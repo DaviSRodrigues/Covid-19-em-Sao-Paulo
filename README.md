@@ -1,9 +1,9 @@
 # Covid-19-em-Sao-Paulo
+![Atualização dos dados](https://github.com/DaviSRodrigues/Covid-19-em-Sao-Paulo/workflows/Atualiza%C3%A7%C3%A3o%20dos%20dados/badge.svg)
+
 Gráficos gerados via Python/Pandas/Plotly a partir de dados públicos para acompanhamento dos casos de Covid-19 no estado e na cidade de São Paulo.
 
 Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
-
-![Atualização dos dados](https://github.com/DaviSRodrigues/Covid-19-em-Sao-Paulo/workflows/Atualiza%C3%A7%C3%A3o%20dos%20dados/badge.svg)
 
 # Atualizações
 
