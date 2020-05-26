@@ -7,7 +7,7 @@ env:
   
 jobs: 
   atualizacao-dados: 
-    if: github.actor == 'davisrodrigues' && (github.event.push.commits[0].message == 'Atualização')
+    if: github.actor == 'davisrodrigues'
     
     runs-on: ubuntu-latest
     
