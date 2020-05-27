@@ -1,6 +1,8 @@
 name: Atualização dos dados
 on: 
-  push
+  push:
+  schedule:
+    - cron: '0 */24 * * *'
 
 env:
   LANG: "pt_BR.UTF-8"
