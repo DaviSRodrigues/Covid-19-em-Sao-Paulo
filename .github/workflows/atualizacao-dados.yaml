@@ -22,27 +22,29 @@ jobs:
 
       - name: Copiar repositório para a máquina virtual
         uses: actions/checkout@v2
+        
+      - name: Instalar Java 11 - requisito tabula-py
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+          java-package: jdk
+        run: java -version
 
       - name: Configurar Python 3.7.6
         uses: actions/setup-python@v2
         with:
           python-version: 3.7.6
-                
-      - name: Versão do Python em uso
         run: python -c "import sys; print(sys.version)"
 
-      - name: Instalar dependências
+      - name: Instalar dependências Python
         run: |
              python -m pip install --upgrade pip
-             pip install pandas plotly nbimporter numpy papermill ipykernel jupyter
+             pip install pandas plotly nbimporter numpy papermill ipykernel jupyter requests beautifulsoup4 tabula-py
       
       - name: Mudar locale para pt_BR.UTF-8
         run: |
           sudo locale-gen pt_BR.UTF-8
           sudo update-locale LANG=pt_BR.UTF-8
-          
-      - name: Teste do locale
-        run: |
           date
       
       - name: Executar notebooks
@@ -54,6 +56,6 @@ jobs:
         run: |
              git config --global user.email "github-actions[bot]@users.noreply.github.com"
              git config --global user.name "github-actions[bot]"
-             git add -- ./docs/graficos ./docs/serviceWorker.js
-             git commit -m '[bot] Atualização diária dos dados' -- ./docs/graficos ./docs/serviceWorker.js
+             git add -- ./dados ./docs/graficos ./docs/serviceWorker.js
+             git commit -m '[bot] Atualização diária dos dados' -- ./dados ./docs/graficos ./docs/serviceWorker.js
              git push
