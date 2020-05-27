@@ -28,6 +28,8 @@ jobs:
         with:
           java-version: '11'
           java-package: jdk
+          
+      - name: Testar Java 11
         run: java -version
 
       - name: Configurar Python 3.7.6
