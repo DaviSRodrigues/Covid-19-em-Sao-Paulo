@@ -1,6 +1,5 @@
 name: Atualização dos dados
-on: 
-  push:
+on:
   schedule:
     - cron: '0 */24 * * *'
 
@@ -62,6 +61,6 @@ jobs:
         run: |
              git config --global user.email "github-actions[bot]@users.noreply.github.com"
              git config --global user.name "github-actions[bot]"
-             git add -- ./dados ./docs/graficos ./docs/serviceWorker.js
-             git commit -m '[bot] Atualização diária dos dados' -- ./dados ./docs/graficos ./docs/serviceWorker.js
+             git add -- ./\*.ipynb ./dados ./docs/graficos ./docs/serviceWorker.js
+             git commit -m '[bot] Atualização diária dos dados' -- ./\*.ipynb ./dados ./docs/graficos ./docs/serviceWorker.js
              git push
