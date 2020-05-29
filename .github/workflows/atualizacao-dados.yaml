@@ -33,12 +33,12 @@ jobs:
       - name: Testar Java 11
         run: java -version
 
-      - name: Configurar Python 3.7.6
+      - name: Configurar Python 3.7.7
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7.6
+          python-version: 3.7.7
           
-      - name: Testar Python 3.7.6
+      - name: Testar Python 3.7.7
         run: python -c "import sys; print(sys.version)"
 
       - name: Instalar dependências Python
