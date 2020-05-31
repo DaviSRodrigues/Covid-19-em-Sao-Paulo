@@ -44,7 +44,7 @@ jobs:
       - name: Instalar dependências Python
         run: |
              python -m pip install --upgrade pip
-             pip install pandas plotly nbimporter numpy papermill ipykernel jupyter requests beautifulsoup4 tabula-py
+             pip install pandas plotly numpy requests beautifulsoup4 tabula-py
       
       - name: Mudar locale para pt_BR.UTF-8
         run: |
@@ -52,10 +52,9 @@ jobs:
           sudo update-locale LANG=pt_BR.UTF-8
           date
       
-      - name: Executar notebooks
-        id: update_nb
+      - name: Gerar gráficos e tabelas com os dados municipais e estaduais
         run: |
-             sh executar-notebooks.sh
+             python covid19sp.py
 
       - name: Fazer o commit das alterações
         run: |
