@@ -361,6 +361,7 @@ def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
 def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado):
     gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento)
     gera_casos_estado(dados_estado)
+    gera_casos_cidade(dados_cidade)
     gera_isolamento_grafico(isolamento)
     gera_isolamento_tabela(isolamento)
     gera_efeito_estado(efeito_estado)
@@ -507,6 +508,96 @@ def gera_casos_estado(dados):
     # fig.show()
     
     pio.write_html(fig, file = 'docs/graficos/casos-estado-mobile.html',
+                   include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+def gera_casos_cidade(dados):
+    fig = make_subplots(specs = [[{"secondary_y": True}]])
+    
+    fig.add_trace(go.Scatter(x = dados['dia'], y = dados['suspeitos'], line = dict(color = 'teal'),
+                             mode = 'lines+markers', name = 'casos suspeitos', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = dados['dia'], y = dados['casos_suspeitos_dia'], marker_color = 'teal',
+                         name = 'casos suspeitos por dia', visible = 'legendonly'))
+    
+    fig.add_trace(go.Scatter(x = dados['dia'], y = dados['confirmados'], line = dict(color = 'blue'),
+                             mode = 'lines+markers', name = 'casos confirmados'))
+    
+    fig.add_trace(go.Bar(x = dados['dia'], y = dados['casos_dia'], marker_color = 'blue',
+                         name = 'casos confirmados por dia'))
+    
+    fig.add_trace(go.Scatter(x = dados['dia'], y = dados['óbitos_suspeitos'], line = dict(color = 'orange'),
+                             mode = 'lines+markers', name = 'óbitos suspeitos', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = dados['dia'], y = dados['óbitos_suspeitos_dia'], marker_color = 'orange',
+                         name = 'óbitos suspeitos por dia', visible = 'legendonly'))
+    
+    fig.add_trace(go.Scatter(x = dados['dia'], y = dados['óbitos'], line = dict(color = 'red'),
+                             mode = 'lines+markers', name = 'óbitos confirmados'))
+    
+    fig.add_trace(go.Bar(x = dados['dia'], y = dados['óbitos_dia'], marker_color = 'red',
+                             name = 'óbitos confirmados por dia', visible = 'legendonly'))
+    
+    fig.add_trace(go.Scatter(x = dados['dia'], y = dados['letalidade'], line = dict(color = 'green'),
+                             mode = 'lines+markers', name = 'letalidade', hovertemplate = '%{y:.2f}%'),
+                  secondary_y = True)
+    
+    d = dados.dia.size
+    
+    frames = [dict(data = [dict(type = 'scatter', x = dados.dia[:d+1], y = dados.suspeitos[:d+1]),
+                           dict(type = 'bar', x = dados.dia[:d+1], y = dados.casos_suspeitos_dia[:d+1]),
+                           dict(type = 'scatter', x = dados.dia[:d+1], y = dados.confirmados[:d+1]),
+                           dict(type = 'bar', x = dados.dia[:d+1], y = dados.casos_dia[:d+1]),
+                           dict(type = 'scatter', x = dados.dia[:d+1], y = dados.óbitos_suspeitos[:d+1]),
+                           dict(type = 'bar', x = dados.dia[:d+1], y = dados.óbitos_suspeitos_dia[:d+1]),
+                           dict(type = 'scatter', x = dados.dia[:d+1], y = dados.óbitos[:d+1]),
+                           dict(type = 'bar', x = dados.dia[:d+1], y = dados.óbitos_dia[:d+1]),
+                           dict(type = 'scatter', x = dados.dia[:d+1], y = dados.letalidade[:d+1])],
+                   traces = [0, 1, 2, 3, 4, 5, 6, 7, 8],
+                  ) for d in range(0, d)]
+    
+    fig.frames = frames
+    
+    botoes = [dict(label = 'Animar', method = 'animate',
+                   args = [None,dict(frame = dict(duration = 200, redraw = True), fromcurrent = True, mode = 'immediate')])]
+    
+    fig.update_layout(
+        font = dict(family = 'Roboto'),
+        title = 'Casos confirmados de Covid-19 na cidade de São Paulo' +
+                '<br><i>Fonte: <a href = "https://www.prefeitura.sp.gov.br/cidade/' +
+                'secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/' +
+                'index.php?p=295572">Prefeitura de São Paulo</a></i>',
+        xaxis_tickangle = 45,
+        hovermode = 'x unified',
+        hoverlabel = {'namelength' : -1}, #para não truncar o nome de cada trace no hover
+        template = 'plotly',
+        updatemenus = [dict(type = 'buttons', showactive = False,
+                            x = 0.05, y = 0.95,
+                            xanchor = 'left', yanchor = 'top',
+                            pad = dict(t = 0, r = 10), buttons = botoes)]
+    )
+    
+    fig.update_yaxes(title_text = 'Número de casos ou óbitos', secondary_y = False)
+    fig.update_yaxes(title_text = 'Taxa de letalidade (%)', secondary_y = True)
+    
+    # fig.show()
+    
+    pio.write_html(fig, file = 'docs/graficos/casos-cidade.html',
+                   include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+    #versão mobile
+    fig.update_traces(selector = dict(type = 'scatter'), mode = 'lines')
+    
+    fig.update_xaxes(nticks = 10)
+    
+    fig.update_layout(
+        showlegend = False,
+        font = dict(size = 11),
+        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 20)
+    )
+    
+    # fig.show()
+    
+    pio.write_html(fig, file = 'docs/graficos/casos-cidade-mobile.html',
                    include_plotlyjs = 'directory', auto_open = False, auto_play = False)
 
 def gera_isolamento_grafico(isolamento):
