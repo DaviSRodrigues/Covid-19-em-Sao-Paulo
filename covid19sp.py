@@ -45,9 +45,7 @@ def carrega_dados_cidade():
     hospitais_campanha = pd.read_csv('dados/hospitais_campanha_sp.csv', sep = ',')
     leitos_municipais = pd.read_csv('dados/leitos_municipais.csv', sep = ',')
     
-    extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais)
-    
-    return dados_cidade, hospitais_campanha, leitos_municipais
+    return extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais)
 
 def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais):
     def formata_numero(valor):
@@ -60,7 +58,9 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         return int(valor)
         
     try:
-        data = datetime.now() - timedelta(hours = 6) #na máquina do GitHub, o horário é UTC
+        #na máquina do GitHub, o horário é UTC
+        #execuções até 9h BRT/12h UTC, buscarão dados do dia anterior
+        data = datetime.now() - timedelta(hours = 12)
         data_str = data.strftime('%d/%m/%Y')
         
         if(dados_cidade.tail(1).data.iat[0] == data_str):
@@ -174,7 +174,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais.loc[leitos_municipais.data == data_str, 'ocupação_uti'] = formata_numero(info_leitos.iat[6, 1])
         
         #atualiza dados municipais do dia anterior
-        data = datetime.now() - timedelta(hours = 6, days = 1)
+        data = datetime.now() - timedelta(hours = 12, days = 1)
         data_str = data.strftime('%d/%m/%Y')
         
         dados_cidade.loc[dados_cidade.data == data_str, 'óbitos'] = formata_numero(obitos.tail(1).iat[0,1])
@@ -190,7 +190,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
     return dados_cidade, hospitais_campanha, leitos_municipais
 
 def carrega_dados_estado():
-    data = datetime.now() - timedelta(hours = 6)
+    data = datetime.now() - timedelta(hours = 12)
     mes = data.strftime('%m')
     
     URL = ('https://www.seade.gov.br/wp-content/uploads/2020'
