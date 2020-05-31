@@ -1,5 +1,6 @@
 name: Atualização dos dados
 on:
+  push:
   schedule:
     - cron: '0 */24 * * *'
 
@@ -54,7 +55,6 @@ jobs:
 
       - name: Gerar gráficos e tabelas com os dados municipais e estaduais
         run: |
-             ls -a
              python covid19sp.py
 
       - name: Fazer o commit das alterações
