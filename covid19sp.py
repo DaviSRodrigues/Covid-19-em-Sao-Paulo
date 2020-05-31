@@ -535,7 +535,7 @@ def gera_casos_cidade(dados):
                              mode = 'lines+markers', name = 'óbitos confirmados'))
     
     fig.add_trace(go.Bar(x = dados['dia'], y = dados['óbitos_dia'], marker_color = 'red',
-                             name = 'óbitos confirmados por dia', visible = 'legendonly'))
+                         name = 'óbitos confirmados por dia', visible = 'legendonly'))
     
     fig.add_trace(go.Scatter(x = dados['dia'], y = dados['letalidade'], line = dict(color = 'green'),
                              mode = 'lines+markers', name = 'letalidade', hovertemplate = '%{y:.2f}%'),
@@ -654,10 +654,9 @@ def gera_isolamento_grafico(isolamento):
         hoverlabel = {'namelength' : -1}, #para não truncar o nome de cada trace no hover
         template = 'plotly',
         updatemenus = [go.layout.Updatemenu(active = 0,
-                buttons = [opcao_metro, opcao_estado] + list(s_municipios.apply(lambda m: cria_lista_opcoes(m))),
-                x = 0.001, xanchor = 'left',
-                y = 0.990, yanchor = 'top'
-                )]
+                                            buttons = [opcao_metro, opcao_estado] + list(s_municipios.apply(lambda m: cria_lista_opcoes(m))),
+                                            x = 0.001, xanchor = 'left',
+                                            y = 0.990, yanchor = 'top')]
     )
         
     # fig.show()
@@ -1022,18 +1021,18 @@ def gera_hospitais_campanha(hospitais_campanha):
                                  mode = 'lines+markers', name = 'internados em leitos<br>de estabilização'))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['altas'],
-                             mode = 'lines+markers', name = 'altas', visible = 'legendonly'))
+                                 mode = 'lines+markers', name = 'altas', visible = 'legendonly'))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['óbitos'],
-                             mode = 'lines+markers', name = 'óbitos', visible = 'legendonly'))
+                                 mode = 'lines+markers', name = 'óbitos', visible = 'legendonly'))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['transferidos'],
-                             mode = 'lines+markers', name = 'transferidos para Hospitais<br>após agravamento clínico',
-                             visible = 'legendonly'))
+                                 mode = 'lines+markers', name = 'transferidos para Hospitais<br>após agravamento clínico',
+                                 visible = 'legendonly'))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['chegando'],
-                             mode = 'lines+markers', name = 'pacientes em processo de<br>transferência para internação<br>no HMCamp', 
-                             visible = 'legendonly'))
+                                 mode = 'lines+markers', name = 'pacientes em processo de<br>transferência para internação<br>no HMCamp',
+                                 visible = 'legendonly'))
         
         d = grafico.dia.size
     
@@ -1065,9 +1064,9 @@ def gera_hospitais_campanha(hospitais_campanha):
             hoverlabel = {'namelength' : -1}, #para não truncar o nome de cada trace no hover
             template = 'plotly',
             updatemenus = [dict(type = 'buttons', showactive = False,
-                            x = 0.05, y = 0.95,
-                            xanchor = 'left', yanchor = 'top',
-                            pad = dict(t = 0, r = 10), buttons = botoes)]
+                                x = 0.05, y = 0.95,
+                                xanchor = 'left', yanchor = 'top',
+                                pad = dict(t = 0, r = 10), buttons = botoes)]
         )
     
         # fig.show()
