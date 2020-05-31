@@ -20,9 +20,6 @@ jobs:
         env: 
              event_name: ${{ github.event_name }}
              git_ref: ${{ github.event.ref }}
-
-      - name: Copiar repositório para a máquina virtual
-        uses: actions/checkout@v2
         
       - name: Instalar Java 11 - requisito tabula-py
         uses: actions/setup-java@v1
@@ -52,8 +49,12 @@ jobs:
           sudo update-locale LANG=pt_BR.UTF-8
           date
       
+      - name: Copiar repositório para a máquina virtual
+        uses: actions/checkout@v2
+
       - name: Gerar gráficos e tabelas com os dados municipais e estaduais
         run: |
+             ls -a
              python covid19sp.py
 
       - name: Fazer o commit das alterações
