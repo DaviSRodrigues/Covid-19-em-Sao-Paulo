@@ -115,7 +115,7 @@ function criaIFrame(linkDesktop, linkMobile, versaoMobile) {
 	iframe.style.display = 'block';
 	iframe.style.border = 'none';
 	iframe.style.width = 1200; 
-	iframe.style.height = 500;
+	iframe.style.height = 400;
 	
 	var divConteudo = document.getElementById('conteudo');
 	divConteudo.insertAdjacentElement('beforeEnd', iframe);
@@ -129,6 +129,11 @@ function montaPagina(pagina) {
 	
 	switch(paginaAtual) {
 		case 'resumo':
+			criaTitulo('Semana Epidemiológica');
+			
+			criaLink('Ampliar resumo semanal', 'graficos/resumo-semanal.html');
+			criaIFrame('graficos/resumo-semanal.html', 'graficos/resumo-semanal-mobile.html', versaoMobile);
+			
 			criaTitulo('Resumo diário');
 			
 			criaLink('Ampliar resumo diário', 'graficos/resumo.html');
