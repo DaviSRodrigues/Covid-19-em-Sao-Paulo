@@ -7,6 +7,11 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 02/06/2020
+
+- Resumo semanal: veja a evolução dos números de casos, óbitos, ocupação de leitos e isolamento social na semana epidemiológica atual e a variação (%) em relação à semana anterior.
+- Leitos na cidade de São Paulo: agora é possível acompanhar a ocupação dos leitos dos hospitais públicos, dos hospitais privados contratados pela prefeitura e dos leitos em geral.
+
 ## 21/05/2020
 
 - Gráficos animados: clique em 'Animar' para acompanhar a evolução dos dados ao longo dos dias

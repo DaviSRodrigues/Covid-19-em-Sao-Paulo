@@ -10,6 +10,7 @@ na cidade e no estado de São Paulo.
 
 from datetime import datetime, timedelta
 import locale
+from math import isnan
 import numpy as np
 import traceback
 
@@ -25,16 +26,16 @@ def main():
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
     print('Carregando dados...')
-    dados_cidade, hospitais_campanha, leitos_municipais = carrega_dados_cidade()
+    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = carrega_dados_cidade()
     dados_estado, isolamento, leitos_estaduais = carrega_dados_estado()
 
     print('\nLimpando e enriquecendo dos dados...')
-    dados_cidade, hospitais_campanha, leitos_municipais, dados_estado, isolamento, leitos_estaduais = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, dados_estado, isolamento, leitos_estaduais)
+    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais)
     efeito_cidade, efeito_estado = gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento)
-    efeito_cidade, efeito_estado = gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_estaduais, isolamento)
+    efeito_cidade, efeito_estado = gera_dados_semana(efeito_cidade, leitos_municipais_total, efeito_estado, leitos_estaduais, isolamento)
 
     print('\nGerando gráficos e tabelas...')
-    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado)
+    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado)
 
     print('\nAtualizando serviceWorker.js...')    
     atualiza_service_worker(dados_cidade)
@@ -45,10 +46,12 @@ def carrega_dados_cidade():
     dados_cidade = pd.read_csv('dados/dados_cidade_sp.csv', sep = ',')
     hospitais_campanha = pd.read_csv('dados/hospitais_campanha_sp.csv', sep = ',')
     leitos_municipais = pd.read_csv('dados/leitos_municipais.csv', sep = ',')
+    leitos_municipais_privados = pd.read_csv('dados/leitos_municipais_privados.csv', sep = ',')
+    leitos_municipais_total = pd.read_csv('dados/leitos_municipais_total.csv', sep = ',')
     
-    return extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais)
+    return extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
 
-def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais):
+def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     def formata_numero(valor):
         if '%' in valor:
             valor = valor.replace('%', '')
@@ -87,7 +90,6 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             for link in soup.find_all('a'):
                 if(data_str in link.text):
                     URL = link['href']
-                    data_str = data_str.replace('º', 'ª')
                     
         print('\tURL do boletim municipal: ' + URL)
 
@@ -156,25 +158,76 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         #atualiza leitos municipais
         if(dados_novos):
             novos_dados = {'data': [data_str],
-                           'pacientes_respiratorio': [formata_numero(info_leitos.iat[0, 1])],
-                           'pacientes_suspeitos': [formata_numero(info_leitos.iat[1, 1])],
-                           'internados_total': [formata_numero(info_leitos.iat[2, 1])],
-                           'internados_uti': [formata_numero(info_leitos.iat[4, 1])],
-                           'ventilação': [formata_numero(info_leitos.iat[5, 1])],
-                           'ocupação_uti': [formata_numero(info_leitos.iat[6, 1])]}
+                           'respiratorio_publico': [formata_numero(info_leitos.iat[0, 1])],
+                           'suspeitos_publico': [formata_numero(info_leitos.iat[1, 1])],
+                           'internados_publico': [formata_numero(info_leitos.iat[2, 1])],
+                           'uti_covid_publico': [formata_numero(info_leitos.iat[3, 1])],
+                           'internados_uti_publico': [formata_numero(info_leitos.iat[4, 1])],
+                           'ventilacao_publico': [formata_numero(info_leitos.iat[5, 1])],
+                           'ocupacao_uti_covid_publico': [formata_numero(info_leitos.iat[6, 1])]}
             
             leitos_municipais = leitos_municipais.append(
                 pd.DataFrame(novos_dados,
-                             columns = ['data', 'pacientes_respiratorio', 'pacientes_suspeitos',
-                                        'internados_total','internados_uti', 'ventilação', 'ocupação_uti']),
+                             columns = ['data', 'respiratorio_publico', 'suspeitos_publico',
+                                        'internados_publico', 'uti_covid_publico', 'internados_uti_publico',
+                                        'ventilacao_publico', 'ocupacao_uti_covid_publico']),
+                ignore_index = True)
+            
+            novos_dados = {'data': [data_str],
+                           'respiratorio_privado': [formata_numero(info_leitos.iat[0, 2])],
+                           'suspeitos_privado': [formata_numero(info_leitos.iat[1, 2])],
+                           'internados_privado': [formata_numero(info_leitos.iat[2, 2])],
+                           'uti_covid_privado': [formata_numero(info_leitos.iat[3, 2])],
+                           'internados_uti_privado': [formata_numero(info_leitos.iat[4, 2])],
+                           'ventilacao_privado': [formata_numero(info_leitos.iat[5, 2])],
+                           'ocupacao_uti_covid_privado': [formata_numero(info_leitos.iat[6, 2])]}
+            
+            leitos_municipais_privados = leitos_municipais_privados.append(
+                pd.DataFrame(novos_dados,
+                             columns = ['data', 'respiratorio_privado', 'suspeitos_privado',
+                                        'internados_privado', 'uti_covid_privado', 'internados_uti_privado',
+                                        'ventilacao_privado', 'ocupacao_uti_covid_privado']),
+                ignore_index = True)
+            
+            novos_dados = {'data': [data_str],
+                           'respiratorio_total': [formata_numero(info_leitos.iat[0, 3])],
+                           'suspeitos_total': [formata_numero(info_leitos.iat[1, 3])],
+                           'internados_total': [formata_numero(info_leitos.iat[2, 3])],
+                           'uti_covid_total': [formata_numero(info_leitos.iat[3, 3])],
+                           'internados_uti_total': [formata_numero(info_leitos.iat[4, 3])],
+                           'ventilacao_total': [formata_numero(info_leitos.iat[5, 3])],
+                           'ocupacao_uti_covid_total': [formata_numero(info_leitos.iat[6, 3])]}
+            
+            leitos_municipais_total = leitos_municipais_total.append(
+                pd.DataFrame(novos_dados,
+                             columns = ['data', 'respiratorio_total', 'suspeitos_total',
+                                        'internados_total', 'uti_covid_total', 'internados_uti_total',
+                                        'ventilacao_total', 'ocupacao_uti_covid_total']),
                 ignore_index = True)
         else:
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'pacientes_respiratorio'] = formata_numero(info_leitos.iat[0, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'pacientes_suspeitos'] = formata_numero(info_leitos.iat[1, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_total'] = formata_numero(info_leitos.iat[2, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_uti'] = formata_numero(info_leitos.iat[4, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'ventilação'] = formata_numero(info_leitos.iat[5, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'ocupação_uti'] = formata_numero(info_leitos.iat[6, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'respiratorio_publico'] = formata_numero(info_leitos.iat[0, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'suspeitos_publico'] = formata_numero(info_leitos.iat[1, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_publico'] = formata_numero(info_leitos.iat[2, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'uti_covid_publico'] = formata_numero(info_leitos.iat[3, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_uti_publico'] = formata_numero(info_leitos.iat[4, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'ventilacao_publico'] = formata_numero(info_leitos.iat[5, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'ocupacao_uti_covid_publico'] = formata_numero(info_leitos.iat[6, 1])
+            
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'respiratorio_privado'] = formata_numero(info_leitos.iat[0, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'suspeitos_privado'] = formata_numero(info_leitos.iat[1, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_privado'] = formata_numero(info_leitos.iat[2, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'uti_covid_privado'] = formata_numero(info_leitos.iat[3, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_uti_privado'] = formata_numero(info_leitos.iat[4, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ventilacao_privado'] = formata_numero(info_leitos.iat[5, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ocupacao_uti_covid_privado'] = formata_numero(info_leitos.iat[6, 2])
+            
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'respiratorio_total'] = formata_numero(info_leitos.iat[0, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'suspeitos_total'] = formata_numero(info_leitos.iat[1, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_total'] = formata_numero(info_leitos.iat[2, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'uti_covid_total'] = formata_numero(info_leitos.iat[3, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_uti_total'] = formata_numero(info_leitos.iat[4, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[5, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
         #atualiza dados municipais do dia anterior
         data = datetime.now() - timedelta(hours = 12, days = 1)
@@ -190,7 +243,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
     
-    return dados_cidade, hospitais_campanha, leitos_municipais
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
 def carrega_dados_estado():
     data = datetime.now() - timedelta(hours = 12)
@@ -213,13 +266,13 @@ def carrega_dados_estado():
     
     return dados_estado, isolamento, leitos_estaduais
 
-def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, dados_estado, isolamento, leitos_estaduais):
-    dados_cidade, hospitais_campanha, leitos_municipais = pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais)
+def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais):
+    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
     dados_estado, isolamento, leitos_estaduais = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais)
     
-    return dados_cidade, hospitais_campanha, leitos_municipais, dados_estado, isolamento, leitos_estaduais
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais
 
-def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais):
+def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     dados_cidade['data'] = pd.to_datetime(dados_cidade.data, format = '%d/%m/%Y')
     dados_cidade['dia'] = dados_cidade.data.apply(lambda d: d.strftime('%d %b'))
     
@@ -228,6 +281,12 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
         
     leitos_municipais['data'] = pd.to_datetime(leitos_municipais.data, format = '%d/%m/%Y')
     leitos_municipais['dia'] = leitos_municipais.data.apply(lambda d: d.strftime('%d %b'))
+    
+    leitos_municipais_privados['data'] = pd.to_datetime(leitos_municipais_privados.data, format = '%d/%m/%Y')
+    leitos_municipais_privados['dia'] = leitos_municipais_privados.data.apply(lambda d: d.strftime('%d %b'))
+    
+    leitos_municipais_total['data'] = pd.to_datetime(leitos_municipais_total.data, format = '%d/%m/%Y')
+    leitos_municipais_total['dia'] = leitos_municipais_total.data.apply(lambda d: d.strftime('%d %b'))
     
     def calcula_letalidade(series):
         #calcula a taxa de letalidade até a data atual
@@ -254,7 +313,7 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     dados_cidade = dados_cidade.apply(lambda linha: calcula_letalidade(linha), axis = 1)
     dados_cidade = dados_cidade.apply(lambda linha: calcula_dia(linha), axis = 1)
     
-    return dados_cidade, hospitais_campanha, leitos_municipais
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
 def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais):
     #apaga as colunas completamente vazias
@@ -264,9 +323,17 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais):
     dados_estado.columns = ['dia', 'total_casos', 'casos_dia', 'obitos_dia']
     dados_estado['data'] = pd.to_datetime(dados_estado.dia + ' 2020', format = '%d %b %Y')
     
+    def formata_municipio(m):
+        return m.title() \
+                .replace(' Da ', ' da ') \
+                .replace(' De ', ' de ') \
+                .replace(' Do ', ' do ') \
+                .replace(' Das ', ' das ') \
+                .replace(' Dos ', ' dos ')
+    
     isolamento.columns = ['str_data', 'escala_cor', 'data', 'município', 'n_registros', 'uf', 'isolamento']
     #deixando apenas a primeira letra de cada palavra como maiúscula
-    isolamento['município'] = isolamento.município.apply(lambda m: m.title())
+    isolamento['município'] = isolamento.município.apply(lambda m: formata_municipio(m))
     isolamento['isolamento'] = pd.to_numeric(isolamento.isolamento.str.replace('%', ''))
     isolamento['data'] = pd.to_datetime(isolamento.data, format = '%d/%m/%y')
     isolamento['dia'] = isolamento.data.apply(lambda d: d.strftime('%d %b'))
@@ -305,7 +372,7 @@ def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
     #semanas atrás com a quantidade de casos e de óbitos da semana atual    
     isolamento['data_futuro'] = isolamento.data.apply(lambda d: d + timedelta(weeks = 2))
     
-    filtro = isolamento.município == 'Estado De São Paulo'
+    filtro = isolamento.município == 'Estado de São Paulo'
     colunas = ['data_futuro', 'isolamento']
 
     esquerda = isolamento.loc[filtro, colunas] \
@@ -368,6 +435,7 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
             obitos_anterior = dados.loc[indice, 'obitos_semana']
             uti_anterior = dados.loc[indice, 'uti']
             isolamento_anterior = dados.loc[indice, 'isolamento_atual']
+            isolamento_2sem_anterior = dados.loc[indice, 'isolamento']
             
             if casos_anterior > 0:
                 linha['variacao_casos'] = ((linha['casos_semana'] / casos_anterior) - 1) * 100
@@ -380,13 +448,16 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
                         
             if isolamento_anterior > 0:
                 linha['variacao_isolamento'] = ((linha['isolamento_atual'] / isolamento_anterior) - 1) * 100
+                
+            if isolamento_2sem_anterior > 0:
+                linha['variacao_isolamento_2sem'] = ((linha['isolamento'] / isolamento_2sem_anterior) - 1) * 100
                     
         return linha
     
     #cálculo da média da taxa de ocupação de leitos de UTI na semana
     leitos = pd.DataFrame()
     leitos['data'] = leitos_municipais.data.apply(lambda d: _formata_semana_extenso(_converte_semana(d)))
-    leitos['uti'] = leitos_municipais.ocupação_uti
+    leitos['uti'] = leitos_municipais.ocupacao_uti_covid_total
     
     leitos = leitos.groupby('data').mean().reset_index()
     
@@ -413,7 +484,7 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
     
     efeito_estado = efeito_estado.merge(leitos, on = 'data', how = 'outer', suffixes = ('_efeito', '_leitos'))  
         
-    filtro = isolamento.município == 'Estado De São Paulo'
+    filtro = isolamento.município == 'Estado de São Paulo'
     colunas = ['data', 'isolamento']
     
     isola_atual = isolamento.loc[filtro, colunas]
@@ -427,8 +498,8 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
     
     return efeito_cidade, efeito_estado
 
-def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado):
-    gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento)
+def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado):
+    gera_resumo_diario(dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento)
     gera_resumo_semanal(efeito_cidade, efeito_estado)
     gera_casos_estado(dados_estado)
     gera_casos_cidade(dados_cidade)
@@ -438,6 +509,8 @@ def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, dados_est
     gera_efeito_cidade(efeito_cidade)
     gera_leitos_estaduais(leitos_estaduais)
     gera_leitos_municipais(leitos_municipais)
+    gera_leitos_municipais_privados(leitos_municipais_privados)
+    gera_leitos_municipais_total(leitos_municipais_total)
     gera_hospitais_campanha(hospitais_campanha)
 
 def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento):
@@ -448,7 +521,7 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
     info = ['<b>Casos</b>', '<b>Casos no dia</b>', '<b>Óbitos</b>', '<b>Óbitos no dia</b>',
             '<b>Letalidade</b>', '<b>Ocupação de UTIs</b>', '<b>Isolamento</b>']
     
-    filtro = (isolamento.município == 'Estado De São Paulo') & (isolamento.data == isolamento.data.max())
+    filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data == isolamento.data.max())
     indice = isolamento.loc[filtro, 'isolamento'].iloc[0]
     
     estado = ['{:4.0f}'.format(dados_estado.tail(1).total_casos.item()), #Casos
@@ -467,7 +540,7 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
               '{:4.0f}'.format(dados_cidade.tail(2).head(1).óbitos.item()), #Óbitos
               '{:4.0f}'.format(dados_cidade.tail(2).head(1).óbitos_dia.item()), #Óbitos por dia
               '{:02.2f}%'.format(dados_cidade.tail(2).head(1).letalidade.item()), #Letalidade
-              '{:02.0f}%'.format(leitos_municipais.tail(1).ocupação_uti.item()), #Ocupação de UTI 
+              '{:02.0f}%'.format(leitos_municipais.tail(1).ocupacao_uti_covid_total.item()), #Ocupação de UTI 
               '{:02.0f}%'.format(indice)] #Isolamento social
     
     fig = go.Figure(data = [go.Table(header = dict(values = cabecalho,
@@ -507,6 +580,12 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
     
     pio.write_html(fig, file = 'docs/graficos/resumo-mobile.html', include_plotlyjs = 'directory', auto_open = False)
 
+def _formata_variacao(v):
+    if isnan(v):
+        return ''
+    
+    return '+{:02.1f}%'.format(v) if v >= 0 else '{:02.1f}%'.format(v)
+
 def gera_resumo_semanal(efeito_cidade, efeito_estado):
     semana = _formata_semana_extenso(_converte_semana(datetime.now() - timedelta(hours = 12)))
     num_semana = efeito_estado.index[efeito_estado.data == semana].item()
@@ -515,30 +594,30 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
                   '<b>Estado de SP</b><br>' + semana,
                   '<b>Cidade de SP</b><br>' + semana]
 
-    info = ['<b>Casos</b>', '<b>Variação (%)</b>',
-            '<b>Óbitos</b>', '<b>Variação (%)</b>',
-            '<b>Ocupação de UTIs</b>', '<b>Variação (%)</b>',
-            '<b>Isolamento</b>', '<b>Variação (%)</b>']
+    info = ['<b>Casos</b>', '<b>Variação</b>',
+            '<b>Óbitos</b>', '<b>Variação</b>',
+            '<b>Ocupação de UTIs</b>', '<b>Variação</b>',
+            '<b>Isolamento</b>', '<b>Variação</b>']
     
     estado = ['{:4.0f}'.format(efeito_estado.loc[num_semana, 'casos_semana']), #Casos
-              '<i>' + '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'variacao_casos']) + '</i>', #Variação casos
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_casos']) + '</i>', #Variação casos
               '{:4.0f}'.format(efeito_estado.loc[num_semana, 'obitos_semana']), #óbitos
-              '<i>' + '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
               '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'uti']), #Ocupação de UTIs
-              '<i>' + '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
               '{:02.0f}%'.format(efeito_estado.loc[num_semana, 'isolamento_atual']), #Isolamento social
-              '<i>' + '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
     
     num_semana = efeito_cidade.index[efeito_cidade.data == semana].item()
     
     cidade = ['{:4.0f}'.format(efeito_cidade.loc[num_semana, 'casos_semana']), #Casos
-              '<i>' + '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'variacao_casos']) + '</i>', #Variação casos
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_casos']) + '</i>', #Variação casos
               '{:4.0f}'.format(efeito_cidade.loc[num_semana, 'obitos_semana']), #óbitos
-              '<i>' + '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
               '{:02.0f}%'.format(efeito_cidade.loc[num_semana, 'uti']), #Ocupação de UTIs
-              '<i>' + '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
               '{:02.0f}%'.format(efeito_cidade.loc[num_semana, 'isolamento_atual']), #Isolamento social
-              '<i>' + '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
     
     fig = go.Figure(data = [go.Table(header = dict(values = cabecalho,
                                                     fill_color = '#00aabb',
@@ -858,21 +937,25 @@ def gera_isolamento_tabela(isolamento):
     # fig.show()
     
     pio.write_html(fig, file = 'docs/graficos/tabela-isolamento-mobile.html', include_plotlyjs = 'directory', auto_open = False)
-
-def gera_efeito_estado(efeito_estado):
+    
+def gera_efeito_estado(efeito_estado):        
     fig = make_subplots(specs = [[{"secondary_y": True}]])
 
     grafico = efeito_estado
     
     fig.add_trace(go.Scatter(x = grafico['data'], y = grafico['isolamento'], line = dict(color = 'orange'),
-                             name = 'isolamento médio<br>de 2 semanas atrás',
-                             hovertemplate = '%{y:.2f}%'), secondary_y = True)
+                             name = 'isolamento médio<br>de 2 semanas atrás', hovertemplate = '%{y:.2f}%',
+                             mode = 'lines+markers+text', textposition = 'top center',
+                             text = grafico['variacao_isolamento_2sem'].apply(lambda v: _formata_variacao(v))),
+                  secondary_y = True)
     
     fig.add_trace(go.Bar(x = grafico['data'], y = grafico['casos_semana'], marker_color = 'blue',
-                         name = 'casos na<br>semana atual'))
+                         name = 'casos na<br>semana atual', textposition = 'outside',
+                         text = grafico['variacao_casos'].apply(lambda v: _formata_variacao(v))))
     
     fig.add_trace(go.Bar(x = grafico['data'], y = grafico['obitos_semana'], marker_color = 'red',
-                         name = 'óbitos na<br>semana atual'))
+                         name = 'óbitos na<br>semana atual', textposition = 'outside',
+                         text = grafico['variacao_obitos'].apply(lambda v: _formata_variacao(v))))
     
     d = grafico.data.size
     
@@ -932,14 +1015,18 @@ def gera_efeito_cidade(efeito_cidade):
     grafico = efeito_cidade
     
     fig.add_trace(go.Scatter(x = grafico['data'], y = grafico['isolamento'], line = dict(color = 'orange'),
-                             name = 'isolamento médio<br>de 2 semanas atrás',
-                             hovertemplate = '%{y:.2f}%'), secondary_y = True)
+                             name = 'isolamento médio<br>de 2 semanas atrás', hovertemplate = '%{y:.2f}%',
+                             mode = 'lines+markers+text', textposition = 'top center',
+                             text = grafico['variacao_isolamento_2sem'].apply(lambda v: _formata_variacao(v))),
+                  secondary_y = True)
     
     fig.add_trace(go.Bar(x = grafico['data'], y = grafico['casos_semana'], marker_color = 'blue',
-                         name = 'casos na<br>semana atual'))
+                         name = 'casos na<br>semana atual', textposition = 'outside',
+                         text = grafico['variacao_casos'].apply(lambda v: _formata_variacao(v))))
     
     fig.add_trace(go.Bar(x = grafico['data'], y = grafico['obitos_semana'], marker_color = 'red',
-                         name = 'óbitos na<br>semana atual'))
+                         name = 'óbitos na<br>semana atual', textposition = 'outside',
+                         text = grafico['variacao_obitos'].apply(lambda v: _formata_variacao(v))))
     
     d = grafico.data.size
     
@@ -1065,35 +1152,39 @@ def gera_leitos_estaduais(leitos):
 def gera_leitos_municipais(leitos):
     fig = make_subplots(specs = [[{"secondary_y": True}]])
     
-    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ocupação_uti'],
-                             mode = 'lines+markers', name = 'taxa de ocupação de UTI',
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ocupacao_uti_covid_publico'],
+                             mode = 'lines+markers', name = 'taxa de ocupação de<br>leitos UTI Covid',
                              hovertemplate = '%{y:.0f}%'),
                   secondary_y = True)
     
-    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_uti'],
-                             mode = 'lines+markers', name = 'pacientes internados em UTI'))
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['uti_covid_publico'],
+                             mode = 'lines+markers', name = 'leitos UTI Covid em operação'))
     
-    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ventilação'],
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_uti_publico'],
+                             mode = 'lines+markers', name = 'pacientes internados em<br>leitos UTI Covid'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ventilacao_publico'], visible = 'legendonly',
                              mode = 'lines+markers', name = 'pacientes internados em<br>ventilação mecânica'))
     
-    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_total'], visible = 'legendonly',
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_publico'], visible = 'legendonly',
                              mode = 'lines+markers', name = 'total de pacientes internados'))
     
-    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['pacientes_respiratorio'], visible = 'legendonly',
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['respiratorio_publico'], visible = 'legendonly',
                              mode = 'lines+markers', name = 'pacientes atendidos com<br>quadro respiratório'))
     
-    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['pacientes_suspeitos'], visible = 'legendonly',
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['suspeitos_publico'], visible = 'legendonly',
                              mode = 'lines+markers', name = 'pacientes atendidos com<br>suspeita de Covid-19'))
     
     d = leitos.dia.size
     
-    frames = [dict(data = [dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ocupação_uti[:d+1]),
-                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_uti[:d+1]),
-                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ventilação[:d+1]),
-                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_total[:d+1]),
-                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.pacientes_respiratorio[:d+1]),
-                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.pacientes_suspeitos[:d+1])],
-                   traces = [0, 1, 2, 3, 4, 5],
+    frames = [dict(data = [dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ocupacao_uti_covid_publico[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.uti_covid_publico[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_uti_publico[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ventilacao_publico[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_publico[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.respiratorio_publico[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.suspeitos_publico[:d+1])],
+                   traces = [0, 1, 2, 3, 4, 5, 6],
                   ) for d in range(0, d)]
     
     fig.frames = frames
@@ -1103,7 +1194,7 @@ def gera_leitos_municipais(leitos):
     
     fig.update_layout(
         font = dict(family = 'Roboto'),
-        title = 'Situação da Rede Hospitalar Municipal' + 
+        title = 'Situação dos 20 Hospitais Públicos Municipais' + 
                 '<br><i>Fonte: <a href = "https://www.prefeitura.sp.gov.br/cidade/' +
                 'secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/' +
                 'index.php?p=295572">Prefeitura de São Paulo</a></i>',
@@ -1140,6 +1231,174 @@ def gera_leitos_municipais(leitos):
     # fig.show()
     
     pio.write_html(fig, file = 'docs/graficos/leitos-municipais-mobile.html',
+                   include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+def gera_leitos_municipais_privados(leitos):
+    fig = make_subplots(specs = [[{"secondary_y": True}]])
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ocupacao_uti_covid_privado'],
+                             mode = 'lines+markers', name = 'taxa de ocupação de<br>leitos UTI Covid',
+                             hovertemplate = '%{y:.0f}%'),
+                  secondary_y = True)
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['uti_covid_privado'],
+                             mode = 'lines+markers', name = 'leitos UTI Covid em operação'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_uti_privado'],
+                             mode = 'lines+markers', name = 'pacientes internados em<br>leitos UTI Covid'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ventilacao_privado'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'pacientes internados em<br>ventilação mecânica'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_privado'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'total de pacientes internados'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['respiratorio_privado'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'pacientes atendidos com<br>quadro respiratório'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['suspeitos_privado'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'pacientes atendidos com<br>suspeita de Covid-19'))
+    
+    d = leitos.dia.size
+    
+    frames = [dict(data = [dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ocupacao_uti_covid_privado[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.uti_covid_privado[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_uti_privado[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ventilacao_privado[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_privado[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.respiratorio_privado[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.suspeitos_privado[:d+1])],
+                   traces = [0, 1, 2, 3, 4, 5, 6],
+                  ) for d in range(0, d)]
+    
+    fig.frames = frames
+    
+    botoes = [dict(label = 'Animar', method = 'animate',
+                   args = [None,dict(frame = dict(duration = 200, redraw = True), fromcurrent = True, mode = 'immediate')])]
+    
+    fig.update_layout(
+        font = dict(family = 'Roboto'),
+        title = 'Situação dos leitos privados contratados pela Prefeitura' + 
+                '<br><i>Fonte: <a href = "https://www.prefeitura.sp.gov.br/cidade/' +
+                'secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/' +
+                'index.php?p=295572">Prefeitura de São Paulo</a></i>',
+        xaxis_tickangle = 45,
+        hovermode = 'x unified',
+        hoverlabel = {'namelength' : -1}, #para não truncar o nome de cada trace no hover
+        template = 'plotly',
+        showlegend = True,
+        updatemenus = [dict(type = 'buttons', showactive = False,
+                            x = 0.05, y = 0.95,
+                            xanchor = 'left', yanchor = 'top',
+                            pad = dict(t = 0, r = 10), buttons = botoes)]
+    )
+    
+    fig.update_yaxes(title_text = 'Número de pacientes', secondary_y = False)
+    fig.update_yaxes(title_text = 'Taxa de ocupação de UTI (%)', secondary_y = True)
+    
+    # fig.show()
+    
+    pio.write_html(fig, file = 'docs/graficos/leitos-municipais-privados.html',
+                   include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+    #versão mobile
+    fig.update_traces(mode = 'lines')
+    
+    fig.update_xaxes(nticks = 10)
+    
+    fig.update_layout(
+        font = dict(size = 11),
+        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 20),
+        showlegend = False
+    )
+    
+    # fig.show()
+    
+    pio.write_html(fig, file = 'docs/graficos/leitos-municipais-privados-mobile.html',
+                   include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+def gera_leitos_municipais_total(leitos):
+    fig = make_subplots(specs = [[{"secondary_y": True}]])
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ocupacao_uti_covid_total'],
+                             mode = 'lines+markers', name = 'taxa de ocupação de<br>leitos UTI Covid',
+                             hovertemplate = '%{y:.0f}%'),
+                  secondary_y = True)
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['uti_covid_total'],
+                             mode = 'lines+markers', name = 'leitos UTI Covid em operação'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_uti_total'],
+                             mode = 'lines+markers', name = 'pacientes internados em<br>leitos UTI Covid'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['ventilacao_total'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'pacientes internados em<br>ventilação mecânica'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['internados_total'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'total de pacientes internados'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['respiratorio_total'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'pacientes atendidos com<br>quadro respiratório'))
+    
+    fig.add_trace(go.Scatter(x = leitos['dia'], y = leitos['suspeitos_total'], visible = 'legendonly',
+                             mode = 'lines+markers', name = 'pacientes atendidos com<br>suspeita de Covid-19'))
+    
+    d = leitos.dia.size
+    
+    frames = [dict(data = [dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ocupacao_uti_covid_total[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.uti_covid_total[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_uti_total[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.ventilacao_total[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.internados_total[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.respiratorio_total[:d+1]),
+                           dict(type = 'scatter', x = leitos.dia[:d+1], y = leitos.suspeitos_total[:d+1])],
+                   traces = [0, 1, 2, 3, 4, 5, 6],
+                  ) for d in range(0, d)]
+    
+    fig.frames = frames
+    
+    botoes = [dict(label = 'Animar', method = 'animate',
+                   args = [None,dict(frame = dict(duration = 200, redraw = True), fromcurrent = True, mode = 'immediate')])]
+    
+    fig.update_layout(
+        font = dict(family = 'Roboto'),
+        title = 'Situação geral dos leitos públicos e privados' + 
+                '<br><i>Fonte: <a href = "https://www.prefeitura.sp.gov.br/cidade/' +
+                'secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/' +
+                'index.php?p=295572">Prefeitura de São Paulo</a></i>',
+        xaxis_tickangle = 45,
+        hovermode = 'x unified',
+        hoverlabel = {'namelength' : -1}, #para não truncar o nome de cada trace no hover
+        template = 'plotly',
+        showlegend = True,
+        updatemenus = [dict(type = 'buttons', showactive = False,
+                            x = 0.05, y = 0.95,
+                            xanchor = 'left', yanchor = 'top',
+                            pad = dict(t = 0, r = 10), buttons = botoes)]
+    )
+    
+    fig.update_yaxes(title_text = 'Número de pacientes', secondary_y = False)
+    fig.update_yaxes(title_text = 'Taxa de ocupação de UTI (%)', secondary_y = True)
+    
+    # fig.show()
+    
+    pio.write_html(fig, file = 'docs/graficos/leitos-municipais-total.html',
+                   include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+    #versão mobile
+    fig.update_traces(mode = 'lines')
+    
+    fig.update_xaxes(nticks = 10)
+    
+    fig.update_layout(
+        font = dict(size = 11),
+        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 20),
+        showlegend = False
+    )
+    
+    # fig.show()
+    
+    pio.write_html(fig, file = 'docs/graficos/leitos-municipais-total-mobile.html',
                    include_plotlyjs = 'directory', auto_open = False, auto_play = False)
     
 def gera_hospitais_campanha(hospitais_campanha):

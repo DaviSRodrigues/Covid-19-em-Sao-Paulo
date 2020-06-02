@@ -179,10 +179,20 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico de ocupação de leitos no estado', 'graficos/leitos-estaduais.html');
 			criaIFrame('graficos/leitos-estaduais.html', 'graficos/leitos-estaduais-mobile.html', versaoMobile);
 			
-			criaTitulo('Ocupação de leitos na Cidade');
+			criaTitulo('Ocupação de leitos públicos na Cidade');
 			
 			criaLink('Ampliar gráfico da situação dos hospitais municipais', 'graficos/leitos-municipais.html');
 			criaIFrame('graficos/leitos-municipais.html', 'graficos/leitos-municipais-mobile.html', versaoMobile);
+			
+			criaTitulo('Ocupação de leitos privados contratados pela Prefeitura');
+			
+			criaLink('Ampliar gráfico da situação dos leitos privados', 'graficos/leitos-municipais-privados.html');
+			criaIFrame('graficos/leitos-municipais-privados.html', 'graficos/leitos-municipais-privados-mobile.html', versaoMobile);
+			
+			criaTitulo('Ocupação geral de leitos públicos e privados na Cidade');
+			
+			criaLink('Ampliar gráfico da situação dos leitos em geral', 'graficos/leitos-municipais-total.html');
+			criaIFrame('graficos/leitos-municipais-total.html', 'graficos/leitos-municipais-total-mobile.html', versaoMobile);
 			
 			break;
 			
