@@ -53,6 +53,9 @@ def carrega_dados_cidade():
 
 def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     def formata_numero(valor):
+        if valor == '-':
+            return np.NaN
+        
         if '%' in valor:
             valor = valor.replace('%', '')
         
@@ -240,6 +243,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         dados_cidade.to_csv('dados/dados_cidade_sp.csv', sep = ',', index  = False)
         hospitais_campanha.to_csv('dados/hospitais_campanha_sp.csv', sep = ',', index  = False)
         leitos_municipais.to_csv('dados/leitos_municipais.csv', sep = ',', index  = False)
+        leitos_municipais_privados.to_csv('dados/leitos_municipais_privados.csv', sep = ',', index  = False)
+        leitos_municipais_total.to_csv('dados/leitos_municipais_total.csv', sep = ',', index  = False)
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
     
