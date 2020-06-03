@@ -610,7 +610,7 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
               '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
               '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'uti']), #Ocupação de UTIs
               '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
-              '{:02.0f}%'.format(efeito_estado.loc[num_semana, 'isolamento_atual']), #Isolamento social
+              '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'isolamento_atual']), #Isolamento social
               '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
     
     num_semana = efeito_cidade.index[efeito_cidade.data == semana].item()
@@ -619,9 +619,9 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
               '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_casos']) + '</i>', #Variação casos
               '{:4.0f}'.format(efeito_cidade.loc[num_semana, 'obitos_semana']), #óbitos
               '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
-              '{:02.0f}%'.format(efeito_cidade.loc[num_semana, 'uti']), #Ocupação de UTIs
+              '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'uti']), #Ocupação de UTIs
               '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
-              '{:02.0f}%'.format(efeito_cidade.loc[num_semana, 'isolamento_atual']), #Isolamento social
+              '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'isolamento_atual']), #Isolamento social
               '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
     
     fig = go.Figure(data = [go.Table(header = dict(values = cabecalho,
