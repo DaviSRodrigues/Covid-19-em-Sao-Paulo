@@ -77,8 +77,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             dados_novos = True
             print('\tExtraindo dados novos de ' + data_str + '...')
         
-        data_str = data.strftime('%d de %B de %Y').lower()        
-        data_str = data_str.replace('01 de ', '1º de ')
+        data_str = f'{data.day} de {data:%B} de {data:%Y}'
+        data_str = data_str.replace('1 de ', '1º de ')
         
         #página de Boletins da Prefeitura de São Paulo
         URL = ('https://www.prefeitura.sp.gov.br/cidade/secretarias'
