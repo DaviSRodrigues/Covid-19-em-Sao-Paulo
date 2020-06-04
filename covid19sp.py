@@ -10,8 +10,7 @@ na cidade e no estado de São Paulo.
 
 from datetime import datetime, timedelta
 import locale
-from math import isnan
-import numpy as np
+import math
 import traceback
 
 from bs4 import BeautifulSoup
@@ -53,11 +52,16 @@ def carrega_dados_cidade():
 
 def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     def formata_numero(valor):
+        valor = str(valor)
+        
         if valor == '-':
-            return np.NaN
+            return math.nan
         
         if '%' in valor:
             valor = valor.replace('%', '')
+            
+        if math.isnan(float(valor)):
+            return math.nan
         
         if '.' in valor:
             return int(valor.replace('.', ''))
@@ -111,11 +115,11 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         
         #atualiza dados municipais        
         if(dados_novos):
-            novos_dados = {'data': data_str,
+            novos_dados = {'data': [data_str],
                            'suspeitos': [formata_numero(resumo.tail(1).iat[0,1])],
                            'confirmados': [formata_numero(resumo.tail(1).iat[0,2])],
-                           'óbitos': [np.NaN],
-                           'óbitos_suspeitos': [np.NaN]}
+                           'óbitos': [math.nan],
+                           'óbitos_suspeitos': [math.nan]}
             
             dados_cidade = dados_cidade.append(
                 pd.DataFrame(novos_dados,
@@ -529,24 +533,24 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
     filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data == isolamento.data.max())
     indice = isolamento.loc[filtro, 'isolamento'].iloc[0]
     
-    estado = ['{:4.0f}'.format(dados_estado.tail(1).total_casos.item()), #Casos
-              '{:4.0f}'.format(dados_estado.tail(1).casos_dia.item()), #Casos por dia
-              '{:4.0f}'.format(dados_estado.tail(1).total_obitos.item()), #Óbitos
-              '{:4.0f}'.format(dados_estado.tail(1).obitos_dia.item()), #Óbitos por dia
-              '{:02.2f}%'.format(dados_estado.tail(1).letalidade.item()), #Letalidade
-              '{:02.1f}%'.format(leitos_estaduais.tail(1).sp_uti.item()), #Ocupação de UTI 
-              '{:02.0f}%'.format(indice)] #Isolamento social
+    estado = ['{:7,.0f}'.format(dados_estado.tail(1).total_casos.item()).replace(',', '.'), #Casos
+              '{:7,.0f}'.format(dados_estado.tail(1).casos_dia.item()).replace(',', '.'), #Casos por dia
+              '{:7,.0f}'.format(dados_estado.tail(1).total_obitos.item()).replace(',', '.'), #Óbitos
+              '{:7,.0f}'.format(dados_estado.tail(1).obitos_dia.item()).replace(',', '.'), #Óbitos por dia
+              '{:7.2f}%'.format(dados_estado.tail(1).letalidade.item()).replace('.', ','), #Letalidade
+              '{:7.1f}%'.format(leitos_estaduais.tail(1).sp_uti.item()).replace('.', ','), #Ocupação de UTI 
+              '{:7.0f}%'.format(indice)] #Isolamento social
     
     filtro = (isolamento.município == 'São Paulo') & (isolamento.data == isolamento.data.max())
     indice = isolamento.loc[filtro, 'isolamento'].iloc[0]
     
-    cidade = ['{:4.0f}'.format(dados_cidade.tail(1).confirmados.item()), #Casos
-              '{:4.0f}'.format(dados_cidade.tail(1).casos_dia.item()), #Casos por dia
-              '{:4.0f}'.format(dados_cidade.tail(2).head(1).óbitos.item()), #Óbitos
-              '{:4.0f}'.format(dados_cidade.tail(2).head(1).óbitos_dia.item()), #Óbitos por dia
-              '{:02.2f}%'.format(dados_cidade.tail(2).head(1).letalidade.item()), #Letalidade
-              '{:02.0f}%'.format(leitos_municipais.tail(1).ocupacao_uti_covid_total.item()), #Ocupação de UTI 
-              '{:02.0f}%'.format(indice)] #Isolamento social
+    cidade = ['{:7,.0f}'.format(dados_cidade.tail(1).confirmados.item()).replace(',', '.'), #Casos
+              '{:7,.0f}'.format(dados_cidade.tail(1).casos_dia.item()).replace(',', '.'), #Casos por dia
+              '{:7,.0f}'.format(dados_cidade.tail(2).head(1).óbitos.item()).replace(',', '.'), #Óbitos
+              '{:7,.0f}'.format(dados_cidade.tail(2).head(1).óbitos_dia.item()).replace(',', '.'), #Óbitos por dia
+              '{:7.2f}%'.format(dados_cidade.tail(2).head(1).letalidade.item()).replace('.', ','), #Letalidade
+              '{:7.0f}%'.format(leitos_municipais.tail(1).ocupacao_uti_covid_total.item()), #Ocupação de UTI 
+              '{:7.0f}%'.format(indice)] #Isolamento social
     
     fig = go.Figure(data = [go.Table(header = dict(values = cabecalho,
                                                    fill_color = '#00aabb',
@@ -586,7 +590,7 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
     pio.write_html(fig, file = 'docs/graficos/resumo-mobile.html', include_plotlyjs = 'directory', auto_open = False)
 
 def _formata_variacao(v):
-    if isnan(v):
+    if math.isnan(v):
         return ''
     
     return '+{:02.1f}%'.format(v) if v >= 0 else '{:02.1f}%'.format(v)
@@ -604,25 +608,25 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
             '<b>Ocupação de UTIs</b>', '<b>Variação</b>',
             '<b>Isolamento</b>', '<b>Variação</b>']
     
-    estado = ['{:4.0f}'.format(efeito_estado.loc[num_semana, 'casos_semana']), #Casos
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_casos']) + '</i>', #Variação casos
-              '{:4.0f}'.format(efeito_estado.loc[num_semana, 'obitos_semana']), #óbitos
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
-              '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'uti']), #Ocupação de UTIs
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
-              '{:02.1f}%'.format(efeito_estado.loc[num_semana, 'isolamento_atual']), #Isolamento social
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
+    estado = ['{:7,.0f}'.format(efeito_estado.loc[num_semana, 'casos_semana']).replace(',', '.'), #Casos
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_casos']).replace('.', ',') + '</i>', #Variação casos
+              '{:7,.0f}'.format(efeito_estado.loc[num_semana, 'obitos_semana']).replace(',', '.'), #óbitos
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_obitos']).replace('.', ',') + '</i>', #Variação óbitos
+              '{:7.1f}%'.format(efeito_estado.loc[num_semana, 'uti']).replace('.', ','), #Ocupação de UTIs
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_uti']).replace('.', ',') + '</i>', #Variação ocupação de UTIs
+              '{:7.1f}%'.format(efeito_estado.loc[num_semana, 'isolamento_atual']).replace('.', ','), #Isolamento social
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_isolamento']).replace('.', ',') + '</i>'] #Variação isolamento
     
     num_semana = efeito_cidade.index[efeito_cidade.data == semana].item()
     
-    cidade = ['{:4.0f}'.format(efeito_cidade.loc[num_semana, 'casos_semana']), #Casos
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_casos']) + '</i>', #Variação casos
-              '{:4.0f}'.format(efeito_cidade.loc[num_semana, 'obitos_semana']), #óbitos
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_obitos']) + '</i>', #Variação óbitos
-              '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'uti']), #Ocupação de UTIs
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_uti']) + '</i>', #Variação ocupação de UTIs
-              '{:02.1f}%'.format(efeito_cidade.loc[num_semana, 'isolamento_atual']), #Isolamento social
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_isolamento']) + '</i>'] #Variação isolamento
+    cidade = ['{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'casos_semana']).replace(',', '.'), #Casos
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_casos']).replace('.', ',') + '</i>', #Variação casos
+              '{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'obitos_semana']).replace(',', '.'), #óbitos
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_obitos']).replace('.', ',') + '</i>', #Variação óbitos
+              '{:7.1f}%'.format(efeito_cidade.loc[num_semana, 'uti']).replace('.', ','), #Ocupação de UTIs
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_uti']).replace('.', ',') + '</i>', #Variação ocupação de UTIs
+              '{:7.1f}%'.format(efeito_cidade.loc[num_semana, 'isolamento_atual']).replace('.', ','), #Isolamento social
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_isolamento']).replace('.', ',') + '</i>'] #Variação isolamento
     
     fig = go.Figure(data = [go.Table(header = dict(values = cabecalho,
                                                     fill_color = '#00aabb',
@@ -954,6 +958,13 @@ def gera_efeito_estado(efeito_estado):
                              text = grafico['variacao_isolamento_2sem'].apply(lambda v: _formata_variacao(v))),
                   secondary_y = True)
     
+    fig.add_trace(go.Scatter(x = grafico['data'], y = grafico['uti'], line = dict(color = 'green'),
+                             name = 'taxa média de<br>ocupação de UTI', hovertemplate = '%{y:.2f}%',
+                             mode = 'lines+markers+text', textposition = 'top center',
+                             text = grafico['variacao_uti'].apply(lambda v: _formata_variacao(v)),
+                             visible = 'legendonly'),
+                  secondary_y = True)
+    
     fig.add_trace(go.Bar(x = grafico['data'], y = grafico['casos_semana'], marker_color = 'blue',
                          name = 'casos na<br>semana atual', textposition = 'outside',
                          text = grafico['variacao_casos'].apply(lambda v: _formata_variacao(v))))
@@ -965,9 +976,10 @@ def gera_efeito_estado(efeito_estado):
     d = grafico.data.size
     
     frames = [dict(data = [dict(type = 'scatter', x = grafico.data[:d+1], y = grafico.isolamento[:d+1]),
+                           dict(type = 'scatter', x = grafico.data[:d+1], y = grafico.uti[:d+1]),
                            dict(type = 'bar', x = grafico.data[:d+1], y = grafico.casos_semana[:d+1]),
                            dict(type = 'bar', x = grafico.data[:d+1], y = grafico.obitos_semana[:d+1])],
-                   traces = [0, 1, 2],
+                   traces = [0, 1, 2, 3],
                   ) for d in range(0, d)]
     
     fig.frames = frames
@@ -1025,6 +1037,13 @@ def gera_efeito_cidade(efeito_cidade):
                              text = grafico['variacao_isolamento_2sem'].apply(lambda v: _formata_variacao(v))),
                   secondary_y = True)
     
+    fig.add_trace(go.Scatter(x = grafico['data'], y = grafico['uti'], line = dict(color = 'green'),
+                             name = 'taxa média de<br>ocupação de UTI', hovertemplate = '%{y:.2f}%',
+                             mode = 'lines+markers+text', textposition = 'top center',
+                             text = grafico['variacao_uti'].apply(lambda v: _formata_variacao(v)),
+                             visible = 'legendonly'),
+                  secondary_y = True)
+    
     fig.add_trace(go.Bar(x = grafico['data'], y = grafico['casos_semana'], marker_color = 'blue',
                          name = 'casos na<br>semana atual', textposition = 'outside',
                          text = grafico['variacao_casos'].apply(lambda v: _formata_variacao(v))))
@@ -1036,9 +1055,10 @@ def gera_efeito_cidade(efeito_cidade):
     d = grafico.data.size
     
     frames = [dict(data = [dict(type = 'scatter', x = grafico.data[:d+1], y = grafico.isolamento[:d+1]),
+                           dict(type = 'scatter', x = grafico.data[:d+1], y = grafico.uti[:d+1]),
                            dict(type = 'bar', x = grafico.data[:d+1], y = grafico.casos_semana[:d+1]),
                            dict(type = 'bar', x = grafico.data[:d+1], y = grafico.obitos_semana[:d+1])],
-                   traces = [0, 1, 2],
+                   traces = [0, 1, 2, 3],
                   ) for d in range(0, d)]
     
     fig.frames = frames
