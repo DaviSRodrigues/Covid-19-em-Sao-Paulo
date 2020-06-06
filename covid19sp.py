@@ -403,7 +403,10 @@ def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
                    .reset_index()
 
     estado['data'] = estado.data.apply(lambda d: _formata_semana_extenso(d))
-
+    
+    estado['casos_semana'] = estado.casos_semana.apply(lambda c: math.nan if c == 0 else c)
+    estado['obitos_semana'] = estado.obitos_semana.apply(lambda c: math.nan if c == 0 else c)
+    
     efeito_estado = estado
 
     #dados municipais
@@ -430,7 +433,10 @@ def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
                    .reset_index()
 
     cidade['data'] = cidade.data.apply(lambda d: _formata_semana_extenso(d))
-
+    
+    cidade['casos_semana'] = cidade.casos_semana.apply(lambda c: math.nan if c == 0 else c)
+    cidade['obitos_semana'] = cidade.obitos_semana.apply(lambda c: math.nan if c == 0 else c)
+    
     efeito_cidade = cidade
     
     return efeito_cidade, efeito_estado
@@ -840,7 +846,7 @@ def gera_isolamento_grafico(isolamento):
     titulo_a = 'Índice de adesão ao isolamento social - '
     titulo_b = '<br><i>Fonte: <a href = "https://www.saopaulo.sp.gov.br/coronavirus/isolamento/">Governo do Estado de São Paulo</a></i>'
     
-    cidades_iniciais = ['Estado De São Paulo', 'São Paulo', 'Guarulhos', 'Osasco', 'Jundiaí', 'Caieiras', 
+    cidades_iniciais = ['Estado de São Paulo', 'São Paulo', 'Guarulhos', 'Osasco', 'Jundiaí', 'Caieiras', 
                         'Campinas', 'Santo André', 'Mauá', 'Francisco Morato', 'Poá']
     
     for m in l_municipios:
@@ -862,7 +868,7 @@ def gera_isolamento_grafico(isolamento):
     
     opcao_estado = dict(label = 'Estado de São Paulo',
                         method = 'update',
-                        args = [{'visible': s_municipios.isin(['Estado De São Paulo'])},
+                        args = [{'visible': s_municipios.isin(['Estado de São Paulo'])},
                                 {'title.text': titulo_a + 'Estado de São Paulo' + titulo_b},
                                 {'showlegend': False}])
     
