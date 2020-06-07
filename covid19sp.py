@@ -602,7 +602,7 @@ def _formata_variacao(v):
     return '+{:02.1f}%'.format(v) if v >= 0 else '{:02.1f}%'.format(v)
 
 def gera_resumo_semanal(efeito_cidade, efeito_estado):
-    semana = _formata_semana_extenso(_converte_semana(datetime.now() - timedelta(hours = 12)))
+    semana = _formata_semana_extenso(_converte_semana(datetime.now() - timedelta(days = 1, hours = 12)))
     num_semana = efeito_estado.index[efeito_estado.data == semana].item()
     
     cabecalho = ['<b>' + str(num_semana + 1) + 'ª semana<br>epidemiológica</b>',
