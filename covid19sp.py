@@ -339,12 +339,12 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais):
                 .replace(' Do ', ' do ') \
                 .replace(' Das ', ' das ') \
                 .replace(' Dos ', ' dos ')
-    
-    isolamento.columns = ['str_data', 'escala_cor', 'data', 'município', 'n_registros', 'uf', 'isolamento']
+                
+    isolamento.columns = ['str_data', 'escala_cor', 'data_dia', 'dia', 'data', 'município', 'n_registros', 'uf', 'isolamento']
     #deixando apenas a primeira letra de cada palavra como maiúscula
     isolamento['município'] = isolamento.município.apply(lambda m: formata_municipio(m))
     isolamento['isolamento'] = pd.to_numeric(isolamento.isolamento.str.replace('%', ''))
-    isolamento['data'] = pd.to_datetime(isolamento.data, format = '%d/%m/%y')
+    isolamento['data'] = pd.to_datetime(isolamento.data, format = '%A, %d de %B de %Y')
     isolamento['dia'] = isolamento.data.apply(lambda d: d.strftime('%d %b'))
     isolamento.sort_values(by = ['data', 'isolamento'], inplace = True)
     
