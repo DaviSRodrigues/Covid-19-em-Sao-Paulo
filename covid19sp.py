@@ -344,8 +344,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais):
     #deixando apenas a primeira letra de cada palavra como maiúscula
     isolamento['município'] = isolamento.município.apply(lambda m: formata_municipio(m))
     isolamento['isolamento'] = pd.to_numeric(isolamento.isolamento.str.replace('%', ''))
-    #%A no Ubuntu: segunda | %A no Windows: segunda-feira | solução: ignorar dia da semana
-    isolamento['data'] = isolamento.data.apply(lambda d: datetime.strptime(d.split(', ')[1], '%d de %B de %Y'))
+    isolamento['data'] = isolamento.str_data.apply(lambda d: datetime.strptime(d.split('(')[1].split(')')[0], '%d/%m/%Y'))
     isolamento['dia'] = isolamento.data.apply(lambda d: d.strftime('%d %b'))
     isolamento.sort_values(by = ['data', 'isolamento'], inplace = True)
     
