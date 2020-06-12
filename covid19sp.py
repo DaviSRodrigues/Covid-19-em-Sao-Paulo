@@ -82,8 +82,10 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             print('\tExtraindo dados novos de ' + data_str + '...')
         
         data_str = f'{data.day} de {data:%B} de {data:%Y}'
-        data_str = data_str.replace('1 de ', '1º de ')
         
+        if data.day == 1:
+            data_str = data_str.replace('1 de ', '1º de ')
+            
         #página de Boletins da Prefeitura de São Paulo
         URL = ('https://www.prefeitura.sp.gov.br/cidade/secretarias'
                '/saude/vigilancia_em_saude/doencas_e_agravos'
