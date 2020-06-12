@@ -32,8 +32,8 @@ const CACHE_URLS = [
 	'graficos/efeito-cidade-mobile.html',
 	'graficos/resumo-semanal-mobile.html',
 	'graficos/resumo-semanal.html',
-	'graficos/leitos-municipais-particulares-mobile.html',
-	'graficos/leitos-municipais-particulares.html',
+	'graficos/leitos-municipais-priv-mobile.html',
+	'graficos/leitos-municipais-priv.html',
 	'graficos/leitos-municipais-total-mobile.html',
 	'graficos/leitos-municipais-total.html',
 	'images/bg01.png',	
@@ -54,7 +54,7 @@ self.addEventListener('install', event => {
 			.then(cache => cache.addAll(CACHE_URLS))
 			.then(self.skipWaiting())
 			.catch(function(err) {
-				console.log("O serviceWorker não salvou os arquivos em cache.", err);
+				console.log("O serviceWorker não salvou os arquivos em cache.", err, err.fileName, err.stack);
 			})
 	);
 });
