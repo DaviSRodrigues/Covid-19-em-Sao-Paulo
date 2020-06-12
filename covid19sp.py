@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import locale
 import math
 import traceback
+from urllib.error import HTTPError
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -251,6 +252,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         leitos_municipais.to_csv('dados/leitos_municipais.csv', sep = ',', index  = False)
         leitos_municipais_privados.to_csv('dados/leitos_municipais_privados.csv', sep = ',', index  = False)
         leitos_municipais_total.to_csv('dados/leitos_municipais_total.csv', sep = ',', index  = False)
+    except HTTPError as e:
+        print('\n\t' + str(e) + '\n')
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
     
@@ -260,19 +263,35 @@ def carrega_dados_estado():
     data = datetime.now() - timedelta(hours = 12)
     mes = data.strftime('%m')
     
-    URL = ('https://www.seade.gov.br/wp-content/uploads/2020'
-           '/' + mes + '/Dados-covid-19-estado.csv')
-
     try:
         print('\tAtualizando dados estaduais...')
+        URL = ('https://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/Dados-covid-19-estado.csv')
         dados_estado = pd.read_table(URL, sep = ';', decimal = ',', encoding = 'latin-1')
-        dados_estado.to_csv('dados/Dados-covid-19-estado.csv', sep = ';', decimal = ',', encoding = 'latin-1')
+        dados_estado.to_csv('dados/Dados-covid-19-estado.csv', sep = ';', decimal = ',', encoding = 'latin-1')        
     except Exception as e:
-        traceback.print_exception(type(e), e, e.__traceback__)
-        print('\tErro ao buscar *.csv da Seade: lendo arquivo local.')
+        if(type(e) == HTTPError):
+            print('\n\t' + str(e))
+        else:
+            traceback.print_exception(type(e), e, e.__traceback__)
+        
+        print('\tErro ao buscar *.csv da Seade: lendo arquivo local.\n')
         dados_estado = pd.read_csv('dados/Dados-covid-19-estado.csv', sep = ';', decimal = ',', encoding = 'latin-1')
-    
-    isolamento = pd.read_csv('dados/isolamento_social.csv', sep = ';')    
+        
+    try:
+        print('\tAtualizando dados de isolamento social...')
+        URL = ('https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no')
+        isolamento = pd.read_table(URL, sep = ',')
+        isolamento.to_csv('dados/isolamento_social.csv', sep = ',')
+        
+    except Exception as e:
+        if(type(e) == HTTPError):
+            print('\n\t' + str(e))
+        else:
+            traceback.print_exception(type(e), e, e.__traceback__)
+            
+        print('\tErro ao buscar *.csv do Tableau: lendo arquivo local.')
+        isolamento = pd.read_csv('dados/isolamento_social.csv', sep = ',')
+        
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv')
     
     return dados_estado, isolamento, leitos_estaduais
@@ -342,11 +361,11 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais):
                 .replace(' Das ', ' das ') \
                 .replace(' Dos ', ' dos ')
                 
-    isolamento.columns = ['str_data', 'escala_cor', 'data_dia', 'dia', 'data', 'município', 'n_registros', 'uf', 'isolamento']
+    isolamento.columns = ['data', 'município', 'UF', 'isolamento']
     #deixando apenas a primeira letra de cada palavra como maiúscula
     isolamento['município'] = isolamento.município.apply(lambda m: formata_municipio(m))
     isolamento['isolamento'] = pd.to_numeric(isolamento.isolamento.str.replace('%', ''))
-    isolamento['data'] = isolamento.str_data.apply(lambda d: datetime.strptime(d.split('(')[1].split(')')[0], '%d/%m/%Y'))
+    isolamento['data'] = isolamento.data.apply(lambda d: datetime.strptime(d.split(', ')[1] + '/2020', '%d/%m/%Y'))
     isolamento['dia'] = isolamento.data.apply(lambda d: d.strftime('%d %b'))
     isolamento.sort_values(by = ['data', 'isolamento'], inplace = True)
     
