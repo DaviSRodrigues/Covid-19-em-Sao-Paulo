@@ -266,8 +266,8 @@ def carrega_dados_estado():
     try:
         print('\tAtualizando dados estaduais...')
         URL = ('https://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/Dados-covid-19-estado.csv')
-        dados_estado = pd.read_table(URL, sep = ';', decimal = ',', encoding = 'latin-1')
-        dados_estado.to_csv('dados/Dados-covid-19-estado.csv', sep = ';', decimal = ',', encoding = 'latin-1')        
+        dados_estado = pd.read_csv(URL, sep = ';', decimal = ',', encoding = 'latin-1')
+        dados_estado.to_csv('dados/dados_estado_sp.csv', sep = ';', decimal = ',', encoding = 'latin-1')
     except Exception as e:
         if(type(e) == HTTPError):
             print('\n\t' + str(e))
@@ -275,12 +275,12 @@ def carrega_dados_estado():
             traceback.print_exception(type(e), e, e.__traceback__)
         
         print('\tErro ao buscar *.csv da Seade: lendo arquivo local.\n')
-        dados_estado = pd.read_csv('dados/Dados-covid-19-estado.csv', sep = ';', decimal = ',', encoding = 'latin-1')
+        dados_estado = pd.read_csv('dados/dados_estado_sp.csv', sep = ';', decimal = ',', encoding = 'latin-1', index_col = 0)
         
     try:
         print('\tAtualizando dados de isolamento social...')
         URL = ('https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no')
-        isolamento = pd.read_table(URL, sep = ',')
+        isolamento = pd.read_csv(URL, sep = ',')
         isolamento.to_csv('dados/isolamento_social.csv', sep = ',')
         
     except Exception as e:
@@ -290,7 +290,7 @@ def carrega_dados_estado():
             traceback.print_exception(type(e), e, e.__traceback__)
             
         print('\tErro ao buscar *.csv do Tableau: lendo arquivo local.')
-        isolamento = pd.read_csv('dados/isolamento_social.csv', sep = ',')
+        isolamento = pd.read_csv('dados/isolamento_social.csv', sep = ',', index_col = 0)
         
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv')
     
@@ -346,11 +346,9 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
 def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais):
-    #apaga as colunas completamente vazias
-    dados_estado.dropna(how = 'all', axis = 1, inplace = True)
-    #apaga as linhas completamente vazias
-    dados_estado.dropna(how = 'all', inplace = True)
+    dados_estado.dropna(how = 'all', axis = 1, inplace = True) #apaga as colunas completamente vazias
     dados_estado.columns = ['dia', 'total_casos', 'casos_dia', 'obitos_dia']
+    dados_estado.dropna(how = 'all', inplace = True) #apaga as linhas completamente vazias
     dados_estado['data'] = pd.to_datetime(dados_estado.dia + ' 2020', format = '%d %b %Y')
     
     def formata_municipio(m):
