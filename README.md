@@ -7,6 +7,10 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 17/06/2020
+- Novo dado no Resumo Semanal: número de internações nos últimos 7 dias (UTI e enfermaria, casos confirmados e suspeitos)
+- Novo gráfico na seção 'Leitos': informações de leitos e internações separadas por região do Estado (DRS - Departamento Regional de Saúde)
+
 ## 02/06/2020
 
 - Resumo semanal: veja a evolução dos números de casos, óbitos, ocupação de leitos e isolamento social na semana epidemiológica atual e a variação (%) em relação à semana anterior.

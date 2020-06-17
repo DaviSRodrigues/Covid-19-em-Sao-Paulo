@@ -36,6 +36,8 @@ const CACHE_URLS = [
 	'graficos/leitos-municipais-privados.html',
 	'graficos/leitos-municipais-total-mobile.html',
 	'graficos/leitos-municipais-total.html',
+	'graficos/drs-mobile.html',
+	'graficos/drs.html',
 	'images/bg01.png',	
 	'icons/android-chrome-192x192.png',
 	'icons/android-chrome-512x512.png',

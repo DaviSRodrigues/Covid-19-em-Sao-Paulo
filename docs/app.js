@@ -179,6 +179,11 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico de ocupação de leitos no estado', 'graficos/leitos-estaduais.html');
 			criaIFrame('graficos/leitos-estaduais.html', 'graficos/leitos-estaduais-mobile.html', versaoMobile);
 			
+			criaTitulo('Departamentos Regionais de Saúde');
+			
+			criaLink('Ampliar gráfico de leitos no DRS', 'graficos/drs.html');
+			criaIFrame('graficos/drs.html', 'graficos/drs-mobile.html', versaoMobile);
+			
 			criaTitulo('Ocupação de leitos públicos na Cidade');
 			
 			criaLink('Ampliar gráfico da situação dos hospitais municipais', 'graficos/leitos-municipais.html');
