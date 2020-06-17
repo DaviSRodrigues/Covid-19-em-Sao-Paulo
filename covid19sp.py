@@ -1269,19 +1269,19 @@ def gera_drs(internacoes):
             mostrar = False
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['total_covid_uti_mm7d'], name = 'leitos Covid-19 nos<br>últimos 7 dias',
-                                     mode = 'lines+markers', hovertemplate = '%{y:.0f}', customdata = [d], visible = mostrar))
+                                 mode = 'lines+markers', hovertemplate = '%{y:.0f}', customdata = [d], visible = mostrar))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['leitos_pc'], name = 'leitos Covid-19 por<br>100 mil habitantes',
-                                     mode = 'lines+markers', customdata = [d], visible = mostrar))
+                                 mode = 'lines+markers', customdata = [d], visible = mostrar))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7d'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>nos últimos 7 dias',
-                                     mode = 'lines+markers', customdata = [d], visible = mostrar))
+                                 mode = 'lines+markers', customdata = [d], visible = mostrar))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7d_l'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>nos 7 dias anteriores',
-                                     mode = 'lines+markers', customdata = [d], visible = mostrar))
+                                 mode = 'lines+markers', customdata = [d], visible = mostrar))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7v7'], name = 'variação do número<br>de internações',
-                                     mode = 'lines+markers', hovertemplate = '%{y:.1f}%', customdata = [d], visible = mostrar),
+                                 mode = 'lines+markers', hovertemplate = '%{y:.1f}%', customdata = [d], visible = mostrar),
                       secondary_y = True)
     
     def cria_lista_opcoes(drs):
