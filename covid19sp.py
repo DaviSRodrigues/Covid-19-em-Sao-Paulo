@@ -88,9 +88,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             data_str = data_str.replace('1 de ', '1º de ')
             
         #página de Boletins da Prefeitura de São Paulo
-        URL = ('https://www.prefeitura.sp.gov.br/cidade/secretarias'
-               '/saude/vigilancia_em_saude/doencas_e_agravos'
-               '/coronavirus/index.php?p=295572')
+        URL = ('https://www.prefeitura.sp.gov.br/cidade/secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572')
         
         for i in range(2):
             pagina = requests.get(URL)
@@ -312,7 +310,9 @@ def carrega_dados_estado():
     return dados_estado, isolamento, leitos_estaduais, internacoes
 
 def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes):
+    print('\tDados municipais...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
+    print('\tDados estaduais...')
     dados_estado, isolamento, leitos_estaduais, internacoes = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes)
     
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes
@@ -418,6 +418,7 @@ def _formata_semana_extenso(data):
            datetime.strptime(data + '-6', '%Y-W%U-%w').strftime('%d/%b')
 
 def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
+    print('\tCalculando efeito do isolamento social...')
     #criar dataframe relação: comparar média de isolamento social de duas
     #semanas atrás com a quantidade de casos e de óbitos da semana atual    
     isolamento['data_futuro'] = isolamento.data.apply(lambda d: d + timedelta(weeks = 2))
@@ -483,6 +484,8 @@ def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
     return efeito_cidade, efeito_estado
 
 def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_estaduais, isolamento, internacoes):
+    print('\tCalculando dados semanais...')
+    
     def calcula_variacao(dados, linha):
         indice = dados.index[dados.data == linha['data']].item() - 1
         
@@ -573,19 +576,33 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
     return efeito_cidade, efeito_estado
 
 def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes):
+    print('\tResumo diário...')
     gera_resumo_diario(dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes)
+    print('\tResumo semanal...')
     gera_resumo_semanal(efeito_cidade, efeito_estado)
+    print('\tCasos no estado...')
     gera_casos_estado(dados_estado)
+    print('\tCasos na cidade...')
     gera_casos_cidade(dados_cidade)
+    print('\tIsolamento social...')
     gera_isolamento_grafico(isolamento)
+    print('\tTabela de isolamento social...')
     gera_isolamento_tabela(isolamento)
+    print('\tEfeitos do isolamento social no estado...')
     gera_efeito_estado(efeito_estado)
+    print('\tEfeitos do isolamento social na cidade...')
     gera_efeito_cidade(efeito_cidade)
+    print('\tLeitos no estado...')
     gera_leitos_estaduais(leitos_estaduais)
+    print('\tDepartamentos Regionais de Saúde...')
     gera_drs(internacoes)
+    print('\tLeitos públicos na cidade...')
     gera_leitos_municipais(leitos_municipais)
+    print('\tLeitos privados na cidade...')
     gera_leitos_municipais_privados(leitos_municipais_privados)
+    print('\tLeitos em geral na cidade...')
     gera_leitos_municipais_total(leitos_municipais_total)
+    print('\tHospitais de campanha...')
     gera_hospitais_campanha(hospitais_campanha)
 
 def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento, internacoes):
