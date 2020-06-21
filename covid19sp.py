@@ -870,9 +870,9 @@ def gera_doencas_preexistentes(doencas, estado = True):
     fig = make_subplots(rows = 1, cols = 2, specs = [[{'type': 'domain'}, {'type': 'domain'}]])
     
     fig.add_trace(go.Pie(labels = doencas.columns, values = casos, hovertext = perc_casos, 
-                          textinfo = 'value', name = 'Casos'), 1, 1)
+                          textinfo = 'label', name = 'Casos'), 1, 1)
     fig.add_trace(go.Pie(labels = doencas.columns, values = obitos, hovertext = perc_obitos, 
-                          textinfo = 'value', name = 'Óbitos'), 1, 2)
+                          textinfo = 'label', name = 'Óbitos'), 1, 2)
     
     fig.update_traces(hole = .4, hoverinfo = 'label+value+text+name')
 
