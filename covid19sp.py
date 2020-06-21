@@ -27,15 +27,15 @@ def main():
 
     print('Carregando dados...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = carrega_dados_cidade()
-    dados_estado, isolamento, leitos_estaduais, internacoes = carrega_dados_estado()
+    dados_estado, isolamento, leitos_estaduais, internacoes, doencas = carrega_dados_estado()
 
     print('\nLimpando e enriquecendo dos dados...')
-    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes)
+    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas)
     efeito_cidade, efeito_estado = gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento)
     efeito_cidade, efeito_estado = gera_dados_semana(efeito_cidade, leitos_municipais_total, efeito_estado, leitos_estaduais, isolamento, internacoes)
 
     print('\nGerando gráficos e tabelas...')
-    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes)
+    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas)
 
     print('\nAtualizando serviceWorker.js...')    
     atualiza_service_worker(dados_cidade)
@@ -138,7 +138,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                            'comum': [184, 813],
                            'uti': [16, 74],
                            'ocupação_comum': [formata_numero(hm_camp.iat[2, 2]), formata_numero(hm_camp.iat[2, 1])],
-                           'ocupação_uti': [formata_numero(hm_camp.iat[3, 2].split(' (')[0]), formata_numero(hm_camp.iat[3, 1].split(' (')[0])],
+                           'ocupação_uti': [formata_numero(hm_camp.iat[3, 2].split('(')[0]), formata_numero(hm_camp.iat[3, 1].split('(')[0])],
                            'altas': [formata_numero(hm_camp.iat[4, 2]), formata_numero(hm_camp.iat[4, 1])],
                            'óbitos': [formata_numero(hm_camp.iat[5, 2]), formata_numero(hm_camp.iat[5, 1])],
                            'transferidos': [formata_numero(hm_camp.iat[6, 2]), formata_numero(hm_camp.iat[6, 1])],
@@ -151,13 +151,13 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                 ignore_index = True)
         else:
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'ocupação_comum'] = formata_numero(hm_camp.iat[2, 2])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 2].split(' (')[0])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 2].split('(')[0])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'altas'] = formata_numero(hm_camp.iat[4, 2])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'óbitos'] = formata_numero(hm_camp.iat[5, 2])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'transferidos'] = formata_numero(hm_camp.iat[6, 2])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'chegando'] = formata_numero(hm_camp.iat[7, 2])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_comum'] = formata_numero(hm_camp.iat[2, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 1].split(' (')[0])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 1].split('(')[0])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'altas'] = formata_numero(hm_camp.iat[4, 1])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'óbitos'] = formata_numero(hm_camp.iat[5, 1])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'transferidos'] = formata_numero(hm_camp.iat[6, 1])
@@ -304,18 +304,33 @@ def carrega_dados_estado():
             
         print('\tErro ao buscar *.csv do Github: lendo arquivo local.')
         internacoes = pd.read_csv('dados/internacoes.csv', sep = ';', index_col = 0)
+    
+    try:
+        print('\tAtualizando dados de doenças preexistentes...')
+        URL = ('https://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/casos_obitos_doencas_preexistentes.csv')
+        doencas = pd.read_csv(URL, sep = ';', encoding = 'latin-1', engine = 'python', skipfooter = 7)
+        doencas.to_csv('dados/doencas_preexistentes.csv', sep = ';', encoding = 'latin-1')
         
+    except Exception as e:
+        if(type(e) == HTTPError):
+            print('\n\t' + str(e))
+        else:
+            traceback.print_exception(type(e), e, e.__traceback__)
+            
+        print('\tErro ao buscar *.csv da Seade: lendo arquivo local.')
+        doencas = pd.read_csv('dados/doencas_preexistentes.csv', sep = ';', encoding = 'latin-1', index_col = 0)
+    
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv')
     
-    return dados_estado, isolamento, leitos_estaduais, internacoes
+    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas
 
-def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes):
+def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas):
     print('\tDados municipais...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
     print('\tDados estaduais...')
-    dados_estado, isolamento, leitos_estaduais, internacoes = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes)
+    dados_estado, isolamento, leitos_estaduais, internacoes, doencas = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas)
     
-    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas
 
 def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     dados_cidade['data'] = pd.to_datetime(dados_cidade.data, format = '%d/%m/%Y')
@@ -360,7 +375,7 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
-def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes):
+def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas):
     dados_estado.dropna(how = 'all', axis = 1, inplace = True) #apaga as colunas completamente vazias
     dados_estado.columns = ['dia', 'total_casos', 'casos_dia', 'obitos_dia']
     dados_estado.dropna(how = 'all', inplace = True) #apaga as linhas completamente vazias
@@ -392,6 +407,11 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     internacoes['leitos_pc'] = pd.to_numeric(internacoes.leitos_pc.str.replace(',', '.'))
     internacoes['internacoes_7v7'] = pd.to_numeric(internacoes.internacoes_7v7.str.replace(',', '.'))
     
+    doencas.columns = ['municipio', 'codigo_ibge', 'idade', 'sexo', 'covid19', 'data_inicio_sintomas', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down']
+    
+    doencas = doencas.groupby(['municipio', 'obito', 'covid19', 'idade', 'sexo', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down']) \
+                     .agg({'asma': 'count', 'cardiopatia': 'count', 'diabetes': 'count', 'doenca_hematologica': 'count', 'doenca_hepatica' : 'count', 'doenca_neurologica' : 'count', 'doenca_renal' : 'count', 'imunodepressao' : 'count', 'obesidade' : 'count', 'outros' : 'count', 'pneumopatia' : 'count', 'puerpera' : 'count', 'sindrome_de_down' : 'count'})
+    
     def calcula_letalidade(series):
         #localiza a linha atual passada como parâmetro e obtém a posição de acordo com o índice
         indice = dados_estado.index[dados_estado.dia == series['dia']].item()
@@ -407,7 +427,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     
     dados_estado = dados_estado.apply(lambda linha: calcula_letalidade(linha), axis = 1)
     
-    return dados_estado, isolamento, leitos_estaduais, internacoes
+    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas
 
 def _converte_semana(data):
     return data.strftime('%Y-W%U')
@@ -575,15 +595,19 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
     
     return efeito_cidade, efeito_estado
 
-def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes):
+def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas):
     print('\tResumo diário...')
     gera_resumo_diario(dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes)
     print('\tResumo semanal...')
     gera_resumo_semanal(efeito_cidade, efeito_estado)
     print('\tCasos no estado...')
     gera_casos_estado(dados_estado)
+    print('\tDoenças preexistentes nos casos e óbitos estaduais...')
+    gera_doencas_preexistentes(doencas)
     print('\tCasos na cidade...')
     gera_casos_cidade(dados_cidade)
+    print('\tDoenças preexistentes nos casos e óbitos municipais...')
+    gera_doencas_preexistentes(doencas, False)
     print('\tIsolamento social...')
     gera_isolamento_grafico(isolamento)
     print('\tTabela de isolamento social...')
@@ -828,6 +852,56 @@ def gera_casos_estado(dados):
     
     pio.write_html(fig, file = 'docs/graficos/casos-estado-mobile.html',
                    include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+def gera_doencas_preexistentes(doencas, estado = True):
+    if estado:
+        casos = [doencas.xs(('CONFIRMADO', 'SIM'), level = ('covid19', d))[d].sum() for d in doencas.columns]
+        perc_casos = [f'{(c / doencas.asma.sum()) * 100:.2f}%' for c in casos]
+        
+        obitos = [doencas.xs(('CONFIRMADO', 1, 'SIM'), level = ('covid19', 'obito', d))[d].sum() for d in doencas.columns]
+        perc_obitos = [f'{(o / doencas.xs(("CONFIRMADO", 1), level = ("covid19", "obito")).asma.sum()) * 100:.2f}%' for o in obitos]
+    else:
+        casos = [doencas.xs(('São Paulo', 'CONFIRMADO', 'SIM'), level = ('municipio', 'covid19', d))[d].sum() for d in doencas.columns]
+        perc_casos = [f'{(c / doencas.xs(("São Paulo", "CONFIRMADO"), level = ("municipio", "covid19")).asma.sum()) * 100:.2f}%' for c in casos]
+        
+        obitos = [doencas.xs(('São Paulo', 'CONFIRMADO', 1, 'SIM'), level = ('municipio', 'covid19', 'obito', d))[d].sum() for d in doencas.columns]
+        perc_obitos = [f'{(o / doencas.xs(("São Paulo", "CONFIRMADO", 1), level = ("municipio", "covid19", "obito")).asma.sum()) * 100:.2f}%' for o in obitos]
+    
+    fig = make_subplots(rows = 1, cols = 2, specs = [[{'type': 'domain'}, {'type': 'domain'}]])
+    
+    fig.add_trace(go.Pie(labels = doencas.columns, values = casos, hovertext = perc_casos, 
+                          textinfo = 'value', name = 'Casos'), 1, 1)
+    fig.add_trace(go.Pie(labels = doencas.columns, values = obitos, hovertext = perc_obitos, 
+                          textinfo = 'value', name = 'Óbitos'), 1, 2)
+    
+    fig.update_traces(hole = .4, hoverinfo = 'label+value+text+name')
+
+    fig.update_layout(
+        font = dict(family = 'Roboto'),
+        title = 'Covid-19: doenças preexistentes registradas ' +
+                ('no Estado de São Paulo' if estado else 'na Cidade de São Paulo') +
+                '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+                'Governo do Estado de São Paulo</a></i>',
+        hovermode = 'x unified',
+        hoverlabel = {'namelength' : -1},
+        template = 'plotly',
+        annotations = [dict(text = 'Casos', x = 0.20, y = 0.5, font_family = 'Roboto', font_size = 20, showarrow = False),
+                        dict(text = 'Óbitos', x = 0.80, y = 0.5, font_family = 'Roboto', font_size = 20, showarrow = False)]
+    )
+    
+    arquivo = 'docs/graficos/doencas-estado.html' if estado else 'docs/graficos/doencas-cidade.html'
+    pio.write_html(fig, file = arquivo, include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+    fig.update_layout(
+        showlegend = False,
+        font = dict(size = 11),
+        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 10),
+        annotations = [dict(text = 'Casos', x = 0.17, y = 0.5, font_family = 'Roboto', font_size = 11, showarrow = False),
+                        dict(text = 'Óbitos', x = 0.83, y = 0.5, font_family = 'Roboto', font_size = 11, showarrow = False)]
+    )
+    
+    arquivo = 'docs/graficos/doencas-estado-mobile.html' if estado else 'docs/graficos/doencas-cidade-mobile.html'
+    pio.write_html(fig, file = arquivo, include_plotlyjs = 'directory', auto_open = False, auto_play = False)
     
 def gera_casos_cidade(dados):
     fig = make_subplots(specs = [[{"secondary_y": True}]])

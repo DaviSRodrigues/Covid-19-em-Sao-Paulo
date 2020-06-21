@@ -152,6 +152,14 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico de casos na cidade', 'graficos/casos-cidade.html');
 			criaIFrame('graficos/casos-cidade.html', 'graficos/casos-cidade-mobile.html', versaoMobile);
 			
+			criaTitulo('Doenças preexistentes nos casos e nos óbitos');
+			
+			criaLink('Ampliar gráfico de doenças preexistentes - Estado', 'graficos/doencas-estado.html');
+			criaIFrame('graficos/doencas-estado.html', 'graficos/doencas-estado-mobile.html', versaoMobile);
+			
+			criaLink('Ampliar gráfico de doenças preexistentes - Cidade', 'graficos/doencas-cidade.html');
+			criaIFrame('graficos/doencas-cidade.html', 'graficos/doencas-cidade-mobile.html', versaoMobile);
+			
 			break;
 		
 		case 'isolamento':

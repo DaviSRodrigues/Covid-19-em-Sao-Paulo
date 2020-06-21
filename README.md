@@ -7,8 +7,13 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 21/06/2020
+
+- Novos gráficos na seção 'Casos': doenças preexistentes nos casos e nos óbitos na cidade e no estado
+
 ## 17/06/2020
 - Novo dado no Resumo Semanal: número de internações nos últimos 7 dias (UTI e enfermaria, casos confirmados e suspeitos)
+- Novo dado no Resumo Diário: número de leitos exclusivos para Covid-19
 - Novo gráfico na seção 'Leitos': informações de leitos e internações separadas por região do Estado (DRS - Departamento Regional de Saúde)
 
 ## 02/06/2020
