@@ -602,12 +602,12 @@ def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_mu
     gera_resumo_semanal(efeito_cidade, efeito_estado)
     print('\tCasos no estado...')
     gera_casos_estado(dados_estado)
-    print('\tDoenças preexistentes nos casos e óbitos estaduais...')
-    gera_doencas_preexistentes(doencas)
     print('\tCasos na cidade...')
     gera_casos_cidade(dados_cidade)
-    print('\tDoenças preexistentes nos casos e óbitos municipais...')
-    gera_doencas_preexistentes(doencas, False)
+    print('\tDoenças preexistentes nos casos estaduais...')
+    gera_doencas_preexistentes_casos(doencas)
+    print('\tDoenças preexistentes nos óbitos estaduais...')
+    gera_doencas_preexistentes_obitos(doencas)
     print('\tIsolamento social...')
     gera_isolamento_grafico(isolamento)
     print('\tTabela de isolamento social...')
@@ -853,56 +853,6 @@ def gera_casos_estado(dados):
     pio.write_html(fig, file = 'docs/graficos/casos-estado-mobile.html',
                    include_plotlyjs = 'directory', auto_open = False, auto_play = False)
     
-def gera_doencas_preexistentes(doencas, estado = True):
-    if estado:
-        casos = [doencas.xs(('CONFIRMADO', 'SIM'), level = ('covid19', d))[d].sum() for d in doencas.columns]
-        perc_casos = [f'{(c / doencas.asma.sum()) * 100:.2f}%' for c in casos]
-        
-        obitos = [doencas.xs(('CONFIRMADO', 1, 'SIM'), level = ('covid19', 'obito', d))[d].sum() for d in doencas.columns]
-        perc_obitos = [f'{(o / doencas.xs(("CONFIRMADO", 1), level = ("covid19", "obito")).asma.sum()) * 100:.2f}%' for o in obitos]
-    else:
-        casos = [doencas.xs(('São Paulo', 'CONFIRMADO', 'SIM'), level = ('municipio', 'covid19', d))[d].sum() for d in doencas.columns]
-        perc_casos = [f'{(c / doencas.xs(("São Paulo", "CONFIRMADO"), level = ("municipio", "covid19")).asma.sum()) * 100:.2f}%' for c in casos]
-        
-        obitos = [doencas.xs(('São Paulo', 'CONFIRMADO', 1, 'SIM'), level = ('municipio', 'covid19', 'obito', d))[d].sum() for d in doencas.columns]
-        perc_obitos = [f'{(o / doencas.xs(("São Paulo", "CONFIRMADO", 1), level = ("municipio", "covid19", "obito")).asma.sum()) * 100:.2f}%' for o in obitos]
-    
-    fig = make_subplots(rows = 1, cols = 2, specs = [[{'type': 'domain'}, {'type': 'domain'}]])
-    
-    fig.add_trace(go.Pie(labels = doencas.columns, values = casos, hovertext = perc_casos, 
-                          textinfo = 'label', name = 'Casos'), 1, 1)
-    fig.add_trace(go.Pie(labels = doencas.columns, values = obitos, hovertext = perc_obitos, 
-                          textinfo = 'label', name = 'Óbitos'), 1, 2)
-    
-    fig.update_traces(hole = .4, hoverinfo = 'label+value+text+name')
-
-    fig.update_layout(
-        font = dict(family = 'Roboto'),
-        title = 'Covid-19: doenças preexistentes registradas ' +
-                ('no Estado de São Paulo' if estado else 'na Cidade de São Paulo') +
-                '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
-                'Governo do Estado de São Paulo</a></i>',
-        hovermode = 'x unified',
-        hoverlabel = {'namelength' : -1},
-        template = 'plotly',
-        annotations = [dict(text = 'Casos', x = 0.20, y = 0.5, font_family = 'Roboto', font_size = 20, showarrow = False),
-                        dict(text = 'Óbitos', x = 0.80, y = 0.5, font_family = 'Roboto', font_size = 20, showarrow = False)]
-    )
-    
-    arquivo = 'docs/graficos/doencas-estado.html' if estado else 'docs/graficos/doencas-cidade.html'
-    pio.write_html(fig, file = arquivo, include_plotlyjs = 'directory', auto_open = False, auto_play = False)
-    
-    fig.update_layout(
-        showlegend = False,
-        font = dict(size = 11),
-        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 10),
-        annotations = [dict(text = 'Casos', x = 0.17, y = 0.5, font_family = 'Roboto', font_size = 11, showarrow = False),
-                        dict(text = 'Óbitos', x = 0.83, y = 0.5, font_family = 'Roboto', font_size = 11, showarrow = False)]
-    )
-    
-    arquivo = 'docs/graficos/doencas-estado-mobile.html' if estado else 'docs/graficos/doencas-cidade-mobile.html'
-    pio.write_html(fig, file = arquivo, include_plotlyjs = 'directory', auto_open = False, auto_play = False)
-    
 def gera_casos_cidade(dados):
     fig = make_subplots(specs = [[{"secondary_y": True}]])
     
@@ -992,6 +942,174 @@ def gera_casos_cidade(dados):
     
     pio.write_html(fig, file = 'docs/graficos/casos-cidade-mobile.html',
                    include_plotlyjs = 'directory', auto_open = False, auto_play = False)
+    
+def gera_doencas_preexistentes_casos(doencas):
+    idades = list(doencas.reset_index('idade').idade.unique())
+    
+    casos_ignorados_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO'), level = ('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    casos_ignorados_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO'), level = ('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    
+    casos_sem_doencas_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level = ('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    casos_sem_doencas_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level = ('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    
+    casos_com_doencas_m = []
+    casos_com_doencas_h = []
+    
+    for d in doencas.columns:
+        casos_com_doencas_m.append([doencas.xs(('CONFIRMADO', 'FEMININO', i, 'SIM'), level = ('covid19', 'sexo', 'idade', d))[d].sum() for i in idades])
+        casos_com_doencas_h.append([doencas.xs(('CONFIRMADO', 'MASCULINO', i, 'SIM'), level = ('covid19', 'sexo', 'idade', d))[d].sum() for i in idades])
+     
+    #para os dados femininos, todos os valores precisam ser negativados
+    casos_ignorados_m_neg = [-valor for valor in casos_ignorados_m]
+    casos_sem_doencas_m_neg = [-valor for valor in casos_sem_doencas_m]
+    casos_com_doencas_m_neg = [[-valor for valor in lista] for lista in casos_com_doencas_m]
+    
+    fig = go.Figure()
+    
+    cont = 0
+    
+    for lista_m in casos_com_doencas_m_neg:
+        fig.add_trace(go.Bar(x = lista_m, y = idades, orientation = 'h',
+                             hoverinfo = 'text+y+name', text = casos_com_doencas_m[cont],
+                             marker_color = 'red', name = doencas.columns[cont],
+                             visible = True if cont == 0 else 'legendonly'))
+        cont = cont + 1
+    
+    cont = 0
+    
+    for lista_h in casos_com_doencas_h:
+        fig.add_trace(go.Bar(x = lista_h, y = idades, orientation = 'h', hoverinfo = 'x+y+name',
+                             marker_color = 'blue', name = doencas.columns[cont],
+                             visible = True if cont == 0 else 'legendonly'))
+        cont = cont + 1
+    
+    fig.add_trace(go.Bar(x = casos_sem_doencas_m_neg, y = idades, orientation = 'h',
+                         hoverinfo = 'text+y+name', text = casos_sem_doencas_m,
+                         marker_color = 'red', name = 'sem doenças<br>preexistentes', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = casos_sem_doencas_h, y = idades, orientation = 'h', hoverinfo = 'x+y+name',
+                         marker_color = 'blue', name = 'sem doenças<br>preexistentes', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = casos_ignorados_m_neg, y = idades, orientation = 'h',
+                         hoverinfo = 'text+y+name', text = casos_ignorados_m,
+                         marker_color = 'red', name = 'ignorado', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = casos_ignorados_h, y = idades, orientation = 'h', hoverinfo = 'x+y+name',
+                         marker_color = 'blue', name = 'ignorado', visible = 'legendonly'))
+    
+    fig.update_layout(
+        font = dict(family = 'Roboto'),
+        title = 'Doenças preexistentes nos casos confirmados de Covid-19 no Estado de São Paulo' +
+                '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+                'Governo do Estado de São Paulo</a></i>',
+        yaxis_title = 'Idade',
+        xaxis_title = 'Mulheres | Homens',
+        hovermode = 'y',
+        hoverlabel = {'namelength' : -1}, #para não truncar o nome de cada trace no hover
+        template = 'plotly',
+        barmode = 'overlay',
+        bargap = 0.1
+    )
+    
+    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 5)])
+    
+    pio.write_html(fig, file = 'docs/graficos/doencas-casos.html', include_plotlyjs = 'directory',
+                   auto_open = False, auto_play = False)
+    
+    #versão mobile
+    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 10)])
+        
+    fig.update_layout(
+        font = dict(size = 11),
+        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 10)
+    )
+    
+    pio.write_html(fig, file = 'docs/graficos/doencas-casos-mobile.html', include_plotlyjs = 'directory',
+                   auto_open = False, auto_play = False)
+
+def gera_doencas_preexistentes_obitos(doencas):
+    idades = list(doencas.reset_index('idade').idade.unique())
+    
+    obitos_ignorados_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 1, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO'), level = ('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    obitos_ignorados_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 1, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO'), level = ('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    
+    obitos_sem_doencas_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 1, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level = ('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    obitos_sem_doencas_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 1, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level = ('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down')).asma.sum() for i in idades]
+    
+    obitos_com_doencas_m = []
+    obitos_com_doencas_h = []
+    
+    for d in doencas.columns:
+        obitos_com_doencas_m.append([doencas.xs(('CONFIRMADO', 'FEMININO', i, 1, 'SIM'), level = ('covid19', 'sexo', 'idade', 'obito', d))[d].sum() for i in idades])
+        obitos_com_doencas_h.append([doencas.xs(('CONFIRMADO', 'MASCULINO', i, 1, 'SIM'), level = ('covid19', 'sexo', 'idade', 'obito', d))[d].sum() for i in idades])
+     
+    #para os dados femininos, todos os valores precisam ser negativados
+    obitos_ignorados_m_neg = [-valor for valor in obitos_ignorados_m]
+    obitos_sem_doencas_m_neg = [-valor for valor in obitos_sem_doencas_m]
+    obitos_com_doencas_m_neg = [[-valor for valor in lista] for lista in obitos_com_doencas_m]
+    
+    fig = go.Figure()
+    
+    cont = 0
+    
+    for lista_m in obitos_com_doencas_m_neg:
+        fig.add_trace(go.Bar(x = lista_m, y = idades, orientation = 'h',
+                             hoverinfo = 'text+y+name', text = obitos_com_doencas_m[cont],
+                             marker_color = 'red', name = doencas.columns[cont],
+                             visible = True if cont == 0 else 'legendonly'))
+        cont = cont + 1
+    
+    cont = 0
+    
+    for lista_h in obitos_com_doencas_h:
+        fig.add_trace(go.Bar(x = lista_h, y = idades, orientation = 'h', hoverinfo = 'x+y+name',
+                             marker_color = 'blue', name = doencas.columns[cont],
+                             visible = True if cont == 0 else 'legendonly'))
+        cont = cont + 1
+    
+    fig.add_trace(go.Bar(x = obitos_sem_doencas_m_neg, y = idades, orientation = 'h',
+                         hoverinfo = 'text+y+name', text = obitos_sem_doencas_m,
+                         marker_color = 'red', name = 'sem doenças<br>preexistentes', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = obitos_sem_doencas_h, y = idades, orientation = 'h', hoverinfo = 'x+y+name',
+                         marker_color = 'blue', name = 'sem doenças<br>preexistentes', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = obitos_ignorados_m_neg, y = idades, orientation = 'h',
+                         hoverinfo = 'text+y+name', text = obitos_ignorados_m,
+                         marker_color = 'red', name = 'ignorado', visible = 'legendonly'))
+    
+    fig.add_trace(go.Bar(x = obitos_ignorados_h, y = idades, orientation = 'h', hoverinfo = 'x+y+name',
+                         marker_color = 'blue', name = 'ignorado', visible = 'legendonly'))
+    
+    fig.update_layout(
+        font = dict(family = 'Roboto'),
+        title = 'Doenças preexistentes nos óbitos confirmados por Covid-19 no Estado de São Paulo' +
+                '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+                'Governo do Estado de São Paulo</a></i>',
+        yaxis_title = 'Idade',
+        xaxis_title = 'Mulheres | Homens',
+        hovermode = 'y',
+        hoverlabel = {'namelength' : -1}, #para não truncar o nome de cada trace no hover
+        template = 'plotly',
+        barmode = 'overlay',
+        bargap = 0.1
+    )
+    
+    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 5)])
+    
+    pio.write_html(fig, file = 'docs/graficos/doencas-obitos.html', include_plotlyjs = 'directory',
+                   auto_open = False, auto_play = False)
+    
+    #versão mobile
+    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 10)])
+        
+    fig.update_layout(
+        font = dict(size = 11),
+        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 10)
+    )
+    
+    pio.write_html(fig, file = 'docs/graficos/doencas-obitos-mobile.html', include_plotlyjs = 'directory',
+                   auto_open = False, auto_play = False)
 
 def gera_isolamento_grafico(isolamento):
     fig = go.Figure()

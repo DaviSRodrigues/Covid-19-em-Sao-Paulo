@@ -152,13 +152,15 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico de casos na cidade', 'graficos/casos-cidade.html');
 			criaIFrame('graficos/casos-cidade.html', 'graficos/casos-cidade-mobile.html', versaoMobile);
 			
-			criaTitulo('Doenças preexistentes nos casos e nos óbitos');
+			criaTitulo('Doenças preexistentes nos casos');
 			
-			criaLink('Ampliar gráfico de doenças preexistentes - Estado', 'graficos/doencas-estado.html');
-			criaIFrame('graficos/doencas-estado.html', 'graficos/doencas-estado-mobile.html', versaoMobile);
+			criaLink('Ampliar gráfico de doenças preexistentes nos casos', 'graficos/doencas-casos.html');
+			criaIFrame('graficos/doencas-casos.html', 'graficos/doencas-casos-mobile.html', versaoMobile);
 			
-			criaLink('Ampliar gráfico de doenças preexistentes - Cidade', 'graficos/doencas-cidade.html');
-			criaIFrame('graficos/doencas-cidade.html', 'graficos/doencas-cidade-mobile.html', versaoMobile);
+			criaTitulo('Doenças preexistentes nos óbitos');
+			
+			criaLink('Ampliar gráfico de doenças preexistentes nos óbitos', 'graficos/doencas-obitos.html');
+			criaIFrame('graficos/doencas-obitos.html', 'graficos/doencas-obitos-mobile.html', versaoMobile);
 			
 			break;
 		
