@@ -105,7 +105,11 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         tabelas = tabula.read_pdf(URL, pages = 2, guess = False, lattice = True, 
                                   pandas_options = {'dtype': 'str'})
         resumo = tabelas[0]
-        obitos = tabelas[1]
+        
+        if len(tabelas) == 2:
+            obitos = tabelas[1]
+        else:
+            obitos = tabelas[2]
 
         tabelas = tabula.read_pdf(URL, pages = 3, guess = True, lattice = True, 
                                   pandas_options = {'dtype': 'str'})
