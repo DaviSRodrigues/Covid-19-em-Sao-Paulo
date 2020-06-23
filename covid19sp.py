@@ -710,10 +710,11 @@ def _formata_variacao(v):
 
 def gera_resumo_semanal(efeito_cidade, efeito_estado):
     hoje = datetime.now() - timedelta(hours = 12)
+    hoje_formatado = int(f'{hoje:%W}') + 1
     semana = _formata_semana_extenso(_converte_semana(hoje))
     num_semana = efeito_estado.index[efeito_estado.data == semana].item()
     
-    cabecalho = [f'<b>{hoje:%W}ª semana<br>epidemiológica</b>',
+    cabecalho = [f'<b>{hoje_formatado}ª semana<br>epidemiológica</b>',
                  f'<b>Estado de SP</b><br>{semana}',
                  f'<b>Cidade de SP</b><br>{semana}']
 
