@@ -709,7 +709,7 @@ def _formata_variacao(v):
     return '+{:02.1f}%'.format(v) if v >= 0 else '{:02.1f}%'.format(v)
 
 def gera_resumo_semanal(efeito_cidade, efeito_estado):
-    hoje = datetime.now() - timedelta(hours = 12)
+    hoje = datetime.now() - timedelta(days = 1)
     hoje_formatado = int(f'{hoje:%W}') + 1
     semana = _formata_semana_extenso(_converte_semana(hoje))
     num_semana = efeito_estado.index[efeito_estado.data == semana].item()
