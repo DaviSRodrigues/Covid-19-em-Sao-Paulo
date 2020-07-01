@@ -72,7 +72,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
     try:
         #na máquina do GitHub, o horário é UTC
         #execuções até 9h BRT/12h UTC, buscarão dados do dia anterior
-        data = datetime.now() - timedelta(hours = 12)
+        data = datetime.now() - timedelta(days = 1, hours = 12)
         data_str = data.strftime('%d/%m/%Y')
                 
         if(dados_cidade.tail(1).data.iat[0] == data_str):
@@ -114,7 +114,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         tabelas = tabula.read_pdf(URL, pages = 3, guess = True, lattice = True, 
                                   pandas_options = {'dtype': 'str'})
         hm_camp = tabelas[0]
-        info_leitos = tabelas[2]
+        info_leitos = tabelas[3]
         
         data_str = data.strftime('%d/%m/%Y')
         
@@ -134,19 +134,19 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             dados_cidade.loc[dados_cidade.data == data_str, 'suspeitos'] = formata_numero(resumo.tail(1).iat[0,1])
             dados_cidade.loc[dados_cidade.data == data_str, 'confirmados'] = formata_numero(resumo.tail(1).iat[0,2])
         
-        #atualiza hospitais de campanha       
+        #atualiza hospitais de campanha
         if(dados_novos):
-            novos_dados = {'data': [data_str, data_str],
-                           'hospital': ['Pacaembu', 'Anhembi'],
-                           'leitos': [200, 887],
-                           'comum': [184, 813],
-                           'uti': [16, 74],
-                           'ocupação_comum': [formata_numero(hm_camp.iat[2, 2]), formata_numero(hm_camp.iat[2, 1])],
-                           'ocupação_uti': [formata_numero(hm_camp.iat[3, 2].split('(')[0]), formata_numero(hm_camp.iat[3, 1].split('(')[0])],
-                           'altas': [formata_numero(hm_camp.iat[4, 2]), formata_numero(hm_camp.iat[4, 1])],
-                           'óbitos': [formata_numero(hm_camp.iat[5, 2]), formata_numero(hm_camp.iat[5, 1])],
-                           'transferidos': [formata_numero(hm_camp.iat[6, 2]), formata_numero(hm_camp.iat[6, 1])],
-                           'chegando': [formata_numero(hm_camp.iat[7, 2]), formata_numero(hm_camp.iat[7, 1])]}
+            novos_dados = {'data': [data_str],
+                           'hospital': ['Anhembi'],
+                           'leitos': [887],
+                           'comum': [813],
+                           'uti': [74],
+                           'ocupação_comum': [formata_numero(hm_camp.iat[2, 1])],
+                           'ocupação_uti': [formata_numero(hm_camp.iat[3, 1].split('(')[0])],
+                           'altas': [formata_numero(hm_camp.iat[4, 1])],
+                           'óbitos': [formata_numero(hm_camp.iat[5, 1])],
+                           'transferidos': [formata_numero(hm_camp.iat[6, 1])],
+                           'chegando': [formata_numero(hm_camp.iat[7, 1])]}
             
             hospitais_campanha = hospitais_campanha.append(
                 pd.DataFrame(novos_dados,
@@ -154,12 +154,6 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                                         'ocupação_uti', 'altas', 'óbitos', 'transferidos', 'chegando']),
                 ignore_index = True)
         else:
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'ocupação_comum'] = formata_numero(hm_camp.iat[2, 2])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 2].split('(')[0])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'altas'] = formata_numero(hm_camp.iat[4, 2])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'óbitos'] = formata_numero(hm_camp.iat[5, 2])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'transferidos'] = formata_numero(hm_camp.iat[6, 2])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Pacaembu')), 'chegando'] = formata_numero(hm_camp.iat[7, 2])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_comum'] = formata_numero(hm_camp.iat[2, 1])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 1].split('(')[0])
             hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'altas'] = formata_numero(hm_camp.iat[4, 1])
@@ -242,7 +236,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
         #atualiza dados municipais do dia anterior
-        data = datetime.now() - timedelta(hours = 12, days = 1)
+        data = datetime.now() - timedelta(hours = 12, days = 2)
         data_str = data.strftime('%d/%m/%Y')
         
         dados_cidade.loc[dados_cidade.data == data_str, 'óbitos'] = formata_numero(obitos.tail(1).iat[0,1])
