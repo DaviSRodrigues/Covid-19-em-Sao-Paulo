@@ -253,22 +253,19 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
     
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
-def carrega_dados_estado():
-    data = datetime.now() - timedelta(hours = 12)
-    mes = data.strftime('%m')
-    
+def carrega_dados_estado():    
     try:
         print('\tAtualizando dados estaduais...')
-        URL = ('https://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/Dados-covid-19-estado.csv')
-        dados_estado = pd.read_csv(URL, sep = ';', decimal = ',', encoding = 'latin-1')
-        dados_estado.to_csv('dados/dados_estado_sp.csv', sep = ';', decimal = ',', encoding = 'latin-1')
+        URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/sp.csv')
+        dados_estado = pd.read_csv(URL, sep = ';')
+        dados_estado.to_csv('dados/dados_estado_sp.csv', sep = ';')
     except Exception as e:
         if(type(e) == HTTPError):
             print('\n\t' + str(e))
         else:
             traceback.print_exception(type(e), e, e.__traceback__)
         
-        print('\tErro ao buscar *.csv da Seade: lendo arquivo local.\n')
+        print('\tErro ao buscar dados_estado_sp.csv do GitHub: lendo arquivo local.\n')
         dados_estado = pd.read_csv('dados/dados_estado_sp.csv', sep = ';', decimal = ',', encoding = 'latin-1', index_col = 0)
         
     try:
@@ -283,12 +280,12 @@ def carrega_dados_estado():
         else:
             traceback.print_exception(type(e), e, e.__traceback__)
             
-        print('\tErro ao buscar *.csv do Tableau: lendo arquivo local.')
+        print('\tErro ao buscar isolamento_social.csv do Tableau: lendo arquivo local.')
         isolamento = pd.read_csv('dados/isolamento_social.csv', sep = ',', index_col = 0)
         
     try:
         print('\tAtualizando dados de internações...')
-        URL = ('https://github.com/seade-R/dados-covid-sp/raw/master/data/plano_sp_leitos_internacoes.csv')
+        URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/plano_sp_leitos_internacoes.csv')
         internacoes = pd.read_csv(URL, sep = ';')
         internacoes.to_csv('dados/internacoes.csv', sep = ';')
         
@@ -298,14 +295,14 @@ def carrega_dados_estado():
         else:
             traceback.print_exception(type(e), e, e.__traceback__)
             
-        print('\tErro ao buscar *.csv do Github: lendo arquivo local.')
+        print('\tErro ao buscar internacoes.csv do GitHub: lendo arquivo local.')
         internacoes = pd.read_csv('dados/internacoes.csv', sep = ';', index_col = 0)
     
     try:
         print('\tAtualizando dados de doenças preexistentes...')
-        URL = ('https://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/casos_obitos_doencas_preexistentes.csv')
-        doencas = pd.read_csv(URL, sep = ';', encoding = 'latin-1', engine = 'python', skipfooter = 7)
-        doencas.to_csv('dados/doencas_preexistentes.csv', sep = ';', encoding = 'latin-1')
+        URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/casos_obitos_doencas_preexistentes.csv')
+        doencas = pd.read_csv(URL, sep = ';')
+        doencas.to_csv('dados/doencas_preexistentes.csv', sep = ';')
         
     except Exception as e:
         if(type(e) == HTTPError):
@@ -313,8 +310,8 @@ def carrega_dados_estado():
         else:
             traceback.print_exception(type(e), e, e.__traceback__)
             
-        print('\tErro ao buscar *.csv da Seade: lendo arquivo local.')
-        doencas = pd.read_csv('dados/doencas_preexistentes.csv', sep = ';', encoding = 'latin-1', index_col = 0)
+        print('\tErro ao buscar doencas_preexistentes.csv do GitHub: lendo arquivo local.')
+        doencas = pd.read_csv('dados/doencas_preexistentes.csv', sep = ';', index_col = 0)
     
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv')
     
@@ -372,10 +369,9 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
 def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas):
-    dados_estado.dropna(how = 'all', axis = 1, inplace = True) #apaga as colunas completamente vazias
-    dados_estado.columns = ['dia', 'total_casos', 'casos_dia', 'obitos_dia']
-    dados_estado.dropna(how = 'all', inplace = True) #apaga as linhas completamente vazias
-    dados_estado['data'] = pd.to_datetime(dados_estado.dia + ' 2020', format = '%d %b %Y')
+    dados_estado.columns = ['data', 'total_casos', 'total_obitos']
+    dados_estado['data'] = pd.to_datetime(dados_estado.data)
+    dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b'))
     
     def formata_municipio(m):
         return m.title() \
@@ -397,7 +393,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     leitos_estaduais['dia'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d %b'))
     
     internacoes.columns = ['data', 'drs', 'total_covid_uti_mm7d', 'pop', 'leitos_pc', 'internacoes_7d', 'internacoes_7d_l', 'internacoes_7v7']
-    internacoes['data'] = internacoes.data.apply(lambda d: datetime.strptime(d, '%Y-%m-%d'))
+    internacoes['data'] = pd.to_datetime(internacoes.data)
     internacoes['dia'] = internacoes.data.apply(lambda d: d.strftime('%d %b'))
     internacoes['total_covid_uti_mm7d'] = pd.to_numeric(internacoes.total_covid_uti_mm7d.str.replace(',', '.'))
     internacoes['leitos_pc'] = pd.to_numeric(internacoes.leitos_pc.str.replace(',', '.'))
@@ -409,12 +405,16 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                      .agg({'asma': 'count', 'cardiopatia': 'count', 'diabetes': 'count', 'doenca_hematologica': 'count', 'doenca_hepatica' : 'count', 'doenca_neurologica' : 'count', 'doenca_renal' : 'count', 'imunodepressao' : 'count', 'obesidade' : 'count', 'outros' : 'count', 'pneumopatia' : 'count', 'puerpera' : 'count', 'sindrome_de_down' : 'count'})
     
     def calcula_letalidade(series):
-        #localiza a linha atual passada como parâmetro e obtém a posição de acordo com o índice
-        indice = dados_estado.index[dados_estado.dia == series['dia']].item()
+        #localiza a linha atual passada como parâmetro e obtém a o índice da linha anterior
+        indice = dados_estado.index[dados_estado.data == series['data']].item() - 1
         
-        #calcula o total de óbitos (coluna 3) até a data atual
-        series['total_obitos'] = dados_estado.loc[0:indice, 'obitos_dia'].sum()
-        
+        if indice >= 0:
+            series['casos_dia'] = series['total_casos'] - dados_estado.loc[indice, 'total_casos']
+            series['obitos_dia'] = series['total_obitos'] - dados_estado.loc[indice, 'total_obitos']
+        else:
+            series['casos_dia'] = series['total_casos']
+            series['obitos_dia'] = series['total_obitos']
+            
         #calcula a taxa de letalidade até a data atual
         if series['total_casos'] > 0:
             series['letalidade'] = round((series['total_obitos'] / series['total_casos']) * 100, 2)
