@@ -104,15 +104,11 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         #com a URL do pdf correto, começa a extração de dados
         tabelas = tabula.read_pdf(URL, pages = 2, guess = False, lattice = True, pandas_options = {'dtype': 'str'})
         resumo = tabelas[0]
-        
-        if len(tabelas) == 2:
-            obitos = tabelas[1]
-        else:
-            obitos = tabelas[2]
+        obitos = tabelas[-1]
 
         tabelas = tabula.read_pdf(URL, pages = 3, guess = True, lattice = True, pandas_options = {'dtype': 'str'})
         hm_camp = tabelas[0]
-        info_leitos = tabelas[3]
+        info_leitos = tabelas[1]
         
         data_str = data.strftime('%d/%m/%Y')
         
@@ -139,12 +135,12 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                            'leitos': [887],
                            'comum': [813],
                            'uti': [74],
-                           'ocupação_comum': [formata_numero(hm_camp.iat[2, 1])],
-                           'ocupação_uti': [formata_numero(hm_camp.iat[3, 1].split('(')[0])],
-                           'altas': [formata_numero(hm_camp.iat[4, 1])],
-                           'óbitos': [formata_numero(hm_camp.iat[5, 1])],
-                           'transferidos': [formata_numero(hm_camp.iat[6, 1])],
-                           'chegando': [formata_numero(hm_camp.iat[7, 1])]}
+                           'ocupação_comum': [formata_numero(hm_camp.iat[1, 1])],
+                           'ocupação_uti': [formata_numero(hm_camp.iat[2, 1].split('(')[0])],
+                           'altas': [formata_numero(hm_camp.iat[3, 1])],
+                           'óbitos': [formata_numero(hm_camp.iat[4, 1])],
+                           'transferidos': [formata_numero(hm_camp.iat[5, 1])],
+                           'chegando': [formata_numero(hm_camp.iat[6, 1])]}
             
             hospitais_campanha = hospitais_campanha.append(
                 pd.DataFrame(novos_dados,
