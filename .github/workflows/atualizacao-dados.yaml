@@ -61,9 +61,8 @@ jobs:
 
       - name: Fazer o commit das alterações
         run: |
-             data_hora = "date +'%d/%m/%y %H:%M:%S'"
              git config --global user.email "github-actions[bot]@users.noreply.github.com"
              git config --global user.name "github-actions[bot]"
              git add -- ./dados ./docs/graficos ./docs/serviceWorker.js
-             git commit -m "[bot] Atualização dos dados | ${data_hora}" -- ./dados ./docs/graficos ./docs/serviceWorker.js
+             git commit -m "[bot] Atualização dos dados | `date +'%d/%m/%y %H:%M:%S'`" -- ./dados ./docs/graficos ./docs/serviceWorker.js
              git push
