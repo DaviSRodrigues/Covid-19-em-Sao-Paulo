@@ -48,8 +48,7 @@ jobs:
         run: |
           sudo locale-gen pt_BR.UTF-8
           sudo update-locale LANG=pt_BR.UTF-8
-          echo "America/Sao_Paulo" | sudo tee /etc/timezone
-          sudo dpkg-reconfigure --frontend noninteractive tzdata
+          sudo timedatectl set-timezone "America/Sao_Paulo"
           date
       
       - name: Copiar repositório para a máquina virtual
