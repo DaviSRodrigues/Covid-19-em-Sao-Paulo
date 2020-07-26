@@ -1,6 +1,5 @@
 name: Atualização dos dados
 on:
-  push:
   schedule:
     - cron: '30 21,1 * * *'
 
@@ -57,8 +56,7 @@ jobs:
         run: git pull
 
       - name: Gerar gráficos e tabelas com os dados municipais e estaduais
-        run: |
-             python covid19sp.py
+        run: python covid19sp.py
 
       - name: Fazer o commit das alterações
         run: |
@@ -66,5 +64,5 @@ jobs:
              git config --global user.email "github-actions[bot]@users.noreply.github.com"
              git config --global user.name "github-actions[bot]"
              git add -- ./dados ./docs/graficos ./docs/serviceWorker.js
-             git commit -m "[bot] Atualização dos dados | $data_hora" -- ./dados ./docs/graficos ./docs/serviceWorker.js
+             git commit -m "[bot] Atualização dos dados | ${data_hora}" -- ./dados ./docs/graficos ./docs/serviceWorker.js
              git push
