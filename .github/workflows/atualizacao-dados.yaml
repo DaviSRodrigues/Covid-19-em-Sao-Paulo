@@ -18,11 +18,9 @@ jobs:
         run: |
              echo "event_name: ${event_name}"
              echo "git_ref: ${git_ref}"
-             echo "data_hora: ${data_hora}"
         env: 
              event_name: ${{ github.event_name }}
              git_ref: ${{ github.event.ref }}
-             data_hora: ${ ${date +'%d/%m/%Y %H:%M:%S'} }
         
       - name: Instalar Java 11 - requisito tabula-py
         uses: actions/setup-java@v1
@@ -67,5 +65,5 @@ jobs:
              git config --global user.email "github-actions[bot]@users.noreply.github.com"
              git config --global user.name "github-actions[bot]"
              git add -- ./dados ./docs/graficos ./docs/serviceWorker.js
-             git commit -m '[bot] Atualização diária dos dados ${data_hora}' -- ./dados ./docs/graficos ./docs/serviceWorker.js
+             git commit -m "[bot] Atualização diária dos dados `date +'%d/%m/%y %H:%M:%S'`" -- ./dados ./docs/graficos ./docs/serviceWorker.js
              git push
