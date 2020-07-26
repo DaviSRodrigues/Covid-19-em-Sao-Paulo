@@ -22,7 +22,7 @@ jobs:
         env: 
              event_name: ${{ github.event_name }}
              git_ref: ${{ github.event.ref }}
-             data_hora: ${{ date +'$d/%m/%Y %H:%M:%S' }}
+             data_hora: ${{ date +'%d/%m/%Y %H:%M:%S' }}
         
       - name: Instalar Java 11 - requisito tabula-py
         uses: actions/setup-java@v1
