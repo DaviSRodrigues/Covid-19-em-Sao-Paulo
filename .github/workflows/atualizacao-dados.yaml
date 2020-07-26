@@ -51,6 +51,7 @@ jobs:
       
       - name: Copiar repositório para a máquina virtual
         uses: actions/checkout@v2
+        run: git pull
 
       - name: Gerar gráficos e tabelas com os dados municipais e estaduais
         run: |
