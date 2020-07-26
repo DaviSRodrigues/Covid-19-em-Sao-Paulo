@@ -70,9 +70,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         return int(valor)
         
     try:
-        #na máquina do GitHub, o horário é UTC
-        #execuções até 9h BRT/12h UTC, buscarão dados do dia anterior
-        data = datetime.now() - timedelta(hours = 12)
+        data = datetime.now()
         data_str = data.strftime('%d/%m/%Y')
                 
         if(dados_cidade.tail(1).data.iat[0] == data_str):
@@ -230,7 +228,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
         #atualiza dados municipais do dia anterior
-        data = datetime.now() - timedelta(days = 1, hours = 12)
+        data = datetime.now() - timedelta(days = 1)
         data_str = data.strftime('%d/%m/%Y')
         
         dados_cidade.loc[dados_cidade.data == data_str, 'óbitos'] = formata_numero(obitos.tail(1).iat[0,1])
@@ -697,10 +695,12 @@ def _formata_variacao(v):
     return '+{:02.1f}%'.format(v) if v >= 0 else '{:02.1f}%'.format(v)
 
 def gera_resumo_semanal(efeito_cidade, efeito_estado):
-    hoje = datetime.now() - timedelta(hours = 12)
+    #%W: semana começa na segunda-feira
+    hoje = datetime.now()
     hoje_formatado = int(f'{hoje:%W}') + 1
     
-    hoje = datetime.now() - timedelta(days = 1, hours = 12)
+    #%U: semana começa no domingo
+    hoje = datetime.now() - timedelta(days = 1)
     semana = _formata_semana_extenso(_converte_semana(hoje))
     num_semana = efeito_estado.index[efeito_estado.data == semana].item()
     
