@@ -114,7 +114,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         if(dados_novos):
             novos_dados = {'data': [data_str],
                            'suspeitos': [formata_numero(resumo.tail(1).iat[0,1])],
-                           'confirmados': [formata_numero(resumo.tail(1).iat[0,2])],
+                           'confirmados': [formata_numero(resumo.tail(1).iat[0,2].split('*')[0])],
                            'óbitos': [math.nan],
                            'óbitos_suspeitos': [math.nan]}
             
