@@ -146,12 +146,12 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                                         'ocupação_uti', 'altas', 'óbitos', 'transferidos', 'chegando']),
                 ignore_index = True)
         else:
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_comum'] = formata_numero(hm_camp.iat[2, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 1].split('(')[0])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'altas'] = formata_numero(hm_camp.iat[4, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'óbitos'] = formata_numero(hm_camp.iat[5, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'transferidos'] = formata_numero(hm_camp.iat[6, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'chegando'] = formata_numero(hm_camp.iat[7, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_comum'] = formata_numero(hm_camp.iat[1, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_uti'] = formata_numero(hm_camp.iat[2, 1].split('(')[0])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'altas'] = formata_numero(hm_camp.iat[3, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'óbitos'] = formata_numero(hm_camp.iat[4, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'transferidos'] = formata_numero(hm_camp.iat[5, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'chegando'] = formata_numero(hm_camp.iat[6, 1])
                 
         #atualiza leitos municipais
         if(dados_novos):
