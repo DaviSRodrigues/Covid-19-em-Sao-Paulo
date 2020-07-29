@@ -342,7 +342,6 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     
     def calcula_dia(series):
         #localiza a linha atual passada como parâmetro e obtém a linha anterior
-        print(dados_cidade.index[dados_cidade.dia == series['dia']].item())
         indice = dados_cidade.index[dados_cidade.dia == series['dia']].item() - 1
         
         if(indice >= 0):
