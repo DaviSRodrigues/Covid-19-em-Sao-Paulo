@@ -124,7 +124,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                 ignore_index = True)
         else:
             dados_cidade.loc[dados_cidade.data == data_str, 'suspeitos'] = formata_numero(resumo.tail(1).iat[0,1])
-            dados_cidade.loc[dados_cidade.data == data_str, 'confirmados'] = formata_numero(resumo.tail(1).iat[0,2])
+            dados_cidade.loc[dados_cidade.data == data_str, 'confirmados'] = formata_numero(resumo.tail(1).iat[0,2].split('*')[0])
         
         #atualiza hospitais de campanha
         if(dados_novos):
@@ -227,12 +227,41 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[5, 3])
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
-        #atualiza dados municipais do dia anterior
-        data = datetime.now() - timedelta(days = 1)
-        data_str = data.strftime('%d/%m/%Y')
+        #atualiza dados municipais do dia anterior        
+        def atualizaObitos(series):
+            hoje = datetime.now()
+            
+            if len(series[0].split('-')) > 1:
+                sep = '-'
+            elif len(series[0].split('/')) > 1:
+                sep = '/'
+            elif len(series[0].split(' ')) > 1:
+                sep = ' '
+                
+            if hoje.strftime('%b') in series[0]:
+                mes = '%b'
+            elif sep + hoje.strftime('%m') in series[0]:
+                mes = '%m'
+                
+            if hoje.strftime('%Y') in series[0]:
+                ano = '%Y'
+            elif sep + hoje.strftime('%y') in series[0]:
+                ano = '%y'
+            else:
+                ano = '%Y'
+                series[0] = series[0] + sep + hoje.strftime('%Y')
+            
+            try:
+                data = datetime.strptime(series[0], '%d' + sep + mes + sep + ano)
+            except ValueError:
+                raise ValueError('Não foi possível identificar o formato das datas de óbitos do boletim municipal.')
+                
+            data_str = data.strftime('%d/%m/%Y')
+                
+            dados_cidade.loc[dados_cidade.data == data_str, 'óbitos'] = formata_numero(series[1])
+            dados_cidade.loc[dados_cidade.data == data_str, 'óbitos_suspeitos'] = formata_numero(series[2])
         
-        dados_cidade.loc[dados_cidade.data == data_str, 'óbitos'] = formata_numero(obitos.tail(1).iat[0,1])
-        dados_cidade.loc[dados_cidade.data == data_str, 'óbitos_suspeitos'] = formata_numero(obitos.tail(1).iat[0,2])
+        obitos.apply(lambda linha: atualizaObitos(linha), axis = 1)
         
         #após a extração dos dados e a montagem de dataframes, a atualização dos arquivos
         dados_cidade.to_csv('dados/dados_cidade_sp.csv', sep = ',', index  = False)
