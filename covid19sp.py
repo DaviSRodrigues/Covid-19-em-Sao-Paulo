@@ -341,14 +341,7 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
         return series
     
     def calcula_dia(series):
-        #localiza a linha atual passada como parâmetro e obtém a linha anterior
-        #parou de funcionar apenas na máquina Linux do GitHub: passou a retornar uma lista
-        #com todos os índices do dataframe em vez do índice da única linha esperada
-        #28/07/2020: troca por uma conversão para lista e acesso à posição [0]
-        #indice = dados_cidade.index[dados_cidade.dia == series['dia']].item() - 1
-        indice = dados_cidade.index[dados_cidade.dia == series['dia']].tolist()[0] - 1
-        
-        print(f'{dados_cidade.index[dados_cidade.dia == series["dia"]].tolist()}\n')
+        indice = dados_cidade.index[dados_cidade.dia == series['dia']].item() - 1
         
         if(indice >= 0):
             casos_conf_anterior = dados_cidade.loc[indice, 'confirmados']
@@ -365,8 +358,6 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     
     dados_cidade = dados_cidade.apply(lambda linha: calcula_letalidade(linha), axis = 1)
     dados_cidade = dados_cidade.apply(lambda linha: calcula_dia(linha), axis = 1)
-    
-    print(f'{dados_cidade.columns}\n')
     
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
