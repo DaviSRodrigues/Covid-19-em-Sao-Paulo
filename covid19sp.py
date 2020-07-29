@@ -348,6 +348,8 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
         #indice = dados_cidade.index[dados_cidade.dia == series['dia']].item() - 1
         indice = dados_cidade.index[dados_cidade.dia == series['dia']].tolist()[0] - 1
         
+        print(f'{dados_cidade.index[dados_cidade.dia == series["dia"]].tolist()}\n')
+        
         if(indice >= 0):
             casos_conf_anterior = dados_cidade.loc[indice, 'confirmados']
             casos_susp_anterior = dados_cidade.loc[indice, 'suspeitos']
@@ -363,6 +365,8 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     
     dados_cidade = dados_cidade.apply(lambda linha: calcula_letalidade(linha), axis = 1)
     dados_cidade = dados_cidade.apply(lambda linha: calcula_dia(linha), axis = 1)
+    
+    print(f'{dados_cidade.columns}\n')
     
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
