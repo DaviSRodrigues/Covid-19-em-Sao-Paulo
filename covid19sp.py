@@ -342,7 +342,11 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     
     def calcula_dia(series):
         #localiza a linha atual passada como parâmetro e obtém a linha anterior
-        indice = dados_cidade.index[dados_cidade.dia == series['dia']].item() - 1
+        #parou de funcionar apenas na máquina Linux do GitHub: passou a retornar uma lista
+        #com todos os índices do dataframe em vez do índice da única linha esperada
+        #28/07/2020: troca por uma conversão para lista e acesso à posição [0]
+        #indice = dados_cidade.index[dados_cidade.dia == series['dia']].item() - 1
+        indice = dados_cidade.index[dados_cidade.dia == series['dia']].tolist()[0] - 1
         
         if(indice >= 0):
             casos_conf_anterior = dados_cidade.loc[indice, 'confirmados']
