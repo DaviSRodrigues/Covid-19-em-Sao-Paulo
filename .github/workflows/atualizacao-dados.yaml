@@ -1,5 +1,6 @@
 name: Atualização dos dados
 on:
+  push:
   schedule:
     - cron: '30 21,1 * * *'
 
@@ -30,12 +31,12 @@ jobs:
       - name: Testar Java 11
         run: java -version
 
-      - name: Configurar Python 3.7.7
+      - name: Configurar Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7.7
+          python-version: 3.6.9
           
-      - name: Testar Python 3.7.7
+      - name: Testar Python
         run: python -c "import sys; print(sys.version)"
 
       - name: Instalar dependências Python
