@@ -344,6 +344,7 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
         #localiza a linha atual passada como parâmetro e obtém a linha anterior
         #indice = dados_cidade.index[dados_cidade.dia == series['dia']].item() - 1
         
+        print(dados_cidade.loc[dados_cidade.dia == series['dia']].index.values)
         indice = dados_cidade.loc[dados_cidade.dia == series['dia']].index.values.item() - 1
         
         if(indice >= 0):
