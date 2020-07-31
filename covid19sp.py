@@ -104,7 +104,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         resumo = tabelas[0]
         obitos = tabelas[-1]
 
-        tabelas = tabula.read_pdf(URL, pages = 3, guess = True, lattice = True, pandas_options = {'dtype': 'str'})
+        tabelas = tabula.read_pdf(URL, pages = 4, guess = True, lattice = True, pandas_options = {'dtype': 'str'})
         hm_camp = tabelas[0]
         info_leitos = tabelas[1]
         
@@ -227,10 +227,10 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[5, 3])
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
-        #atualiza dados municipais do dia anterior        
-        def atualizaObitos(series):
-            hoje = datetime.now()
-            
+        #atualiza dados municipais do dia anterior
+        hoje = datetime.now()
+        
+        def atualizaObitos(series):            
             if len(series[0].split('-')) > 1:
                 sep = '-'
             elif len(series[0].split('/')) > 1:
@@ -259,9 +259,10 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             data_str = data.strftime('%d/%m/%Y')
                 
             dados_cidade.loc[dados_cidade.data == data_str, 'óbitos'] = formata_numero(series[1])
-            dados_cidade.loc[dados_cidade.data == data_str, 'óbitos_suspeitos'] = formata_numero(series[2])
+            dados_cidade.loc[dados_cidade.data == data_str, 'óbitos_suspeitos'] = formata_numero(series[5])
         
-        obitos.apply(lambda linha: atualizaObitos(linha), axis = 1)
+        #remove a primeira linha vazia e atualiza os dados, sem alterar o dataframe original
+        obitos.drop(0).apply(lambda linha: atualizaObitos(linha), axis = 1)
         
         #após a extração dos dados e a montagem de dataframes, a atualização dos arquivos
         dados_cidade.to_csv('dados/dados_cidade_sp.csv', sep = ',', index  = False)
