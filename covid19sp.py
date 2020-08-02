@@ -228,7 +228,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
         #atualiza dados municipais do dia anterior
-        hoje = datetime.now()
+        ontem = datetime.now() - timedelta(days = 1)
+        mes_anterior = ontem - timedelta(days = 18) #a tabela de óbitos mostra 18 dias
         
         def atualizaObitos(series):            
             if len(series[0].split('-')) > 1:
@@ -238,18 +239,22 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             elif len(series[0].split(' ')) > 1:
                 sep = ' '
                 
-            if hoje.strftime('%b') in series[0]:
+            if ontem.strftime('%b') in series[0]:
                 mes = '%b'
-            elif sep + hoje.strftime('%m') in series[0]:
+            elif sep + ontem.strftime('%m') in series[0]:
+                mes = '%m'
+            elif mes_anterior.strftime('%b') in series[0]:
+                mes = '%b'
+            elif sep + mes_anterior.strftime('%m') in series[0]:
                 mes = '%m'
                 
-            if hoje.strftime('%Y') in series[0]:
+            if ontem.strftime('%Y') in series[0]:
                 ano = '%Y'
-            elif sep + hoje.strftime('%y') in series[0]:
+            elif sep + ontem.strftime('%y') in series[0]:
                 ano = '%y'
             else:
                 ano = '%Y'
-                series[0] = series[0] + sep + hoje.strftime('%Y')
+                series[0] = series[0] + sep + ontem.strftime('%Y')
             
             try:
                 data = datetime.strptime(series[0], '%d' + sep + mes + sep + ano)
