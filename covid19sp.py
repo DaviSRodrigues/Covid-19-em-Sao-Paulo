@@ -68,7 +68,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             return int(valor.replace('.', ''))
         
         return int(valor)
-        
+    
     try:
         data = datetime.now()
         data_str = data.strftime('%d/%m/%Y')
@@ -227,11 +227,12 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[5, 3])
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
-        #atualiza dados municipais do dia anterior
-        ontem = datetime.now() - timedelta(days = 1)
-        mes_anterior = ontem - timedelta(days = 18) #a tabela de óbitos mostra 18 dias
+        #atualiza o número de óbitos para os últimos 20 dias
+        data = data - timedelta(days = 20)
         
-        def atualizaObitos(series):            
+        def atualizaObitos(series):
+            nonlocal data
+            
             if len(series[0].split('-')) > 1:
                 sep = '-'
             elif len(series[0].split('/')) > 1:
@@ -239,32 +240,30 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             elif len(series[0].split(' ')) > 1:
                 sep = ' '
                 
-            if ontem.strftime('%b') in series[0]:
+            if data.strftime('%b') in series[0]:
                 mes = '%b'
-            elif sep + ontem.strftime('%m') in series[0]:
-                mes = '%m'
-            elif mes_anterior.strftime('%b') in series[0]:
-                mes = '%b'
-            elif sep + mes_anterior.strftime('%m') in series[0]:
+            elif sep + data.strftime('%m') in series[0]:
                 mes = '%m'
                 
-            if ontem.strftime('%Y') in series[0]:
+            if data.strftime('%Y') in series[0]:
                 ano = '%Y'
-            elif sep + ontem.strftime('%y') in series[0]:
+            elif sep + data.strftime('%y') in series[0]:
                 ano = '%y'
             else:
                 ano = '%Y'
-                series[0] = series[0] + sep + ontem.strftime('%Y')
+                series[0] = series[0] + sep + data.strftime('%Y')
             
             try:
-                data = datetime.strptime(series[0], '%d' + sep + mes + sep + ano)
+                dt_obito = datetime.strptime(series[0], '%d' + sep + mes + sep + ano)
             except ValueError:
                 raise ValueError('Não foi possível identificar o formato das datas de óbitos do boletim municipal.')
-                
-            data_str = data.strftime('%d/%m/%Y')
-                
-            dados_cidade.loc[dados_cidade.data == data_str, 'óbitos'] = formata_numero(series[1])
-            dados_cidade.loc[dados_cidade.data == data_str, 'óbitos_suspeitos'] = formata_numero(series[5])
+            
+            dt_obito = dt_obito.strftime('%d/%m/%Y')
+            
+            dados_cidade.loc[dados_cidade.data == dt_obito, 'óbitos'] = formata_numero(series[1])
+            dados_cidade.loc[dados_cidade.data == dt_obito, 'óbitos_suspeitos'] = formata_numero(series[5])
+            
+            data = data + timedelta(days = 1)
         
         #remove a primeira linha vazia e atualiza os dados, sem alterar o dataframe original
         obitos.drop(0).apply(lambda linha: atualizaObitos(linha), axis = 1)
