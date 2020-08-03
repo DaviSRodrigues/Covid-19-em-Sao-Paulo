@@ -287,12 +287,10 @@ def carrega_dados_estado():
         URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/sp.csv')
         dados_estado = pd.read_csv(URL, sep = ';')
         dados_estado.to_csv('dados/dados_estado_sp.csv', sep = ';')
+    except HTTPError as he:
+        print('\n\t' + str(he))
     except Exception as e:
-        if(type(e) == HTTPError):
-            print('\n\t' + str(e))
-        else:
-            traceback.print_exception(type(e), e, e.__traceback__)
-        
+        traceback.print_exception(type(e), e, e.__traceback__)        
         print('\tErro ao buscar dados_estado_sp.csv do GitHub: lendo arquivo local.\n')
         dados_estado = pd.read_csv('dados/dados_estado_sp.csv', sep = ';', decimal = ',', encoding = 'latin-1', index_col = 0)
         
@@ -300,44 +298,39 @@ def carrega_dados_estado():
         print('\tAtualizando dados de isolamento social...')
         URL = ('https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no')
         isolamento = pd.read_csv(URL, sep = ',')
-        isolamento.to_csv('dados/isolamento_social.csv', sep = ',')
-        
+        isolamento.to_csv('dados/isolamento_social.csv', sep = ',')        
+    except HTTPError as he:
+        print('\n\t' + str(he))
     except Exception as e:
-        if(type(e) == HTTPError):
-            print('\n\t' + str(e))
-        else:
-            traceback.print_exception(type(e), e, e.__traceback__)
-            
+        traceback.print_exception(type(e), e, e.__traceback__)            
         print('\tErro ao buscar isolamento_social.csv do Tableau: lendo arquivo local.')
         isolamento = pd.read_csv('dados/isolamento_social.csv', sep = ',', index_col = 0)
         
     try:
         print('\tAtualizando dados de internações...')
-        URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/plano_sp_leitos_internacoes.csv')
-        internacoes = pd.read_csv(URL, sep = ';')
-        internacoes.to_csv('dados/internacoes.csv', sep = ';')
-        
+        #URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/plano_sp_leitos_internacoes.csv')
+        #internacoes = pd.read_csv(URL, sep = ';', decimal = ',', thousands = '.')
+        #internacoes.to_csv('dados/internacoes.csv', sep = ';', decimal = ',')
+        URL = ('http://www.seade.gov.br/wp-content/uploads/2020/08/Leitos-e-Internacoes.csv')
+        internacoes = pd.read_csv(URL, sep = ';', encoding = 'latin-1', decimal = ',', thousands = '.', engine = 'python', skipfooter = 2)
+        internacoes.to_csv('dados/internacoes.csv', sep = ';', decimal = ',', encoding = 'latin-1')
+    except HTTPError as he:
+        print('\n\t' + str(he))
     except Exception as e:
-        if(type(e) == HTTPError):
-            print('\n\t' + str(e))
-        else:
-            traceback.print_exception(type(e), e, e.__traceback__)
-            
+        traceback.print_exception(type(e), e, e.__traceback__)            
         print('\tErro ao buscar internacoes.csv do GitHub: lendo arquivo local.')
-        internacoes = pd.read_csv('dados/internacoes.csv', sep = ';', index_col = 0)
+        #internacoes = pd.read_csv('dados/internacoes.csv', sep = ';', decimal = ',', thousands = '.', index_col = 0)
+        internacoes = pd.read_csv('dados/internacoes.csv', sep = ';', decimal = ',', thousands = '.', encoding = 'latin-1', index_col = 0)
     
     try:
         print('\tAtualizando dados de doenças preexistentes...')
         URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/casos_obitos_doencas_preexistentes.csv')
         doencas = pd.read_csv(URL, sep = ';')
         doencas.to_csv('dados/doencas_preexistentes.csv', sep = ';')
-        
+    except HTTPError as he:
+        print('\n\t' + str(he))
     except Exception as e:
-        if(type(e) == HTTPError):
-            print('\n\t' + str(e))
-        else:
-            traceback.print_exception(type(e), e, e.__traceback__)
-            
+        traceback.print_exception(type(e), e, e.__traceback__)            
         print('\tErro ao buscar doencas_preexistentes.csv do GitHub: lendo arquivo local.')
         doencas = pd.read_csv('dados/doencas_preexistentes.csv', sep = ';', index_col = 0)
     
@@ -423,9 +416,6 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     internacoes.columns = ['data', 'drs', 'total_covid_uti_mm7d', 'pop', 'leitos_pc', 'internacoes_7d', 'internacoes_7d_l', 'internacoes_7v7']
     internacoes['data'] = pd.to_datetime(internacoes.data)
     internacoes['dia'] = internacoes.data.apply(lambda d: d.strftime('%d %b'))
-    internacoes['total_covid_uti_mm7d'] = pd.to_numeric(internacoes.total_covid_uti_mm7d.str.replace(',', '.'))
-    internacoes['leitos_pc'] = pd.to_numeric(internacoes.leitos_pc.str.replace(',', '.'))
-    internacoes['internacoes_7v7'] = pd.to_numeric(internacoes.internacoes_7v7.str.replace(',', '.'))
     
     doencas.columns = ['municipio', 'codigo_ibge', 'idade', 'sexo', 'covid19', 'data_inicio_sintomas', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down']
     
