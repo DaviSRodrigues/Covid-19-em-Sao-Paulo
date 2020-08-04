@@ -227,9 +227,6 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[5, 3])
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
-        #atualiza o número de óbitos para os últimos 20 dias
-        data = data - timedelta(days = 20)
-        
         def atualizaObitos(series):
             nonlocal data
             
@@ -239,18 +236,19 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                 sep = '/'
             elif len(series[0].split(' ')) > 1:
                 sep = ' '
-                
-            if data.strftime('%b') in series[0]:
-                mes = '%b'
-            elif sep + data.strftime('%m') in series[0]:
+            
+            if series[0].split(sep)[1].isnumeric():
                 mes = '%m'
-                
-            if data.strftime('%Y') in series[0]:
-                ano = '%Y'
-            elif sep + data.strftime('%y') in series[0]:
-                ano = '%y'
             else:
-                ano = '%Y'
+                mes = '%b'
+                
+            if len(series[0].split(sep)) >= 3:
+                if len(series[0].split(sep)[2]) == 2:
+                    ano = '%y'
+                else:
+                    ano = '%Y'
+            else:
+                ano = '%Y'            
                 series[0] = series[0] + sep + data.strftime('%Y')
             
             try:
@@ -262,8 +260,6 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             
             dados_cidade.loc[dados_cidade.data == dt_obito, 'óbitos'] = formata_numero(series[1])
             dados_cidade.loc[dados_cidade.data == dt_obito, 'óbitos_suspeitos'] = formata_numero(series[5])
-            
-            data = data + timedelta(days = 1)
         
         #remove a primeira linha vazia e atualiza os dados, sem alterar o dataframe original
         obitos.drop(0).apply(lambda linha: atualizaObitos(linha), axis = 1)
