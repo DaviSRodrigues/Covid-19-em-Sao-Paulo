@@ -398,7 +398,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                 .replace(' Das ', ' das ') \
                 .replace(' Dos ', ' dos ')
                 
-    isolamento.columns = ['data', 'município', 'UF', 'isolamento']
+    isolamento.columns = ['codigo_ibge', 'data', 'município', 'UF', 'isolamento']
     #deixando apenas a primeira letra de cada palavra como maiúscula
     isolamento['município'] = isolamento.município.apply(lambda m: formata_municipio(m))
     isolamento['isolamento'] = pd.to_numeric(isolamento.isolamento.str.replace('%', ''))
