@@ -323,8 +323,6 @@ def carrega_dados_estado():
         URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/casos_obitos_doencas_preexistentes.csv')
         doencas = pd.read_csv(URL, sep = ';')
         #doencas.to_csv('dados/doencas_preexistentes.csv', sep = ';')
-    except HTTPError as he:
-        print('\n\t' + str(he))
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
         print('\tErro ao buscar doencas_preexistentes.csv do GitHub: lendo arquivo da Seade.')
