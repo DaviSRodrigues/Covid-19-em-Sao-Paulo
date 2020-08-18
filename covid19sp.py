@@ -103,12 +103,12 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
 
         #com a URL do pdf correto, começa a extração de dados
         tabelas = tabula.read_pdf(URL, pages = 2, guess = False, lattice = True, pandas_options = {'dtype': 'str'})
-        resumo = tabelas[2]
+        resumo = tabelas[0]
         obitos = tabelas[1]
 
         tabelas = tabula.read_pdf(URL, pages = 4, guess = True, lattice = True, pandas_options = {'dtype': 'str'})
-        hm_camp = tabelas[3]
-        info_leitos = tabelas[0]
+        hm_camp = tabelas[0]
+        info_leitos = tabelas[1]
         
         data_str = data.strftime('%d/%m/%Y')
         
@@ -135,12 +135,12 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                            'leitos': [887],
                            'comum': [813],
                            'uti': [74],
-                           'ocupação_comum': [formata_numero(hm_camp.iat[2, 1])],
-                           'ocupação_uti': [formata_numero(hm_camp.iat[3, 1])],
-                           'altas': [formata_numero(hm_camp.iat[4, 1])],
-                           'óbitos': [formata_numero(hm_camp.iat[5, 1])],
-                           'transferidos': [formata_numero(hm_camp.iat[6, 1])],
-                           'chegando': [formata_numero(hm_camp.iat[7, 1])]}
+                           'ocupação_comum': [formata_numero(hm_camp.iat[1, 1])],
+                           'ocupação_uti': [formata_numero(hm_camp.iat[2, 1])],
+                           'altas': [formata_numero(hm_camp.iat[3, 1])],
+                           'óbitos': [formata_numero(hm_camp.iat[4, 1])],
+                           'transferidos': [formata_numero(hm_camp.iat[5, 1])],
+                           'chegando': [formata_numero(hm_camp.iat[6, 1])]}
             
             hospitais_campanha = hospitais_campanha.append(
                 pd.DataFrame(novos_dados,
@@ -148,23 +148,23 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                                         'ocupação_uti', 'altas', 'óbitos', 'transferidos', 'chegando']),
                 ignore_index = True)
         else:
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_comum'] = formata_numero(hm_camp.iat[2, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_uti'] = formata_numero(hm_camp.iat[3, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'altas'] = formata_numero(hm_camp.iat[4, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'óbitos'] = formata_numero(hm_camp.iat[5, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'transferidos'] = formata_numero(hm_camp.iat[6, 1])
-            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'chegando'] = formata_numero(hm_camp.iat[7, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_comum'] = formata_numero(hm_camp.iat[1, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'ocupação_uti'] = formata_numero(hm_camp.iat[2, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'altas'] = formata_numero(hm_camp.iat[3, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'óbitos'] = formata_numero(hm_camp.iat[4, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'transferidos'] = formata_numero(hm_camp.iat[5, 1])
+            hospitais_campanha.loc[((hospitais_campanha.data == data_str) & (hospitais_campanha.hospital == 'Anhembi')), 'chegando'] = formata_numero(hm_camp.iat[6, 1])
                 
         #atualiza leitos municipais
         if(dados_novos):
             novos_dados = {'data': [data_str],
-                           'respiratorio_publico': [formata_numero(info_leitos.iat[1, 1])],
-                           'suspeitos_publico': [formata_numero(info_leitos.iat[2, 1])],
-                           'internados_publico': [formata_numero(info_leitos.iat[3, 1])],
-                           'uti_covid_publico': [formata_numero(info_leitos.iat[4, 1])],
-                           'internados_uti_publico': [formata_numero(info_leitos.iat[5, 1])],
-                           'ventilacao_publico': [formata_numero(info_leitos.iat[6, 1])],
-                           'ocupacao_uti_covid_publico': [formata_numero(info_leitos.iat[7, 1])]}
+                           'respiratorio_publico': [formata_numero(info_leitos.iat[0, 1])],
+                           'suspeitos_publico': [formata_numero(info_leitos.iat[1, 1])],
+                           'internados_publico': [formata_numero(info_leitos.iat[2, 1])],
+                           'uti_covid_publico': [formata_numero(info_leitos.iat[3, 1])],
+                           'internados_uti_publico': [formata_numero(info_leitos.iat[4, 1])],
+                           'ventilacao_publico': [formata_numero(info_leitos.iat[5, 1])],
+                           'ocupacao_uti_covid_publico': [formata_numero(info_leitos.iat[6, 1])]}
             
             leitos_municipais = leitos_municipais.append(
                 pd.DataFrame(novos_dados,
@@ -174,13 +174,13 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                 ignore_index = True)
             
             novos_dados = {'data': [data_str],
-                           'respiratorio_privado': [formata_numero(info_leitos.iat[1, 2])],
-                           'suspeitos_privado': [formata_numero(info_leitos.iat[2, 2])],
-                           'internados_privado': [formata_numero(info_leitos.iat[3, 2])],
-                           'uti_covid_privado': [formata_numero(info_leitos.iat[4, 2])],
-                           'internados_uti_privado': [formata_numero(info_leitos.iat[5, 2])],
-                           'ventilacao_privado': [formata_numero(info_leitos.iat[6, 2])],
-                           'ocupacao_uti_covid_privado': [formata_numero(info_leitos.iat[7, 2])]}
+                           'respiratorio_privado': [formata_numero(info_leitos.iat[0, 2])],
+                           'suspeitos_privado': [formata_numero(info_leitos.iat[1, 2])],
+                           'internados_privado': [formata_numero(info_leitos.iat[2, 2])],
+                           'uti_covid_privado': [formata_numero(info_leitos.iat[3, 2])],
+                           'internados_uti_privado': [formata_numero(info_leitos.iat[4, 2])],
+                           'ventilacao_privado': [formata_numero(info_leitos.iat[5, 2])],
+                           'ocupacao_uti_covid_privado': [formata_numero(info_leitos.iat[6, 2])]}
             
             leitos_municipais_privados = leitos_municipais_privados.append(
                 pd.DataFrame(novos_dados,
@@ -190,13 +190,13 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                 ignore_index = True)
             
             novos_dados = {'data': [data_str],
-                           'respiratorio_total': [formata_numero(info_leitos.iat[1, 3])],
-                           'suspeitos_total': [formata_numero(info_leitos.iat[2, 3])],
-                           'internados_total': [formata_numero(info_leitos.iat[3, 3])],
-                           'uti_covid_total': [formata_numero(info_leitos.iat[4, 3])],
-                           'internados_uti_total': [formata_numero(info_leitos.iat[5, 3])],
-                           'ventilacao_total': [formata_numero(info_leitos.iat[6, 3])],
-                           'ocupacao_uti_covid_total': [formata_numero(info_leitos.iat[7, 3])]}
+                           'respiratorio_total': [formata_numero(info_leitos.iat[0, 3])],
+                           'suspeitos_total': [formata_numero(info_leitos.iat[1, 3])],
+                           'internados_total': [formata_numero(info_leitos.iat[2, 3])],
+                           'uti_covid_total': [formata_numero(info_leitos.iat[3, 3])],
+                           'internados_uti_total': [formata_numero(info_leitos.iat[4, 3])],
+                           'ventilacao_total': [formata_numero(info_leitos.iat[5, 3])],
+                           'ocupacao_uti_covid_total': [formata_numero(info_leitos.iat[6, 3])]}
             
             leitos_municipais_total = leitos_municipais_total.append(
                 pd.DataFrame(novos_dados,
@@ -205,29 +205,29 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                                         'ventilacao_total', 'ocupacao_uti_covid_total']),
                 ignore_index = True)
         else:
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'respiratorio_publico'] = formata_numero(info_leitos.iat[1, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'suspeitos_publico'] = formata_numero(info_leitos.iat[2, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_publico'] = formata_numero(info_leitos.iat[3, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'uti_covid_publico'] = formata_numero(info_leitos.iat[4, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_uti_publico'] = formata_numero(info_leitos.iat[5, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'ventilacao_publico'] = formata_numero(info_leitos.iat[6, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'ocupacao_uti_covid_publico'] = formata_numero(info_leitos.iat[7, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'respiratorio_publico'] = formata_numero(info_leitos.iat[0, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'suspeitos_publico'] = formata_numero(info_leitos.iat[1, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_publico'] = formata_numero(info_leitos.iat[2, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'uti_covid_publico'] = formata_numero(info_leitos.iat[3, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_uti_publico'] = formata_numero(info_leitos.iat[4, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'ventilacao_publico'] = formata_numero(info_leitos.iat[5, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'ocupacao_uti_covid_publico'] = formata_numero(info_leitos.iat[6, 1])
             
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'respiratorio_privado'] = formata_numero(info_leitos.iat[1, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'suspeitos_privado'] = formata_numero(info_leitos.iat[2, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_privado'] = formata_numero(info_leitos.iat[3, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'uti_covid_privado'] = formata_numero(info_leitos.iat[4, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_uti_privado'] = formata_numero(info_leitos.iat[5, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ventilacao_privado'] = formata_numero(info_leitos.iat[6, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ocupacao_uti_covid_privado'] = formata_numero(info_leitos.iat[7, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'respiratorio_privado'] = formata_numero(info_leitos.iat[0, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'suspeitos_privado'] = formata_numero(info_leitos.iat[1, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_privado'] = formata_numero(info_leitos.iat[2, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'uti_covid_privado'] = formata_numero(info_leitos.iat[3, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_uti_privado'] = formata_numero(info_leitos.iat[4, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ventilacao_privado'] = formata_numero(info_leitos.iat[5, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ocupacao_uti_covid_privado'] = formata_numero(info_leitos.iat[6, 2])
             
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'respiratorio_total'] = formata_numero(info_leitos.iat[1, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'suspeitos_total'] = formata_numero(info_leitos.iat[2, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_total'] = formata_numero(info_leitos.iat[3, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'uti_covid_total'] = formata_numero(info_leitos.iat[4, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_uti_total'] = formata_numero(info_leitos.iat[5, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[6, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[7, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'respiratorio_total'] = formata_numero(info_leitos.iat[0, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'suspeitos_total'] = formata_numero(info_leitos.iat[1, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_total'] = formata_numero(info_leitos.iat[2, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'uti_covid_total'] = formata_numero(info_leitos.iat[3, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_uti_total'] = formata_numero(info_leitos.iat[4, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[5, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
         
         def atualizaObitos(series):
             nonlocal data
