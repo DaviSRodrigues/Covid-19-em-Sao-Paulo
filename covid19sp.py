@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 import locale
 import math
 import traceback
-from urllib.error import HTTPError
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -73,15 +72,6 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
     
     try:
         data = datetime.now()
-        data_str = data.strftime('%d/%m/%Y')
-                
-        if(dados_cidade.tail(1).data.iat[0] == data_str):
-            dados_novos = False
-            print('\tAtualizando dados existentes de ' + data_str + '...')
-        else:
-            dados_novos = True
-            print('\tExtraindo dados novos de ' + data_str + '...')
-        
         data_str = f'{data.day} de {data:%B} de {data:%Y}'
         
         if data.day == 1:
@@ -89,6 +79,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             
         #página de Boletins da Prefeitura de São Paulo
         URL = ('https://www.prefeitura.sp.gov.br/cidade/secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572')
+        boletim_disponivel = False
         
         for i in range(2):
             pagina = requests.get(URL)
@@ -98,8 +89,22 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             for link in soup.find_all('a'):
                 if(data_str in link.text):
                     URL = link['href']
+                    boletim_disponivel = True
+                    break
                     
-        print('\tURL do boletim municipal: ' + URL)
+        if boletim_disponivel:
+            data_str = data.strftime('%d/%m/%Y')
+            
+            if(dados_cidade.tail(1).data.iat[0] == data_str):
+                dados_novos = False
+                print('\tAtualizando dados existentes de ' + data_str + '...')
+            else:
+                dados_novos = True
+                print('\tExtraindo dados novos de ' + data_str + '...')
+                        
+            print('\tURL do boletim municipal: ' + URL)
+        else:
+            raise Exception(f'O boletim de {data_str} ainda não está disponível.')
 
         #com a URL do pdf correto, começa a extração de dados
         tabelas = tabula.read_pdf(URL, pages = 2, guess = False, lattice = True, pandas_options = {'dtype': 'str'})
@@ -109,8 +114,6 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         tabelas = tabula.read_pdf(URL, pages = 4, guess = True, lattice = True, pandas_options = {'dtype': 'str'})
         hm_camp = tabelas[0]
         info_leitos = tabelas[1]
-        
-        data_str = data.strftime('%d/%m/%Y')
         
         #atualiza dados municipais        
         if(dados_novos):
@@ -272,8 +275,6 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         leitos_municipais.to_csv('dados/leitos_municipais.csv', sep = ',', index  = False)
         leitos_municipais_privados.to_csv('dados/leitos_municipais_privados.csv', sep = ',', index  = False)
         leitos_municipais_total.to_csv('dados/leitos_municipais_total.csv', sep = ',', index  = False)
-    except HTTPError as e:
-        print('\n\t' + str(e) + '\n')
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
     
