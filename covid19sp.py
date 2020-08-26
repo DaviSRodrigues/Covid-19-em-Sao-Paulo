@@ -95,12 +95,12 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         if boletim_disponivel:
             data_str = data.strftime('%d/%m/%Y')
             
-            if(dados_cidade.tail(1).data.iat[0] == data_str):
-                dados_novos = False
-                print('\tAtualizando dados existentes de ' + data_str + '...')
-            else:
+            if(data.date() > datetime.strptime(dados_cidade.tail(1).data.iat[0], '%d/%m/%Y').date()):
                 dados_novos = True
                 print('\tExtraindo dados novos de ' + data_str + '...')
+            else:
+                dados_novos = False
+                print('\tAtualizando dados existentes de ' + data_str + '...')
                         
             print('\tURL do boletim municipal: ' + URL)
         else:
