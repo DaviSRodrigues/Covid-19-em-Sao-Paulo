@@ -9,7 +9,7 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 ## 02/09/2020
 
-- Novos dados na seção 'Departamentos Regionais de Saúde': ocupação de leitos por DRS e média móvel de pacientes internados em leitos de UTI exclusivos para Covid-19 ns últimos 7 dias
+- Novos dados na seção 'Departamentos Regionais de Saúde': ocupação de leitos por DRS e média móvel de pacientes internados em leitos de UTI exclusivos para Covid-19 nos últimos 7 dias
 
 ## 21/06/2020
 
