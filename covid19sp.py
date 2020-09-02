@@ -330,7 +330,7 @@ def carrega_dados_estado():
             URL = 'http://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/casos_obitos_doencas_preexistentes.csv'
             doencas = pd.read_csv(URL, sep = ';', encoding = 'latin-1')        
     
-    leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv')
+    leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col = 0)
     
     return dados_estado, isolamento, leitos_estaduais, internacoes, doencas
 
@@ -407,11 +407,34 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     isolamento.sort_values(by = ['data', 'isolamento'], inplace = True)
     
     leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format = '%d/%m/%Y')
-    leitos_estaduais['dia'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d %b'))
     
-    internacoes.columns = ['data', 'drs', 'total_covid_uti_mm7d', 'pop', 'leitos_pc', 'internacoes_7d', 'internacoes_7d_l', 'internacoes_7v7']
+    internacoes.columns = ['data', 'drs', 'pacientes_uti_mm7d', 'total_covid_uti_mm7d', 'ocupacao_leitos', 'pop', 'leitos_pc', 'internacoes_7d', 'internacoes_7d_l', 'internacoes_7v7']
     internacoes['data'] = pd.to_datetime(internacoes.data)
     internacoes['dia'] = internacoes.data.apply(lambda d: d.strftime('%d %b'))
+    
+    if internacoes.data.max() > leitos_estaduais.data.max():
+        novos_dados = {'data': internacoes.data.max(),
+                       'sp_uti': None,
+                       'sp_enfermaria': None,
+                       'rmsp_uti': None,
+                       'rmsp_enfermaria': None}
+        
+        leitos_estaduais = leitos_estaduais.append(novos_dados, ignore_index = True)
+    
+    def atualizaOcupacaoUTI(series):
+        leitos_estaduais.loc[leitos_estaduais.data == series['data'], 'sp_uti'] = series['ocupacao_leitos']
+        
+        filtro_drs = ((internacoes.drs.str.contains('SP')) | (internacoes.drs.str.contains('Município de São Paulo')))
+        ocupacao = internacoes.loc[(filtro_drs) & (internacoes.data == series['data']), 'pacientes_uti_mm7d'].sum() / internacoes.loc[(filtro_drs) & (internacoes.data == series['data']), 'total_covid_uti_mm7d'].sum()
+        leitos_estaduais.loc[leitos_estaduais.data == series['data'], 'rmsp_uti'] = round(ocupacao * 100, 2)
+    
+    internacoes.apply(lambda linha: atualizaOcupacaoUTI(linha), axis = 1)
+    
+    leitos_estaduais['dia'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d %b'))
+    leitos_estaduais['data'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d/%m/%Y'))
+    colunas = ['data', 'sp_uti', 'sp_enfermaria', 'rmsp_uti', 'rmsp_enfermaria']
+    leitos_estaduais[colunas].to_csv('dados/leitos_estaduais.csv', sep = ',')
+    leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format = '%d/%m/%Y')
     
     doencas.columns = ['municipio', 'codigo_ibge', 'idade', 'sexo', 'covid19', 'data_inicio_sintomas', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down']
     
@@ -1492,16 +1515,23 @@ def gera_drs(internacoes):
         else:
             mostrar = False
         
-        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['total_covid_uti_mm7d'], name = 'leitos Covid-19 nos<br>últimos 7 dias',
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['pacientes_uti_mm7d'], name = 'pacientes internados em leitos<br>de UTI para Covid-19 - média<br>móvel dos últimos 7 dias',
                                  mode = 'lines+markers', hovertemplate = '%{y:.0f}', customdata = [d], visible = mostrar))
         
-        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['leitos_pc'], name = 'leitos Covid-19 por<br>100 mil habitantes',
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['total_covid_uti_mm7d'], name = 'leitos Covid-19 - média<br>móvel dos últimos 7 dias',
+                                 mode = 'lines+markers', hovertemplate = '%{y:.0f}', customdata = [d], visible = mostrar))
+        
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['ocupacao_leitos'], name = 'ocupação de leitos de UTI<br>para Covid-19 para cada<br>100 mil habitantes',
+                                 mode = 'lines+markers', hovertemplate = '%{y:.1f}%', customdata = [d], visible = mostrar),
+                      secondary_y = True)
+        
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['leitos_pc'], name = 'leitos Covid-19 para<br>cada 100 mil habitantes',
                                  mode = 'lines+markers', customdata = [d], visible = mostrar))
         
-        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7d'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>nos últimos 7 dias',
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7d'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>média móvel dos últimos 7 dias',
                                  mode = 'lines+markers', customdata = [d], visible = mostrar))
         
-        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7d_l'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>nos 7 dias anteriores',
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7d_l'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>média móvel dos 7 dias<br>anteriores',
                                  mode = 'lines+markers', customdata = [d], visible = mostrar))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7v7'], name = 'variação do número<br>de internações',
