@@ -422,13 +422,20 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         leitos_estaduais = leitos_estaduais.append(novos_dados, ignore_index = True)
     
     def atualizaOcupacaoUTI(series):
-        leitos_estaduais.loc[leitos_estaduais.data == series['data'], 'sp_uti'] = series['ocupacao_leitos']
+        ocupacao = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == series['data']), 'ocupacao_leitos']
+        series['sp_uti'] = ocupacao.item() if any(ocupacao) else series['sp_uti']
         
-        filtro_drs = ((internacoes.drs.str.contains('SP')) | (internacoes.drs.str.contains('Município de São Paulo')))
-        ocupacao = internacoes.loc[(filtro_drs) & (internacoes.data == series['data']), 'pacientes_uti_mm7d'].sum() / internacoes.loc[(filtro_drs) & (internacoes.data == series['data']), 'total_covid_uti_mm7d'].sum()
-        leitos_estaduais.loc[leitos_estaduais.data == series['data'], 'rmsp_uti'] = round(ocupacao * 100, 2)
+        filtro_drs = ((internacoes.drs.str.contains('SP')) | (internacoes.drs == 'Município de São Paulo'))
+        leitos = internacoes.loc[(filtro_drs) & (internacoes.data == series['data']), 'total_covid_uti_mm7d'].sum()
+        
+        if leitos > 0:
+            pacientes = internacoes.loc[(filtro_drs) & (internacoes.data == series['data']), 'pacientes_uti_mm7d'].sum()
+            ocupacao = pacientes / leitos
+            series['rmsp_uti'] = round(ocupacao * 100, 2)
+        
+        return series
     
-    internacoes.apply(lambda linha: atualizaOcupacaoUTI(linha), axis = 1)
+    leitos_estaduais = leitos_estaduais.apply(lambda linha: atualizaOcupacaoUTI(linha), axis = 1)
     
     leitos_estaduais['dia'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d %b'))
     leitos_estaduais['data'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d/%m/%Y'))
@@ -1522,7 +1529,7 @@ def gera_drs(internacoes):
                                  mode = 'lines+markers', hovertemplate = '%{y:.0f}', customdata = [d], visible = mostrar))
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['ocupacao_leitos'], name = 'ocupação de leitos de UTI<br>para Covid-19 para cada<br>100 mil habitantes',
-                                 mode = 'lines+markers', hovertemplate = '%{y:.1f}%', customdata = [d], visible = mostrar),
+                                 mode = 'lines+markers', hovertemplate = '%{y:.2f}%', customdata = [d], visible = mostrar),
                       secondary_y = True)
         
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['leitos_pc'], name = 'leitos Covid-19 para<br>cada 100 mil habitantes',
