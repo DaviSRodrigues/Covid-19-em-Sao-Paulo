@@ -162,6 +162,11 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico de doenças preexistentes nos óbitos', 'graficos/doencas-obitos.html');
 			criaIFrame('graficos/doencas-obitos.html', 'graficos/doencas-obitos-mobile.html', versaoMobile);
 			
+			criaTitulo('Raça/cor nos casos e óbitos');
+			
+			criaLink('Ampliar gráfico de raça/cor nos casos e óbitos', 'graficos/raca-cor.html');
+			criaIFrame('graficos/raca-cor.html', 'graficos/raca-cor-mobile.html', versaoMobile);
+			
 			break;
 		
 		case 'isolamento':

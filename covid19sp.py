@@ -26,15 +26,15 @@ def main():
 
     print('Carregando dados...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = carrega_dados_cidade()
-    dados_estado, isolamento, leitos_estaduais, internacoes, doencas = carrega_dados_estado()
+    dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais = carrega_dados_estado()
 
     print('\nLimpando e enriquecendo dos dados...')
-    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas)
+    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais)
     efeito_cidade, efeito_estado = gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento)
     efeito_cidade, efeito_estado = gera_dados_semana(efeito_cidade, leitos_municipais_total, efeito_estado, leitos_estaduais, isolamento, internacoes)
 
     print('\nGerando gráficos e tabelas...')
-    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas)
+    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas, dados_raciais)
 
     print('\nAtualizando serviceWorker.js...')    
     atualiza_service_worker(dados_cidade)
@@ -94,8 +94,9 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                     
         if boletim_disponivel:
             data_str = data.strftime('%d/%m/%Y')
+            data_cidade = datetime.strptime(dados_cidade.tail(1).data.iat[0], '%d/%m/%Y')
             
-            if(data.date() > datetime.strptime(dados_cidade.tail(1).data.iat[0], '%d/%m/%Y').date()):
+            if(data.date() > data_cidade.date()):
                 dados_novos = True
                 print('\tExtraindo dados novos de ' + data_str + '...')
             else:
@@ -328,19 +329,29 @@ def carrega_dados_estado():
             print(f'\tErro ao buscar doencas_preexistentes.csv localmente: lendo arquivo da Seade.\n\t{e}')
             mes = datetime.now().strftime('%m')
             URL = 'http://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/casos_obitos_doencas_preexistentes.csv'
-            doencas = pd.read_csv(URL, sep = ';', encoding = 'latin-1')        
-    
+            doencas = pd.read_csv(URL, sep = ';', encoding = 'latin-1')
+            
+    try:
+        print('\tAtualizando dados de casos/óbitos por raça e cor...')
+        URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/casos_obitos_raca_cor.csv.zip')
+        dados_raciais = pd.read_csv(URL, sep = ';')
+        opcoes_zip = dict(method = 'zip', archive_name = 'dados_raciais.csv')
+        dados_raciais.to_csv('dados/dados_raciais.zip', sep = ';', compression = opcoes_zip)
+    except Exception as e:
+        print(f'\tErro ao buscar dados_raciais.csv do GitHub: lendo arquivo local.\n\t{e}')
+        dados_raciais = pd.read_csv('dados/dados_raciais.zip', sep = ';', index_col = 0)
+        
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col = 0)
     
-    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas
+    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais
 
-def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas):
+def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais):
     print('\tDados municipais...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
     print('\tDados estaduais...')
-    dados_estado, isolamento, leitos_estaduais, internacoes, doencas = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas)
+    dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais)
     
-    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais
 
 def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     dados_cidade['data'] = pd.to_datetime(dados_cidade.data, format = '%d/%m/%Y')
@@ -385,7 +396,7 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
-def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas):
+def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais):
     dados_estado.columns = ['data', 'total_casos', 'total_obitos']
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
     dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b'))
@@ -445,7 +456,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     
     doencas.columns = ['municipio', 'codigo_ibge', 'idade', 'sexo', 'covid19', 'data_inicio_sintomas', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down']
     
-    doencas = doencas.groupby(['municipio', 'obito', 'covid19', 'idade', 'sexo', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down']) \
+    doencas = doencas.groupby(['obito', 'covid19', 'idade', 'sexo', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera', 'sindrome_de_down']) \
                      .agg({'asma': 'count', 'cardiopatia': 'count', 'diabetes': 'count', 'doenca_hematologica': 'count', 'doenca_hepatica' : 'count', 'doenca_neurologica' : 'count', 'doenca_renal' : 'count', 'imunodepressao' : 'count', 'obesidade' : 'count', 'outros' : 'count', 'pneumopatia' : 'count', 'puerpera' : 'count', 'sindrome_de_down' : 'count'})
     
     def calcula_letalidade(series):
@@ -467,7 +478,13 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     
     dados_estado = dados_estado.apply(lambda linha: calcula_letalidade(linha), axis = 1)
     
-    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas
+    dados_raciais = dados_raciais[['obito', 'raca_cor']]
+    dados_raciais = dados_raciais.fillna('IGNORADO')
+    dados_raciais.loc[dados_raciais.raca_cor == 'NONE', 'raca_cor'] = 'IGNORADO'
+    dados_raciais['raca_cor'] = dados_raciais.raca_cor.str.title()
+    dados_raciais = dados_raciais.groupby(['obito', 'raca_cor']).agg(contagem = ('obito', 'count'))
+    
+    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais
 
 def _converte_semana(data):
     return data.strftime('%Y-W%U')
@@ -635,7 +652,7 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
     
     return efeito_cidade, efeito_estado
 
-def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas):
+def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas, dados_raciais):
     print('\tResumo diário...')
     gera_resumo_diario(dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes)
     print('\tResumo semanal...')
@@ -648,6 +665,8 @@ def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_mu
     gera_doencas_preexistentes_casos(doencas)
     print('\tDoenças preexistentes nos óbitos estaduais...')
     gera_doencas_preexistentes_obitos(doencas)
+    print('\tCasos e óbitos estaduais por raça/cor...')
+    gera_casos_obitos_por_raca_cor(dados_raciais)
     print('\tIsolamento social...')
     gera_isolamento_grafico(isolamento)
     print('\tTabela de isolamento social...')
@@ -1156,6 +1175,49 @@ def gera_doencas_preexistentes_obitos(doencas):
     pio.write_html(fig, file = 'docs/graficos/doencas-obitos-mobile.html', include_plotlyjs = 'directory',
                    auto_open = False, auto_play = False)
 
+def gera_casos_obitos_por_raca_cor(dados_raciais):
+    racas_cores = list(dados_raciais.reset_index('raca_cor').raca_cor.unique())
+    casos = [dados_raciais.xs((rc), level = ('raca_cor')).contagem.sum() for rc in racas_cores]
+    obitos = [dados_raciais.xs((1, rc), level = ('obito', 'raca_cor')).contagem.sum() for rc in racas_cores]
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(x = casos, y = racas_cores,
+                         orientation = 'h', hoverinfo = 'x+y+name',
+                         marker_color = 'blue', name = 'casos', visible = True))
+    
+    fig.add_trace(go.Bar(x = obitos, y = racas_cores,
+                         orientation = 'h', hoverinfo = 'x+y+name',
+                         marker_color = 'red', name = 'óbitos', visible = True))
+    
+    fig.update_layout(
+        font = dict(family = 'Roboto'),
+        title = 'Raça/cor nos casos e óbitos confirmados por Covid-19 no Estado de São Paulo' +
+                '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+                'Governo do Estado de São Paulo</a></i>',
+        xaxis_title = 'Casos ou óbitos',
+        xaxis_tickangle = 30,
+        hovermode = 'y',
+        barmode = 'overlay',
+        bargap = 0.1,
+        hoverlabel = {'namelength' : -1},
+        template = 'plotly'
+    )
+    
+    # fig.show()
+    
+    pio.write_html(fig, file = 'docs/graficos/raca-cor.html', include_plotlyjs = 'directory',
+                   auto_open = False, auto_play = False)
+    
+    #versão mobile        
+    fig.update_layout(
+        font = dict(size = 11),
+        margin = dict(l = 1, r = 1, b = 1, t = 90, pad = 10)
+    )
+    
+    pio.write_html(fig, file = 'docs/graficos/raca-cor-mobile.html', include_plotlyjs = 'directory',
+                   auto_open = False, auto_play = False)
+    
 def gera_isolamento_grafico(isolamento):
     fig = go.Figure()
 
