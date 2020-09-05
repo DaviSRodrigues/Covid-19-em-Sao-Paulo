@@ -1075,13 +1075,13 @@ def gera_doencas_preexistentes_casos(doencas):
         bargap = 0.1
     )
     
-    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 5)])
+    fig.update_yaxes(range = [0, 105], tickvals = [*range(0, 105, 5)])
     
     pio.write_html(fig, file = 'docs/graficos/doencas-casos.html', include_plotlyjs = 'directory',
                    auto_open = False, auto_play = False)
     
     #versão mobile
-    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 10)])
+    fig.update_yaxes(range = [0, 105], tickvals = [*range(0, 105, 10)])
         
     fig.update_layout(
         font = dict(size = 11),
@@ -1159,13 +1159,13 @@ def gera_doencas_preexistentes_obitos(doencas):
         bargap = 0.1
     )
     
-    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 5)])
+    fig.update_yaxes(range = [0, 105], tickvals = [*range(0, 105, 5)])
     
     pio.write_html(fig, file = 'docs/graficos/doencas-obitos.html', include_plotlyjs = 'directory',
                    auto_open = False, auto_play = False)
     
     #versão mobile
-    fig.update_yaxes(range = [0, 120], tickvals = [*range(0, 120, 10)])
+    fig.update_yaxes(range = [0, 105], tickvals = [*range(0, 105, 10)])
         
     fig.update_layout(
         font = dict(size = 11),
@@ -1177,17 +1177,23 @@ def gera_doencas_preexistentes_obitos(doencas):
 
 def gera_casos_obitos_por_raca_cor(dados_raciais):
     racas_cores = list(dados_raciais.reset_index('raca_cor').raca_cor.unique())
+    
     casos = [dados_raciais.xs((rc), level = ('raca_cor')).contagem.sum() for rc in racas_cores]
+    casos_perc = ['{:02.1f}%'.format((c / sum(casos))* 100) for c in casos]
+    
     obitos = [dados_raciais.xs((1, rc), level = ('obito', 'raca_cor')).contagem.sum() for rc in racas_cores]
+    obitos_perc = ['{:02.1f}%'.format((o / sum(obitos)) * 100) for o in obitos]
     
     fig = go.Figure()
     
     fig.add_trace(go.Bar(x = casos, y = racas_cores,
                          orientation = 'h', hoverinfo = 'x+y+name',
+                         textposition = 'auto', text = casos_perc,
                          marker_color = 'blue', name = 'casos', visible = True))
     
     fig.add_trace(go.Bar(x = obitos, y = racas_cores,
                          orientation = 'h', hoverinfo = 'x+y+name',
+                         textposition = 'auto', text = obitos_perc,
                          marker_color = 'red', name = 'óbitos', visible = True))
     
     fig.update_layout(
@@ -1198,7 +1204,7 @@ def gera_casos_obitos_por_raca_cor(dados_raciais):
         xaxis_title = 'Casos ou óbitos',
         xaxis_tickangle = 30,
         hovermode = 'y',
-        barmode = 'overlay',
+        barmode = 'stack',
         bargap = 0.1,
         hoverlabel = {'namelength' : -1},
         template = 'plotly'
@@ -1590,7 +1596,7 @@ def gera_drs(internacoes):
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['total_covid_uti_mm7d'], name = 'leitos Covid-19 - média<br>móvel dos últimos 7 dias',
                                  mode = 'lines+markers', hovertemplate = '%{y:.0f}', customdata = [d], visible = mostrar))
         
-        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['ocupacao_leitos'], name = 'ocupação de leitos de UTI<br>para Covid-19 para cada<br>100 mil habitantes',
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['ocupacao_leitos'], name = 'ocupação de leitos de<br>UTI para Covid-19',
                                  mode = 'lines+markers', hovertemplate = '%{y:.2f}%', customdata = [d], visible = mostrar),
                       secondary_y = True)
         
