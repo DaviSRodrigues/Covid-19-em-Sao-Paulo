@@ -113,8 +113,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         obitos = tabelas[1]
 
         tabelas = tabula.read_pdf(URL, pages = 4, guess = True, lattice = True, pandas_options = {'dtype': 'str'})
-        hm_camp = tabelas[0]
-        info_leitos = tabelas[1]
+        # hm_camp = tabelas[0]
+        info_leitos = tabelas[0]
         
         #atualiza dados municipais        
         if(dados_novos):
