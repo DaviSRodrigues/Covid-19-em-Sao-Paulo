@@ -73,6 +73,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
     try:
         data = datetime.now()
         data_str = f'{data.day} de {data:%B} de {data:%Y}'
+        data_AMD = f'{data:%Y}{data:%m}{data:%d}'
+        data_DMA = f'{data:%d}{data:%m}{data:%Y}'
         
         if data.day == 1:
             data_str = data_str.replace('1 de ', '1º de ')
@@ -87,7 +89,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             soup = BeautifulSoup(pagina.text, 'html.parser')
             
             for link in soup.find_all('a'):
-                if(data_str in link.text):
+                if(data_str in link.text) or (data_AMD in link.text) or (data_DMA in link.text):
                     URL = link['href']
                     boletim_disponivel = True
                     break
