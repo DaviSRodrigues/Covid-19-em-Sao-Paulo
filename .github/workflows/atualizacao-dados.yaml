@@ -39,7 +39,7 @@ jobs:
       - name: Instalar dependências Python
         run: |
              python -m pip install --upgrade pip
-             pip install pandas plotly requests beautifulsoup4 tabula-py
+             pip install --no-binary :all: pandas,plotly,requests,beautifulsoup4,tabula-py
       
       - name: Mudar locale para pt_BR.UTF-8 e horário para BRT
         run: |
