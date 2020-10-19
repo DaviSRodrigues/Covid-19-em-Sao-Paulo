@@ -33,14 +33,16 @@ jobs:
 
       - name: Configurar Python
         uses: actions/setup-python@v2
+        with:
+          version: 3.7.9
           
       - name: Testar Python
         run: python -c "import sys; print(sys.version)"
 
       - name: Instalar dependências Python
         run: |
-             pip install pip==20.2.3 --force-reinstall
-             pip install --no-use-pep517 pandas plotly requests beautifulsoup4 tabula-py
+             python -m pip install --upgrade pip
+             pip install pandas plotly requests beautifulsoup4 tabula-py
       
       - name: Mudar locale para pt_BR.UTF-8 e horário para BRT
         run: |
