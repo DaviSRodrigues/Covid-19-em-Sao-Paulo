@@ -34,7 +34,7 @@ jobs:
       - name: Configurar Python
         uses: actions/setup-python@v2
         with:
-          version: 3.7.9
+          python-version: 3.7.9
           
       - name: Testar Python
         run: python -c "import sys; print(sys.version)"
