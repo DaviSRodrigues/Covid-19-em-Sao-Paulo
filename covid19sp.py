@@ -26,15 +26,15 @@ def main():
 
     print('Carregando dados...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = carrega_dados_cidade()
-    dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais = carrega_dados_estado()
+    dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais = carrega_dados_estado()
 
     print('\nLimpando e enriquecendo dos dados...')
-    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais)
+    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais)
     efeito_cidade, efeito_estado = gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento)
     efeito_cidade, efeito_estado = gera_dados_semana(efeito_cidade, leitos_municipais_total, efeito_estado, leitos_estaduais, isolamento, internacoes)
 
     print('\nGerando gráficos e tabelas...')
-    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas, dados_raciais)
+    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais)
 
     print('\nAtualizando serviceWorker.js...')    
     atualiza_service_worker(dados_cidade)
@@ -308,6 +308,10 @@ def carrega_dados_estado():
         URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/plano_sp_leitos_internacoes.csv')
         internacoes = pd.read_csv(URL, sep = ';', decimal = ',', thousands = '.')
         internacoes.to_csv('dados/internacoes.csv', sep = ';', decimal = ',')
+        
+        URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/plano_sp_leitos_internacoes_serie_nova.csv')
+        internacoes_28 = pd.read_csv(URL, sep = ';', decimal = ',', thousands = '.')
+        internacoes_28.to_csv('dados/internacoes_28.csv', sep = ';', decimal = ',')
     except Exception as e:
         try:    
             print(f'\tErro ao buscar internacoes.csv do GitHub: lendo arquivo da Seade.\n\t{e}')
@@ -316,6 +320,8 @@ def carrega_dados_estado():
         except Exception as e:
             print(f'\tErro ao buscar internacoes.csv da Seade: lendo arquivo local.\n\t{e}')
             internacoes = pd.read_csv('dados/internacoes.csv', sep = ';', decimal = ',', thousands = '.', index_col = 0)
+        finally:
+            internacoes_28 = pd.read_csv('dados/internacoes_28.csv', sep = ';', decimal = ',', thousands = '.', index_col = 0)
     
     try:
         print('\tAtualizando dados de doenças preexistentes...')
@@ -345,15 +351,15 @@ def carrega_dados_estado():
         
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col = 0)
     
-    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais
+    return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais
 
-def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais):
+def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais):
     print('\tDados municipais...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
     print('\tDados estaduais...')
-    dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais)
+    dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais)
     
-    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais
 
 def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     dados_cidade['data'] = pd.to_datetime(dados_cidade.data, format = '%d/%m/%Y')
@@ -398,7 +404,7 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
-def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais):
+def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais):
     dados_estado.columns = ['data', 'total_casos', 'total_obitos']
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
     dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b'))
@@ -424,6 +430,10 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     internacoes.columns = ['data', 'drs', 'pacientes_uti_mm7d', 'total_covid_uti_mm7d', 'ocupacao_leitos', 'pop', 'leitos_pc', 'internacoes_7d', 'internacoes_7d_l', 'internacoes_7v7']
     internacoes['data'] = pd.to_datetime(internacoes.data)
     internacoes['dia'] = internacoes.data.apply(lambda d: d.strftime('%d %b'))
+    
+    internacoes_28.columns = ['data', 'drs', 'pacientes_uti_mm7d', 'total_covid_uti_mm7d', 'ocupacao_leitos', 'pop', 'leitos_pc', 'internacoes_28d', 'internacoes_28d_l', 'internacoes_28v28']
+    internacoes_28['data'] = pd.to_datetime(internacoes_28.data)
+    internacoes_28['dia'] = internacoes_28.data.apply(lambda d: d.strftime('%d %b'))
     
     if internacoes.data.max() > leitos_estaduais.data.max():
         novos_dados = {'data': internacoes.data.max(),
@@ -486,7 +496,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_raciais['raca_cor'] = dados_raciais.raca_cor.str.title()
     dados_raciais = dados_raciais.groupby(['obito', 'raca_cor']).agg(contagem = ('obito', 'count'))
     
-    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais
+    return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais
 
 def _converte_semana(data):
     return data.strftime('%Y-W%U')
@@ -654,7 +664,7 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
     
     return efeito_cidade, efeito_estado
 
-def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, doencas, dados_raciais):
+def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais):
     print('\tResumo diário...')
     gera_resumo_diario(dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes)
     print('\tResumo semanal...')
@@ -680,15 +690,15 @@ def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_mu
     print('\tLeitos no estado...')
     gera_leitos_estaduais(leitos_estaduais)
     print('\tDepartamentos Regionais de Saúde...')
-    gera_drs(internacoes)
+    gera_drs(internacoes, internacoes_28)
     print('\tLeitos públicos na cidade...')
     gera_leitos_municipais(leitos_municipais)
     print('\tLeitos privados na cidade...')
     gera_leitos_municipais_privados(leitos_municipais_privados)
     print('\tLeitos em geral na cidade...')
     gera_leitos_municipais_total(leitos_municipais_total)
-    print('\tHospitais de campanha...')
-    gera_hospitais_campanha(hospitais_campanha)
+    #print('\tHospitais de campanha...')
+    #gera_hospitais_campanha(hospitais_campanha)
 
 def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento, internacoes):
     cabecalho = ['<b>Resumo diário</b>',
@@ -1572,7 +1582,7 @@ def gera_leitos_estaduais(leitos):
     pio.write_html(fig, file = 'docs/graficos/leitos-estaduais-mobile.html',
                    include_plotlyjs = 'directory', auto_open = False, auto_play = False)
 
-def gera_drs(internacoes):
+def gera_drs(internacoes, internacoes_28):
     fig = make_subplots(specs = [[{"secondary_y": True}]])
 
     #lista de Departamentos Regionais de Saúde
@@ -1586,6 +1596,7 @@ def gera_drs(internacoes):
         
     for d in l_drs:
         grafico = internacoes[internacoes.drs == d]
+        grafico_28 = internacoes_28[internacoes_28.drs == d]
         
         if d == 'Estado de São Paulo':
             mostrar = True
@@ -1611,7 +1622,17 @@ def gera_drs(internacoes):
         fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7d_l'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>média móvel dos 7 dias<br>anteriores',
                                  mode = 'lines+markers', customdata = [d], visible = mostrar))
         
-        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7v7'], name = 'variação do número<br>de internações',
+        fig.add_trace(go.Scatter(x = grafico['dia'], y = grafico['internacoes_7v7'], name = 'variação do número<br>de internações 7 dias',
+                                 mode = 'lines+markers', hovertemplate = '%{y:.1f}%', customdata = [d], visible = mostrar),
+                      secondary_y = True)
+        
+        fig.add_trace(go.Scatter(x = grafico_28['dia'], y = grafico_28['internacoes_28d'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>média móvel dos últimos 28 dias',
+                                 mode = 'lines+markers', customdata = [d], visible = mostrar))
+        
+        fig.add_trace(go.Scatter(x = grafico_28['dia'], y = grafico_28['internacoes_28d_l'], name = 'internações (UTI e enfermaria,<br>confirmados e suspeitos)<br>média móvel dos 28 dias<br>anteriores',
+                                 mode = 'lines+markers', customdata = [d], visible = mostrar))
+        
+        fig.add_trace(go.Scatter(x = grafico_28['dia'], y = grafico_28['internacoes_28v28'], name = 'variação do número<br>de internações 28 dias',
                                  mode = 'lines+markers', hovertemplate = '%{y:.1f}%', customdata = [d], visible = mostrar),
                       secondary_y = True)
     

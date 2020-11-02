@@ -7,6 +7,13 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 02/11/2020
+
+- Novos dados no gráfico dos Departamentos Regionais de Saúde:
+	* Número de novas internações (UTI e Enfermaria) de pacientes confirmados ou com suspeita de COVID-19 nos últimos 28 dias
+	* Número de novas internações (UTI e Enfermaria) de pacientes confirmados ou com suspeita de COVID-19 nos 28 dias anteriores
+	* Variação no número de novas internações ((internacoes_28d - internacoes_28d_l) / internacoes_28d_l)
+
 ## 03/09/2020
 
 - Novo gráfico na seção 'Casos': 'Raça/cor nos casos e óbitos'
