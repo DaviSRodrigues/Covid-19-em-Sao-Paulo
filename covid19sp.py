@@ -499,7 +499,13 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais
 
 def _converte_semana(data):
-    return data.strftime('%Y-W%U')
+    convertion = data.strftime('%Y-W%U')
+
+    if 'W00' in convertion:
+        year = int(convertion.split('-')[0])
+        convertion = convertion.replace('W00', 'W52').replace(str(year), str(year - 1))
+
+    return convertion
     
 def _formata_semana_extenso(data):
     #http://portalsinan.saude.gov.br/calendario-epidemiologico-2020
