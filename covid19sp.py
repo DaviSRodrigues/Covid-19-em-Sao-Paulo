@@ -79,8 +79,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         data_AMD = f'{data:%Y}{data:%m}{data:%d}'
         data_DMA = f'{data:%d}{data:%m}{data:%Y}'
 
-        if data.day == 1:
-            data_str = data_str.replace('1 de ', '1º de ')
+        data_str_1 = data_str.replace('1 de ', '1º de ') if data.day == 1 else data_str
 
         # página de Boletins da Prefeitura de São Paulo
         URL = ('https://www.prefeitura.sp.gov.br/cidade/secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572')
@@ -92,9 +91,9 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             soup = BeautifulSoup(pagina.text, 'html.parser')
 
             for link in soup.find_all('a'):
-                if (data_str in link.text) or (data_AMD in link.text) or (data_DMA in link.text):
+                if (data_str in link.text) or (data_str_1 in link.text) or (data_AMD in link.text) or (data_DMA in link.text):
                     URL = link['href']
-                    boletim_disponivel = True
+                    boletim_disponivel = True if i == 1 else False
                     break
 
         if boletim_disponivel:
