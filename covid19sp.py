@@ -298,13 +298,10 @@ def carrega_dados_estado():
         dados_estado = pd.read_csv('dados/dados_estado_sp.csv', sep=';', decimal=',', encoding='latin-1', index_col=0)
 
     try:
-        print('\tAtualizando dados de isolamento social...')
-        URL = ('https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no')
-        isolamento = pd.read_csv(URL, sep=',')
-        isolamento.to_csv('dados/isolamento_social.csv', sep=',')
-    except Exception as e:
-        print(f'\tErro ao buscar isolamento_social.csv do Tableau: lendo arquivo local.\n\t{e}')
+        print('\tCarregando dados de isolamento social...')
         isolamento = pd.read_csv('dados/isolamento_social.csv', sep=',', index_col=0)
+    except Exception as e:
+        print(f'\tErro ao buscar isolamento_social.csv\n\t{e}')
 
     try:
         print('\tAtualizando dados de internações...')
@@ -416,21 +413,39 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
     dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b'))
 
+    print('\t\tAtualizando dados de isolamento social...')
+    URL = ('https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no')
+    isolamento_atualizado = pd.read_csv(URL, sep=',')
+
     def formata_municipio(m):
         return m.title() \
-                .replace(' Da ', ' da ') \
-                .replace(' De ', ' de ') \
-                .replace(' Do ', ' do ') \
-                .replace(' Das ', ' das ') \
-                .replace(' Dos ', ' dos ')
+            .replace(' Da ', ' da ') \
+            .replace(' De ', ' de ') \
+            .replace(' Do ', ' do ') \
+            .replace(' Das ', ' das ') \
+            .replace(' Dos ', ' dos ')
 
-    isolamento.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
-    # deixando apenas a primeira letra de cada palavra como maiúscula
-    isolamento['município'] = isolamento.município.apply(lambda m: formata_municipio(m))
-    isolamento['isolamento'] = pd.to_numeric(isolamento.isolamento.str.replace('%', ''))
-    isolamento['data'] = isolamento.data.apply(lambda d: datetime.strptime(d.split(', ')[1] + '/2020', '%d/%m/%Y'))
-    isolamento['dia'] = isolamento.data.apply(lambda d: d.strftime('%d %b'))
+    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+
+    ontem = datetime.now() - timedelta(days=1)
+    ontem_str = ontem.strftime('%A, %d/%m')
+
+    isolamento_atualizado.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
+    isolamento_atualizado.drop(columns='codigo_ibge', inplace=True)
+    isolamento_atualizado = isolamento_atualizado.loc[isolamento_atualizado.data == ontem_str]
+
+    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+
+    isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
+    isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
+    isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
+        lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(ontem.year), '%d/%m/%Y'))
+    isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b'))
+
+    isolamento = isolamento.append(isolamento_atualizado)
+    isolamento['data'] = pd.to_datetime(isolamento.data)
     isolamento.sort_values(by=['data', 'isolamento'], inplace=True)
+    isolamento.to_csv('dados/isolamento_social.csv', sep=',', index=False)
 
     leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format='%d/%m/%Y')
 
@@ -1457,8 +1472,7 @@ def gera_efeito_estado(efeito_estado):
     fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['uti'], line=dict(color='green'),
                              name='taxa média de<br>ocupação de UTI', hovertemplate='%{y:.2f}%',
                              mode='lines+markers+text', textposition='top center',
-                             text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v)),
-                             visible='legendonly'),
+                             text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
     fig.add_trace(go.Bar(x=grafico['data'], y=grafico['casos_semana'], marker_color='blue',
@@ -1537,8 +1551,7 @@ def gera_efeito_cidade(efeito_cidade):
     fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['uti'], line=dict(color='green'),
                              name='taxa média de<br>ocupação de UTI', hovertemplate='%{y:.2f}%',
                              mode='lines+markers+text', textposition='top center',
-                             text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v)),
-                             visible='legendonly'),
+                             text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
     fig.add_trace(go.Bar(x=grafico['data'], y=grafico['casos_semana'], marker_color='blue',
