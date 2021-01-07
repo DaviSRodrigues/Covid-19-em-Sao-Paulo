@@ -299,7 +299,7 @@ def carrega_dados_estado():
 
     try:
         print('\tCarregando dados de isolamento social...')
-        isolamento = pd.read_csv('dados/isolamento_social.csv', sep=',', index_col=0)
+        isolamento = pd.read_csv('dados/isolamento_social.csv', sep=',')
     except Exception as e:
         print(f'\tErro ao buscar isolamento_social.csv\n\t{e}')
 
@@ -436,16 +436,19 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-    isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
-    isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
-    isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
-        lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(ontem.year), '%d/%m/%Y'))
-    isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b'))
+    if not isolamento_atualizado.empty:
+        isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
+        isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
+        isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
+            lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(ontem.year), '%d/%m/%Y'))
+        isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b'))
 
-    isolamento = isolamento.append(isolamento_atualizado)
-    isolamento['data'] = pd.to_datetime(isolamento.data)
-    isolamento.sort_values(by=['data', 'isolamento'], inplace=True)
-    isolamento.to_csv('dados/isolamento_social.csv', sep=',', index=False)
+        isolamento = isolamento.append(isolamento_atualizado)
+        isolamento['data'] = pd.to_datetime(isolamento.data)
+        isolamento.sort_values(by=['data', 'isolamento'], inplace=True)
+        isolamento.to_csv('dados/isolamento_social.csv', sep=',', index=False)
+    else:
+        isolamento['data'] = pd.to_datetime(isolamento.data)
 
     leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format='%d/%m/%Y')
 
