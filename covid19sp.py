@@ -434,9 +434,10 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     isolamento_atualizado.drop(columns='codigo_ibge', inplace=True)
     isolamento_atualizado = isolamento_atualizado.loc[isolamento_atualizado.data == ontem_str]
 
+    data_arquivo = pd.to_datetime(isolamento.iloc[-1]['data'])
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-    if not isolamento_atualizado.empty:
+    if data_arquivo.date() < ontem.date() and not isolamento_atualizado.empty:
         isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
         isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
         isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
