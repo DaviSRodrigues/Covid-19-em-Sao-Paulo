@@ -1,7 +1,7 @@
 name: Atualização dos dados
 on:
   schedule:
-    - cron: '30 21,1 * * *'
+    - cron: '0 21,1 * * *'
 
 env:
   LANG: "pt_BR.UTF-8"
