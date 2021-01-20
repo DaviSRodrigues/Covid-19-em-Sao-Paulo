@@ -289,7 +289,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
 def carrega_dados_estado():
     ano = datetime.now().strftime('%Y')
     mes = datetime.now().strftime('%m')
-    
+
     try:
         print('\tAtualizando dados estaduais...')
         URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/sp.csv')
