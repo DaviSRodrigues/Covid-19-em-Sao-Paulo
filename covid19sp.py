@@ -287,6 +287,9 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
 
 
 def carrega_dados_estado():
+    ano = datetime.now().strftime('%Y')
+    mes = datetime.now().strftime('%m')
+    
     try:
         print('\tAtualizando dados estaduais...')
         URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/sp.csv')
@@ -315,7 +318,7 @@ def carrega_dados_estado():
     except Exception as e:
         try:
             print(f'\tErro ao buscar internacoes.csv do GitHub: lendo arquivo da Seade.\n\t{e}')
-            URL = ('http://www.seade.gov.br/wp-content/uploads/2020/08/Leitos-e-Internacoes.csv')
+            URL = (f'http://www.seade.gov.br/wp-content/uploads/{ano}/{mes}/Leitos-e-Internacoes.csv')
             internacoes = pd.read_csv(URL, sep=';', encoding='latin-1', decimal=',', thousands='.', engine='python',
                                       skipfooter=2)
         except Exception as e:
@@ -336,8 +339,7 @@ def carrega_dados_estado():
             doencas = pd.read_csv('dados/doencas_preexistentes.zip', sep=';', index_col=0)
         except Exception as e:
             print(f'\tErro ao buscar doencas_preexistentes.csv localmente: lendo arquivo da Seade.\n\t{e}')
-            mes = datetime.now().strftime('%m')
-            URL = 'http://www.seade.gov.br/wp-content/uploads/2020/' + mes + '/casos_obitos_doencas_preexistentes.csv'
+            URL = f'http://www.seade.gov.br/wp-content/uploads/{ano}/{mes}/casos_obitos_doencas_preexistentes.csv'
             doencas = pd.read_csv(URL, sep=';', encoding='latin-1')
 
     try:
