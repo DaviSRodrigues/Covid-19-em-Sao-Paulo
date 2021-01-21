@@ -75,11 +75,10 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
 
     try:
         data = datetime.now()
-        data_str = f'{data.day} de {data:%B} de {data:%Y}'
-        data_AMD = f'{data:%Y}{data:%m}{data:%d}'
-        data_DMA = f'{data:%d}{data:%m}{data:%Y}'
-
-        data_str_1 = data_str.replace('1 de ', '1º de ') if data.day == 1 else data_str
+        data_str = f' {data.day} de {data:%B} de {data:%Y}'
+        data_str_1 = data_str.replace(' 1 de ', ' 1º de ') if data.day == 1 else data_str
+        data_AMD = f' {data:%Y}{data:%m}{data:%d}'
+        data_DMA = f' {data:%d}{data:%m}{data:%Y}'
 
         # página de Boletins da Prefeitura de São Paulo
         URL = ('https://www.prefeitura.sp.gov.br/cidade/secretarias/saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572')
