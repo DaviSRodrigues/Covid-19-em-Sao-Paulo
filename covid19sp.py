@@ -373,19 +373,19 @@ def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leito
 
 def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
     dados_cidade['data'] = pd.to_datetime(dados_cidade.data, format='%d/%m/%Y')
-    dados_cidade['dia'] = dados_cidade.data.apply(lambda d: d.strftime('%d %b'))
+    dados_cidade['dia'] = dados_cidade.data.apply(lambda d: d.strftime('%d %b %y'))
 
     hospitais_campanha['data'] = pd.to_datetime(hospitais_campanha.data, format='%d/%m/%Y')
-    hospitais_campanha['dia'] = hospitais_campanha.data.apply(lambda d: d.strftime('%d %b'))
+    hospitais_campanha['dia'] = hospitais_campanha.data.apply(lambda d: d.strftime('%d %b %y'))
 
     leitos_municipais['data'] = pd.to_datetime(leitos_municipais.data, format='%d/%m/%Y')
-    leitos_municipais['dia'] = leitos_municipais.data.apply(lambda d: d.strftime('%d %b'))
+    leitos_municipais['dia'] = leitos_municipais.data.apply(lambda d: d.strftime('%d %b %y'))
 
     leitos_municipais_privados['data'] = pd.to_datetime(leitos_municipais_privados.data, format='%d/%m/%Y')
-    leitos_municipais_privados['dia'] = leitos_municipais_privados.data.apply(lambda d: d.strftime('%d %b'))
+    leitos_municipais_privados['dia'] = leitos_municipais_privados.data.apply(lambda d: d.strftime('%d %b %y'))
 
     leitos_municipais_total['data'] = pd.to_datetime(leitos_municipais_total.data, format='%d/%m/%Y')
-    leitos_municipais_total['dia'] = leitos_municipais_total.data.apply(lambda d: d.strftime('%d %b'))
+    leitos_municipais_total['dia'] = leitos_municipais_total.data.apply(lambda d: d.strftime('%d %b %y'))
 
     def calcula_letalidade(series):
         # calcula a taxa de letalidade até a data atual
@@ -418,7 +418,7 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
 def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais):
     dados_estado.columns = ['data', 'total_casos', 'total_obitos']
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
-    dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b'))
+    dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b %y'))
 
     print('\t\tAtualizando dados de isolamento social...')
     URL = ('https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no')
@@ -449,7 +449,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
         isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
             lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(ontem.year), '%d/%m/%Y'))
-        isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b'))
+        isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b %y'))
 
         isolamento = isolamento.append(isolamento_atualizado)
         isolamento['data'] = pd.to_datetime(isolamento.data)
@@ -463,12 +463,12 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     internacoes.columns = ['data', 'drs', 'pacientes_uti_mm7d', 'total_covid_uti_mm7d', 'ocupacao_leitos', 'pop',
                            'leitos_pc', 'internacoes_7d', 'internacoes_7d_l', 'internacoes_7v7']
     internacoes['data'] = pd.to_datetime(internacoes.data)
-    internacoes['dia'] = internacoes.data.apply(lambda d: d.strftime('%d %b'))
+    internacoes['dia'] = internacoes.data.apply(lambda d: d.strftime('%d %b %y'))
 
     internacoes_28.columns = ['data', 'drs', 'pacientes_uti_mm7d', 'total_covid_uti_mm7d', 'ocupacao_leitos', 'pop',
                               'leitos_pc', 'internacoes_28d', 'internacoes_28d_l', 'internacoes_28v28']
     internacoes_28['data'] = pd.to_datetime(internacoes_28.data)
-    internacoes_28['dia'] = internacoes_28.data.apply(lambda d: d.strftime('%d %b'))
+    internacoes_28['dia'] = internacoes_28.data.apply(lambda d: d.strftime('%d %b %y'))
 
     if internacoes.data.max() > leitos_estaduais.data.max():
         novos_dados = {'data': internacoes.data.max(),
@@ -495,7 +495,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     leitos_estaduais = leitos_estaduais.apply(lambda linha: atualizaOcupacaoUTI(linha), axis=1)
 
-    leitos_estaduais['dia'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d %b'))
+    leitos_estaduais['dia'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d %b %y'))
     leitos_estaduais['data'] = leitos_estaduais.data.apply(lambda d: d.strftime('%d/%m/%Y'))
     colunas = ['data', 'sp_uti', 'sp_enfermaria', 'rmsp_uti', 'rmsp_enfermaria']
     leitos_estaduais[colunas].to_csv('dados/leitos_estaduais.csv', sep=',')
@@ -2160,7 +2160,7 @@ def atualiza_service_worker(dados_cidade):
     versao_anterior = int(filedata[16:18])
 
     # primeira atualização no dia
-    if (filedata.count(data_atual) == 0):
+    if filedata.count(data_atual) == 0:
         versao_atual = 1
         filedata = filedata.replace(data_anterior, data_atual)
     else:
