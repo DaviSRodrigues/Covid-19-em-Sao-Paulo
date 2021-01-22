@@ -238,6 +238,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
 
         def atualizaObitos(series):
             nonlocal data
+            inicio_de_ano = True if data.month == 1 else False
 
             if len(series[0].split('-')) > 1:
                 sep = '-'
@@ -251,6 +252,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             else:
                 mes = '%b'
 
+            mes_obito = datetime.strptime(series[0].split(sep)[1], mes).month
+
             if len(series[0].split(sep)) >= 3:
                 if len(series[0].split(sep)[2]) == 2:
                     ano = '%y'
@@ -258,8 +261,11 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                     ano = '%Y'
             else:
                 ano = '%Y'
-                series[0] = series[0] + sep + data.strftime('%Y')
 
+                if inicio_de_ano and mes_obito == 12:
+                    series[0] = series[0] + sep + str(data.year - 1)
+                else:
+                    series[0] = series[0] + sep + data.strftime(ano)
             try:
                 dt_obito = datetime.strptime(series[0], '%d' + sep + mes + sep + ano)
             except ValueError:
@@ -271,7 +277,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             dados_cidade.loc[dados_cidade.data == dt_obito, 'óbitos_suspeitos'] = formata_numero(series[5])
 
         # remove a primeira linha vazia e atualiza os dados, sem alterar o dataframe original
-        obitos.drop([0, 1]).apply(lambda linha: atualizaObitos(linha), axis=1)
+        obitos.drop(0).apply(lambda linha: atualizaObitos(linha), axis=1)
 
         # após a extração dos dados e a montagem de dataframes, a atualização dos arquivos
         dados_cidade.to_csv('dados/dados_cidade_sp.csv', sep=',', index=False)
