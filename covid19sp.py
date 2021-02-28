@@ -33,11 +33,11 @@ def main():
 
     print('\nLimpando e enriquecendo dos dados...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas)
-    efeito_cidade, efeito_estado = gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento)
+    efeito_cidade, efeito_estado = gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento, dados_vacinacao)
     efeito_cidade, efeito_estado = gera_dados_semana(efeito_cidade, leitos_municipais_total, efeito_estado, leitos_estaduais, isolamento, internacoes)
 
     print('\nGerando gráficos e tabelas...')
-    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais)
+    gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao)
 
     print('\nAtualizando serviceWorker.js...')
     atualiza_service_worker(dados_cidade)
@@ -76,7 +76,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         return int(valor)
 
     try:
-        data = datetime.now()
+        data = data_processamento_cidade
         data_str = f' {data.day} de {data:%B} de {data:%Y}'
         data_str_1 = data_str.replace(' 1 de ', ' 1º de ') if data.day == 1 else data_str
         data_AMD = f' {data:%Y}{data:%m}{data:%d}'
@@ -113,19 +113,20 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             raise Exception(f'O boletim de {data_str} ainda não está disponível.')
 
         # com a URL do pdf correto, começa a extração de dados
-        tabelas = tabula.read_pdf(URL, pages=2, guess=False, lattice=True, pandas_options={'dtype': 'str'})
-        resumo = tabelas[0]
-        obitos = tabelas[1]
+        tabelas = tabula.read_pdf(URL, pages=1, guess=False, lattice=True, pandas_options={'dtype': 'str'})
+        info_casos = tabelas[1]
 
         tabelas = tabula.read_pdf(URL, pages=4, guess=True, lattice=True, pandas_options={'dtype': 'str'})
-        # hm_camp = tabelas[0]
-        info_leitos = tabelas[0]
+        info_obitos = tabelas[0]
+
+        tabelas = tabula.read_pdf(URL, pages=5, guess=True, lattice=True, pandas_options={'dtype': 'str'})
+        info_leitos = tabelas[2]
 
         # atualiza dados municipais
         if (dados_novos):
             novos_dados = {'data': [data_str],
-                           'suspeitos': [formata_numero(resumo.tail(1).iat[0, 1])],
-                           'confirmados': [formata_numero(resumo.tail(1).iat[0, 2])],
+                           'suspeitos': [math.nan],
+                           'confirmados': [formata_numero(info_casos.iat[0,0])],
                            'óbitos': [math.nan],
                            'óbitos_suspeitos': [math.nan]}
 
@@ -134,8 +135,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
                              columns=['data', 'suspeitos', 'confirmados', 'óbitos', 'óbitos_suspeitos']),
                              ignore_index=True)
         else:
-            dados_cidade.loc[dados_cidade.data == data_str, 'suspeitos'] = formata_numero(resumo.tail(1).iat[0, 1])
-            dados_cidade.loc[dados_cidade.data == data_str, 'confirmados'] = formata_numero(resumo.tail(1).iat[0, 2])
+            # dados_cidade.loc[dados_cidade.data == data_str, 'suspeitos'] = formata_numero(resumo.tail(1).iat[0, 1])
+            dados_cidade.loc[dados_cidade.data == data_str, 'confirmados'] = formata_numero(info_casos['Casos Confirmados'].item())
 
         # atualiza hospitais de campanha
         # if(dados_novos):
@@ -169,11 +170,11 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             novos_dados = {'data': [data_str],
                            'respiratorio_publico': [formata_numero(info_leitos.iat[0, 1])],
                            'suspeitos_publico': [formata_numero(info_leitos.iat[1, 1])],
-                           'internados_publico': [formata_numero(info_leitos.iat[2, 1])],
+                           'internados_publico': [formata_numero(info_leitos.iat[5, 1])],
                            'uti_covid_publico': [formata_numero(info_leitos.iat[3, 1])],
-                           'internados_uti_publico': [formata_numero(info_leitos.iat[4, 1])],
-                           'ventilacao_publico': [formata_numero(info_leitos.iat[5, 1])],
-                           'ocupacao_uti_covid_publico': [formata_numero(info_leitos.iat[6, 1])]}
+                           'internados_uti_publico': [formata_numero(info_leitos.iat[6, 1])],
+                           'ventilacao_publico': [math.nan],
+                           'ocupacao_uti_covid_publico': [formata_numero(info_leitos.iat[9, 1])]}
 
             leitos_municipais = leitos_municipais.append(
                 pd.DataFrame(novos_dados,
@@ -185,11 +186,11 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             novos_dados = {'data': [data_str],
                            'respiratorio_privado': [formata_numero(info_leitos.iat[0, 2])],
                            'suspeitos_privado': [formata_numero(info_leitos.iat[1, 2])],
-                           'internados_privado': [formata_numero(info_leitos.iat[2, 2])],
+                           'internados_privado': [formata_numero(info_leitos.iat[5, 2])],
                            'uti_covid_privado': [formata_numero(info_leitos.iat[3, 2])],
-                           'internados_uti_privado': [formata_numero(info_leitos.iat[4, 2])],
-                           'ventilacao_privado': [formata_numero(info_leitos.iat[5, 2])],
-                           'ocupacao_uti_covid_privado': [formata_numero(info_leitos.iat[6, 2])]}
+                           'internados_uti_privado': [formata_numero(info_leitos.iat[6, 2])],
+                           'ventilacao_privado': [math.nan],
+                           'ocupacao_uti_covid_privado': [formata_numero(info_leitos.iat[9, 2])]}
 
             leitos_municipais_privados = leitos_municipais_privados.append(
                 pd.DataFrame(novos_dados,
@@ -201,11 +202,11 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             novos_dados = {'data': [data_str],
                            'respiratorio_total': [formata_numero(info_leitos.iat[0, 3])],
                            'suspeitos_total': [formata_numero(info_leitos.iat[1, 3])],
-                           'internados_total': [formata_numero(info_leitos.iat[2, 3])],
+                           'internados_total': [formata_numero(info_leitos.iat[5, 3])],
                            'uti_covid_total': [formata_numero(info_leitos.iat[3, 3])],
-                           'internados_uti_total': [formata_numero(info_leitos.iat[4, 3])],
-                           'ventilacao_total': [formata_numero(info_leitos.iat[5, 3])],
-                           'ocupacao_uti_covid_total': [formata_numero(info_leitos.iat[6, 3])]}
+                           'internados_uti_total': [formata_numero(info_leitos.iat[6, 3])],
+                           'ventilacao_total': [math.nan],
+                           'ocupacao_uti_covid_total': [formata_numero(info_leitos.iat[9, 3])]}
 
             leitos_municipais_total = leitos_municipais_total.append(
                 pd.DataFrame(novos_dados,
@@ -216,27 +217,27 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
         else:
             leitos_municipais.loc[leitos_municipais.data == data_str, 'respiratorio_publico'] = formata_numero(info_leitos.iat[0, 1])
             leitos_municipais.loc[leitos_municipais.data == data_str, 'suspeitos_publico'] = formata_numero(info_leitos.iat[1, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_publico'] = formata_numero(info_leitos.iat[2, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_publico'] = formata_numero(info_leitos.iat[5, 1])
             leitos_municipais.loc[leitos_municipais.data == data_str, 'uti_covid_publico'] = formata_numero(info_leitos.iat[3, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_uti_publico'] = formata_numero(info_leitos.iat[4, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'ventilacao_publico'] = formata_numero(info_leitos.iat[5, 1])
-            leitos_municipais.loc[leitos_municipais.data == data_str, 'ocupacao_uti_covid_publico'] = formata_numero(info_leitos.iat[6, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'internados_uti_publico'] = formata_numero(info_leitos.iat[6, 1])
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'ventilacao_publico'] = math.nan
+            leitos_municipais.loc[leitos_municipais.data == data_str, 'ocupacao_uti_covid_publico'] = formata_numero(info_leitos.iat[9, 1])
 
             leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'respiratorio_privado'] = formata_numero(info_leitos.iat[0, 2])
             leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'suspeitos_privado'] = formata_numero(info_leitos.iat[1, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_privado'] = formata_numero(info_leitos.iat[2, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_privado'] = formata_numero(info_leitos.iat[5, 2])
             leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'uti_covid_privado'] = formata_numero(info_leitos.iat[3, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_uti_privado'] = formata_numero(info_leitos.iat[4, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ventilacao_privado'] = formata_numero(info_leitos.iat[5, 2])
-            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ocupacao_uti_covid_privado'] = formata_numero(info_leitos.iat[6, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'internados_uti_privado'] = formata_numero(info_leitos.iat[6, 2])
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ventilacao_privado'] = math.nan
+            leitos_municipais_privados.loc[leitos_municipais_privados.data == data_str, 'ocupacao_uti_covid_privado'] = formata_numero(info_leitos.iat[9, 2])
 
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'respiratorio_total'] = formata_numero(info_leitos.iat[0, 3])
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'suspeitos_total'] = formata_numero(info_leitos.iat[1, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_total'] = formata_numero(info_leitos.iat[2, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_total'] = formata_numero(info_leitos.iat[5, 3])
             leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'uti_covid_total'] = formata_numero(info_leitos.iat[3, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_uti_total'] = formata_numero(info_leitos.iat[4, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = formata_numero(info_leitos.iat[5, 3])
-            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[6, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'internados_uti_total'] = formata_numero(info_leitos.iat[6, 3])
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ventilacao_total'] = math.nan
+            leitos_municipais_total.loc[leitos_municipais_total.data == data_str, 'ocupacao_uti_covid_total'] = formata_numero(info_leitos.iat[9, 3])
 
         def atualizaObitos(series):
             nonlocal data
@@ -278,8 +279,8 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
             dados_cidade.loc[dados_cidade.data == dt_obito, 'óbitos'] = formata_numero(series[1])
             dados_cidade.loc[dados_cidade.data == dt_obito, 'óbitos_suspeitos'] = formata_numero(series[5])
 
-        # remove a primeira linha vazia e atualiza os dados, sem alterar o dataframe original
-        obitos.drop(0).apply(lambda linha: atualizaObitos(linha), axis=1)
+        # remove as linhas vazias e atualiza os dados, sem alterar o dataframe original
+        info_obitos.drop([0, 1]).apply(lambda linha: atualizaObitos(linha), axis=1)
 
         # após a extração dos dados e a montagem de dataframes, a atualização dos arquivos
         dados_cidade.to_csv('dados/dados_cidade_sp.csv', sep=',', index=False)
@@ -294,7 +295,7 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
 
 
 def carrega_dados_estado():
-    hoje = datetime.now()
+    hoje = data_processamento_estado
     ano = hoje.strftime('%Y')
     mes = hoje.strftime('%m')
     data = hoje.strftime('%Y%m%d')
@@ -604,57 +605,88 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dados_pop = pd.read_csv(URL, sep=';')
         dados_pop = dados_pop.loc[dados_pop.datahora == hoje_str, ['nome_munic', 'datahora', 'pop']]
         dados_pop['nome_munic'] = dados_pop.nome_munic.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        nonlocal dados_vacinacao, doses_aplicadas
+        nonlocal dados_vacinacao
         dados_vacinacao['populacao'] = None
-        dados_vacinacao['munic'] = dados_vacinacao.municipio.str.lower()
-        dados_pop['nome_munic'] = dados_pop.nome_munic.str.lower()
 
-        for m in list(dados_vacinacao['munic'].unique()):
+        for m in list(dados_vacinacao['municipio'].unique()):
             pop = dados_pop.loc[dados_pop.nome_munic == m, 'pop']
             pop = None if pop.empty else pop.iat[0]
 
-            dados_vacinacao.loc[dados_vacinacao.munic == m, 'populacao'] = pop
-
-        dados_vacinacao.drop(columns='munic', inplace=True)
+            dados_vacinacao.loc[dados_vacinacao.municipio == m, 'populacao'] = pop
 
     def atualiza_estado():
         nonlocal dados_vacinacao
-        datas = list(dados_vacinacao.data.unique())
-        filtro_e = dados_vacinacao.municipio != 'Estado de São Paulo'
+        filtro_e = dados_vacinacao.municipio != 'ESTADO DE SAO PAULO'
+        data_atual = pd.to_datetime(hoje.strftime('%Y-%m-%d'))  # para tirar as horas
+        filtro_d = dados_vacinacao.data == data_atual
 
-        for d in datas:
-            filtro_d = dados_vacinacao.data == d
+        novos_dados = {'data': data_atual,
+                       'municipio': 'ESTADO DE SAO PAULO',
+                       'doses_recebidas': dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'].sum(),
+                       '1a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'].sum(),
+                       '2a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'].sum(),
+                       'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
-            novos_dados = {'data': d,
-                           'municipio': 'Estado de São Paulo',
-                           'doses_recebidas': dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'].sum(),
-                           '1a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'].sum(),
-                           '2a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'].sum(),
-                           'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
+        dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
 
-            dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+    def calcula_campos_adicionais(linha):
+        primeira_dose = 0 if linha['1a_dose'] is None or math.isnan(linha['1a_dose']) else linha['1a_dose']
+        segunda_dose = 0 if linha['2a_dose'] is None or math.isnan(linha['2a_dose']) else linha['2a_dose']
+        populacao = 0 if linha['populacao'] is None or math.isnan(linha['populacao']) else linha['populacao']
+        doses_recebidas = 0 if linha['doses_recebidas'] is None or math.isnan(linha['doses_recebidas']) else linha['doses_recebidas']
+
+        linha['total_doses'] = primeira_dose + segunda_dose
+
+        try:
+            linha['perc_vacinadas_1a_dose'] = (primeira_dose / populacao) * 100
+        except ZeroDivisionError:
+            linha['perc_vacinadas_1a_dose'] = None
+
+        try:
+            linha['perc_vacinadas_2a_dose'] = (segunda_dose / populacao) * 100
+        except ZeroDivisionError:
+            linha['perc_vacinadas_2a_dose'] = None
+
+        try:
+            linha['perc_aplicadas'] = (linha['total_doses'] / doses_recebidas) * 100
+        except ZeroDivisionError:
+            linha['perc_aplicadas'] = None
+
+        # obtém o dia anterior
+        indice = dados_vacinacao.index[(dados_vacinacao.data == linha['data'] - timedelta(days=1)) &
+                                       (dados_vacinacao.municipio == linha['municipio'])]
+
+        if indice.empty:
+            linha['aplicadas_dia'] = linha['total_doses']
+        else:
+            indice = indice.item()
+            linha['aplicadas_dia'] = linha['total_doses'] - dados_vacinacao.loc[indice, 'total_doses']
+
+        return linha
 
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
-    hoje = datetime.now()
+    hoje = data_processamento_estado
 
     if dados_vacinacao.data.max() < hoje and doses_aplicadas is not None:
         dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
         doses_aplicadas['Municipio'] = doses_aplicadas.Municipio.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
         doses_recebidas['Município'] = doses_recebidas.Município.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         for m in list(doses_aplicadas.Municipio.unique()):
             atualiza_doses(m)
 
-        dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
-        dados_vacinacao.to_csv('dados/dados_vacinacao.csv', sep=',', index=False)
-
         atualiza_populacao()
         atualiza_estado()
+        dados_vacinacao = dados_vacinacao.apply(lambda linha: calcula_campos_adicionais(linha), axis=1)
+
+        dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
+        dados_vacinacao.sort_values(by=['data', 'municipio'], ascending=True, inplace=True)
+        dados_vacinacao.to_csv('dados/dados_vacinacao.csv', sep=',', index=False)
 
     return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao
 
@@ -675,7 +707,7 @@ def _formata_semana_extenso(data):
            datetime.strptime(data + '-6', '%Y-W%U-%w').strftime('%d/%b')
 
 
-def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
+def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento, dados_vacinacao):
     print('\tCalculando efeito do isolamento social...')
     # criar dataframe relação: comparar média de isolamento social de duas
     # semanas atrás com a quantidade de casos e de óbitos da semana atual
@@ -683,55 +715,66 @@ def gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento):
 
     filtro = isolamento.município == 'Estado de São Paulo'
     colunas = ['data_futuro', 'isolamento']
-
     esquerda = isolamento.loc[filtro, colunas].groupby(['data_futuro']).mean().reset_index()
-
     esquerda.columns = ['data', 'isolamento']
 
     estado = dados_estado[['data', 'obitos_dia', 'casos_dia']].groupby(['data']).sum().reset_index()
-
     estado.columns = ['data', 'obitos_semana', 'casos_semana']
 
     estado = esquerda.merge(estado, on=['data'], how='outer', suffixes=('_isolamento', '_estado'))
 
+    filtro = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
+    colunas = ['data', 'aplicadas_dia', 'perc_vacinadas_1a_dose']
+    vacinacao = dados_vacinacao.loc[filtro, colunas].groupby(['data']).sum().reset_index()
+    vacinacao.columns = ['data', 'vacinadas_semana', 'perc_vac_semana']
+
+    estado = vacinacao.merge(estado, on=['data'], how='outer', suffixes=('_vacinacao', '_estado'))
+
     estado['data'] = estado.data.apply(lambda d: _converte_semana(d))
 
     estado = estado.groupby('data') \
-                   .agg({'isolamento': 'mean', 'obitos_semana': sum, 'casos_semana': sum}) \
+                   .agg({'isolamento': 'mean', 'obitos_semana': sum, 'casos_semana': sum,
+                         'vacinadas_semana': sum, 'perc_vac_semana': max}) \
                    .reset_index()
 
     estado['data'] = estado.data.apply(lambda d: _formata_semana_extenso(d))
 
     estado['casos_semana'] = estado.casos_semana.apply(lambda c: math.nan if c == 0 else c)
     estado['obitos_semana'] = estado.obitos_semana.apply(lambda c: math.nan if c == 0 else c)
+    estado['vacinadas_semana'] = estado.vacinadas_semana.apply(lambda c: math.nan if c == 0 else c)
 
     efeito_estado = estado
 
     # dados municipais
     filtro = isolamento.município == 'São Paulo'
     colunas = ['data_futuro', 'isolamento']
-
     esquerda = isolamento.loc[filtro, colunas].groupby(['data_futuro']).mean().reset_index()
-
     esquerda.columns = ['data', 'isolamento']
 
     cidade = dados_cidade[['data', 'óbitos_dia', 'casos_dia']].groupby(['data']).sum().reset_index()
-
     cidade.columns = ['data', 'obitos_semana', 'casos_semana']
-    cidade['município'] = 'São Paulo'
 
     cidade = esquerda.merge(cidade, on=['data'], how='outer', suffixes=('_isolamento', '_cidade'))
+
+    filtro = dados_vacinacao.municipio == 'SAO PAULO'
+    colunas = ['data', 'aplicadas_dia', 'perc_vacinadas_1a_dose']
+    vacinacao = dados_vacinacao.loc[filtro, colunas].groupby(['data']).sum().reset_index()
+    vacinacao.columns = ['data', 'vacinadas_semana', 'perc_vac_semana']
+
+    cidade = vacinacao.merge(cidade, on=['data'], how='outer', suffixes=('_vacinacao', '_cidade'))
 
     cidade['data'] = cidade.data.apply(lambda d: _converte_semana(d))
 
     cidade = cidade.groupby('data') \
-                   .agg({'isolamento': 'mean', 'obitos_semana': sum, 'casos_semana': sum}) \
+                   .agg({'isolamento': 'mean', 'obitos_semana': sum, 'casos_semana': sum,
+                         'vacinadas_semana': sum, 'perc_vac_semana': max}) \
                    .reset_index()
 
     cidade['data'] = cidade.data.apply(lambda d: _formata_semana_extenso(d))
 
     cidade['casos_semana'] = cidade.casos_semana.apply(lambda c: math.nan if c == 0 else c)
     cidade['obitos_semana'] = cidade.obitos_semana.apply(lambda c: math.nan if c == 0 else c)
+    cidade['vacinadas_semana'] = cidade.vacinadas_semana.apply(lambda c: math.nan if c == 0 else c)
 
     efeito_cidade = cidade
 
@@ -750,6 +793,8 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
             uti_anterior = dados.loc[indice, 'uti']
             isolamento_anterior = dados.loc[indice, 'isolamento_atual']
             isolamento_2sem_anterior = dados.loc[indice, 'isolamento']
+            vacinadas_anterior = dados.loc[indice, 'vacinadas_semana']
+            perc_vac_semana_anterior = dados.loc[indice, 'perc_vac_semana']
 
             if casos_anterior > 0:
                 linha['variacao_casos'] = ((linha['casos_semana'] / casos_anterior) - 1) * 100
@@ -765,6 +810,12 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
 
             if isolamento_2sem_anterior > 0:
                 linha['variacao_isolamento_2sem'] = ((linha['isolamento'] / isolamento_2sem_anterior) - 1) * 100
+
+            if vacinadas_anterior > 0:
+                linha['variacao_vacinadas'] = ((linha['vacinadas_semana'] / vacinadas_anterior) - 1) * 100
+
+            if perc_vac_semana_anterior > 0:
+                linha['variacao_perc_vac'] = ((linha['perc_vac_semana'] / perc_vac_semana_anterior) - 1) * 100
 
         return linha
 
@@ -831,9 +882,9 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
     return efeito_cidade, efeito_estado
 
 
-def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais):
+def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao):
     print('\tResumo diário...')
-    gera_resumo_diario(dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes)
+    gera_resumo_diario(dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes, dados_vacinacao)
     print('\tResumo semanal...')
     gera_resumo_semanal(efeito_cidade, efeito_estado)
     print('\tCasos no estado...')
@@ -868,18 +919,22 @@ def gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_mu
     # gera_hospitais_campanha(hospitais_campanha)
 
 
-def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento, internacoes):
+def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento, internacoes, dados_vacinacao):
     cabecalho = ['<b>Resumo diário</b>',
                  '<b>Estado de SP</b><br><i>' + dados_estado.tail(1).data.item().strftime('%d/%m/%Y') + '</i>',
                  '<b>Cidade de SP</b><br><i>' + dados_cidade.tail(1).data.item().strftime('%d/%m/%Y') + '</i>']
 
-    info = ['<b>Casos</b>', '<b>Casos no dia</b>', '<b>Óbitos</b>', '<b>Óbitos no dia</b>',
+    info = ['<b>Vacinadas</b>', '<b>Casos</b>', '<b>Casos no dia</b>', '<b>Óbitos</b>', '<b>Óbitos no dia</b>',
             '<b>Letalidade</b>', '<b>Leitos Covid-19</b>', '<b>Ocupação de UTIs</b>', '<b>Isolamento</b>']
 
     filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data == isolamento.data.max())
     indice = isolamento.loc[filtro, 'isolamento'].iloc[0]
 
-    estado = ['{:7,.0f}'.format(dados_estado.tail(1).total_casos.item()).replace(',', '.'),  # Casos
+    filtro = (dados_vacinacao.municipio == 'ESTADO DE SAO PAULO') & (dados_vacinacao.data == dados_vacinacao.data.max())
+    vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia'].item()
+
+    estado = ['{:7,.0f}'.format(vacinadas).replace(',', '.'),  # Vacinadas
+              '{:7,.0f}'.format(dados_estado.tail(1).total_casos.item()).replace(',', '.'),  # Casos
               '{:7,.0f}'.format(dados_estado.tail(1).casos_dia.item()).replace(',', '.'),  # Casos por dia
               '{:7,.0f}'.format(dados_estado.tail(1).total_obitos.item()).replace(',', '.'),  # Óbitos
               '{:7,.0f}'.format(dados_estado.tail(1).obitos_dia.item()).replace(',', '.'),  # Óbitos por dia
@@ -892,7 +947,11 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
     filtro = (isolamento.município == 'São Paulo') & (isolamento.data == isolamento.data.max())
     indice = isolamento.loc[filtro, 'isolamento'].iloc[0]
 
-    cidade = ['{:7,.0f}'.format(dados_cidade.tail(1).confirmados.item()).replace(',', '.'),  # Casos
+    filtro = (dados_vacinacao.municipio == 'SAO PAULO') & (dados_vacinacao.data == dados_vacinacao.data.max())
+    vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia'].item()
+
+    cidade = ['{:7,.0f}'.format(vacinadas).replace(',', '.'),  # Vacinadas
+              '{:7,.0f}'.format(dados_cidade.tail(1).confirmados.item()).replace(',', '.'),  # Casos
               '{:7,.0f}'.format(dados_cidade.tail(1).casos_dia.item()).replace(',', '.'),  # Casos por dia
               '{:7,.0f}'.format(dados_cidade.tail(2).head(1).óbitos.item()).replace(',', '.'),  # Óbitos
               '{:7,.0f}'.format(dados_cidade.tail(2).head(1).óbitos_dia.item()).replace(',', '.'),  # Óbitos por dia
@@ -920,7 +979,7 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
                                'de São Paulo</a> e <a href = "https://www.prefeitura.sp.gov.br/cidade/secretarias/' +
                                'saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572">Prefeitura' +
                                ' de São Paulo</a></i>')],
-        height=380
+        height=415
     )
 
     # fig.show()
@@ -931,7 +990,7 @@ def gera_resumo_diario(dados_cidade, leitos_municipais, dados_estado, leitos_est
         font=dict(size=13),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=370
+        height=398
     )
 
     # fig.show()
@@ -971,13 +1030,16 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
                  f'<b>Estado de SP</b><br>{semana}',
                  f'<b>Cidade de SP</b><br>{semana}']
 
-    info = ['<b>Casos</b>', '<b>Variação</b>',
+    info = ['<b>Vacinadas</b>', '<b>Variação</b>',
+            '<b>Casos</b>', '<b>Variação</b>',
             '<b>Óbitos</b>', '<b>Variação</b>',
             '<b>Internações</b>', '<b>Variação</b>',
             '<b>Ocupação de UTIs</b>', '<b>Variação</b>',
             '<b>Isolamento</b>', '<b>Variação</b>']
 
-    estado = ['{:7,.0f}'.format(efeito_estado.loc[num_semana, 'casos_semana']).replace(',', '.'),  # Casos
+    estado = ['{:7,.0f}'.format(efeito_estado.loc[num_semana, 'vacinadas_semana']).replace(',', '.'),  # Vacinadas
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_vacinadas']).replace('.', ',') + '</i>', # Variação vacinadas
+              '{:7,.0f}'.format(efeito_estado.loc[num_semana, 'casos_semana']).replace(',', '.'),  # Casos
               '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_casos']).replace('.', ',') + '</i>', # Variação casos
               '{:7,.0f}'.format(efeito_estado.loc[num_semana, 'obitos_semana']).replace(',', '.'),  # óbitos
               '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_obitos']).replace('.', ',') + '</i>', # Variação óbitos
@@ -990,7 +1052,9 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
 
     num_semana = efeito_cidade.index[efeito_cidade.data == semana].item()
 
-    cidade = ['{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'casos_semana']).replace(',', '.'),  # Casos
+    cidade = ['{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'vacinadas_semana']).replace(',', '.'),  # Vacinadas
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_vacinadas']).replace('.', ',') + '</i>', # Variação vacinadas
+              '{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'casos_semana']).replace(',', '.'),  # Casos
               '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_casos']).replace('.', ',') + '</i>', # Variação casos
               '{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'obitos_semana']).replace(',', '.'),  # óbitos
               '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_obitos']).replace('.', ',') + '</i>', # Variação óbitos
@@ -1020,7 +1084,7 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
                                'de São Paulo</a> e <a href = "https://www.prefeitura.sp.gov.br/cidade/secretarias/' +
                                'saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572">Prefeitura' +
                                ' de São Paulo</a></i>')],
-        height=445
+        height=515
     )
 
     # fig.show()
@@ -1031,7 +1095,7 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
         font=dict(size=13),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=435
+        height=500
     )
 
     # fig.show()
@@ -1602,6 +1666,12 @@ def gera_efeito_estado(efeito_estado):
                              text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
+    fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['perc_vac_semana'], line=dict(color='black'),
+                             name='população vacinada', hovertemplate='%{y:.2f}%',
+                             mode='lines+markers+text', textposition='top center',
+                             text=grafico['variacao_perc_vac'].apply(lambda v: _formata_variacao(v))),
+                  secondary_y=True)
+
     fig.add_trace(go.Bar(x=grafico['data'], y=grafico['casos_semana'], marker_color='blue',
                          name='casos na<br>semana atual', textposition='outside',
                          text=grafico['variacao_casos'].apply(lambda v: _formata_variacao(v))))
@@ -1679,6 +1749,12 @@ def gera_efeito_cidade(efeito_cidade):
                              name='taxa média de<br>ocupação de UTI', hovertemplate='%{y:.2f}%',
                              mode='lines+markers+text', textposition='top center',
                              text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v))),
+                  secondary_y=True)
+
+    fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['perc_vac_semana'], line=dict(color='black'),
+                             name='população vacinada', hovertemplate='%{y:.2f}%',
+                             mode='lines+markers+text', textposition='top center',
+                             text=grafico['variacao_perc_vac'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
     fig.add_trace(go.Bar(x=grafico['data'], y=grafico['casos_semana'], marker_color='blue',
@@ -2293,4 +2369,7 @@ def atualiza_service_worker(dados_cidade):
 
 
 if __name__ == '__main__':
+    data_processamento_cidade = datetime.now()
+    data_processamento_estado = datetime.now()
+
     main()

@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 28/02/2021
+- Dados da campanha de vacinação agora estão disponíveis!
+
 ## 02/11/2020
 
 - Novos dados no gráfico dos Departamentos Regionais de Saúde:

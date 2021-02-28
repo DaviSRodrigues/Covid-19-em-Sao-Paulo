@@ -115,7 +115,7 @@ function criaIFrame(linkDesktop, linkMobile, versaoMobile) {
 	iframe.style.display = 'block';
 	iframe.style.border = 'none';
 	iframe.style.width = 1200; 
-	iframe.style.height = 400;
+	iframe.style.height = versaoMobile ? 500 : 400;
 	
 	var divConteudo = document.getElementById('conteudo');
 	divConteudo.insertAdjacentElement('beforeEnd', iframe);
