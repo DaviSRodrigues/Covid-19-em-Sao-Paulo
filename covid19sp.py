@@ -9,9 +9,11 @@ na cidade e no estado de São Paulo.
 """
 
 from datetime import datetime, timedelta
+from io import StringIO
 import locale
 import math
 import traceback
+import unicodedata
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -27,10 +29,10 @@ def main():
 
     print('Carregando dados...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = carrega_dados_cidade()
-    dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais = carrega_dados_estado()
+    dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas = carrega_dados_estado()
 
     print('\nLimpando e enriquecendo dos dados...')
-    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais)
+    dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao = pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas)
     efeito_cidade, efeito_estado = gera_dados_efeito_isolamento(dados_cidade, dados_estado, isolamento)
     efeito_cidade, efeito_estado = gera_dados_semana(efeito_cidade, leitos_municipais_total, efeito_estado, leitos_estaduais, isolamento, internacoes)
 
@@ -292,8 +294,10 @@ def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais
 
 
 def carrega_dados_estado():
-    ano = datetime.now().strftime('%Y')
-    mes = datetime.now().strftime('%m')
+    hoje = datetime.now()
+    ano = hoje.strftime('%Y')
+    mes = hoje.strftime('%m')
+    data = hoje.strftime('%Y%m%d')
 
     try:
         print('\tAtualizando dados estaduais...')
@@ -357,18 +361,47 @@ def carrega_dados_estado():
         print(f'\tErro ao buscar dados_raciais.csv do GitHub: lendo arquivo local.\n\t{e}')
         dados_raciais = pd.read_csv('dados/dados_raciais.zip', sep=';', index_col=0)
 
+    print('\tAtualizando dados da campanha de vacinação...')
+
+    headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                             'AppleWebKit/537.36 (KHTML, like Gecko) '
+                             'Chrome/88.0.4324.182 '
+                             'Safari/537.36 '
+                             'Edg/88.0.705.74'}
+
+    try:
+        print('\t\tDoses aplicadas por município...')
+        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
+        req = requests.get(URL, headers=headers, stream=True)
+        req.encoding = req.apparent_encoding
+        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+    except Exception as e:
+        print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
+        doses_aplicadas = None
+
+    try:
+        print('\t\tDoses recebidas por cada município...')
+        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv'
+        req = requests.get(URL, headers=headers, stream=True)
+        req.encoding = req.apparent_encoding
+        doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+    except Exception as e:
+        print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
+        doses_recebidas = None
+
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col=0)
+    dados_vacinacao = pd.read_csv('dados/dados_vacinacao.csv')
 
-    return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais
+    return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas
 
 
-def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados,leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais):
+def pre_processamento(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados,leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas):
     print('\tDados municipais...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
     print('\tDados estaduais...')
-    dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais)
+    dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas)
 
-    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao
 
 
 def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
@@ -415,13 +448,13 @@ def pre_processamento_cidade(dados_cidade, hospitais_campanha, leitos_municipais
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
 
-def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais):
+def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas):
     dados_estado.columns = ['data', 'total_casos', 'total_obitos']
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
     dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b %y'))
 
     print('\t\tAtualizando dados de isolamento social...')
-    URL = ('https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no')
+    URL = 'https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no'
     isolamento_atualizado = pd.read_csv(URL, sep=',')
 
     def formata_municipio(m):
@@ -540,7 +573,90 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_raciais['raca_cor'] = dados_raciais.raca_cor.str.title()
     dados_raciais = dados_raciais.groupby(['obito', 'raca_cor']).agg(contagem=('obito', 'count'))
 
-    return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais
+    def atualiza_doses(municipio):
+        temp = doses_aplicadas.loc[doses_aplicadas['Municipio'] == municipio]
+
+        doses = temp.loc[temp.Dose == '1° Dose', 'Contagem de Id Vacinacao']
+        primeira_dose = int(doses.iat[0]) if not doses.empty else None
+
+        doses = temp.loc[temp.Dose == '2° Dose', 'Contagem de Id Vacinacao']
+        segunda_dose = int(doses.iat[0]) if not doses.empty else None
+
+        if doses_recebidas is not None:
+            recebidas = doses_recebidas.loc[doses_recebidas.Município == municipio, 'Qtd Dose']
+            recebidas = None if recebidas.empty else recebidas.iat[0]
+        else:
+            recebidas = None
+
+        novos_dados = {'data': hoje.date(),
+                       'municipio': municipio,
+                       'doses_recebidas': recebidas,
+                       '1a_dose': primeira_dose,
+                       '2a_dose': segunda_dose}
+
+        nonlocal dados_vacinacao
+        dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+
+    def atualiza_populacao():
+        print('\t\tCarregando dados populacionais...')
+        hoje_str = hoje.strftime('%Y-%m-%d')
+        URL = 'https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/dados_covid_sp.csv'
+        dados_pop = pd.read_csv(URL, sep=';')
+        dados_pop = dados_pop.loc[dados_pop.datahora == hoje_str, ['nome_munic', 'datahora', 'pop']]
+        dados_pop['nome_munic'] = dados_pop.nome_munic.apply(
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+
+        nonlocal dados_vacinacao, doses_aplicadas
+        dados_vacinacao['populacao'] = None
+        dados_vacinacao['munic'] = dados_vacinacao.municipio.str.lower()
+        dados_pop['nome_munic'] = dados_pop.nome_munic.str.lower()
+
+        for m in list(dados_vacinacao['munic'].unique()):
+            pop = dados_pop.loc[dados_pop.nome_munic == m, 'pop']
+            pop = None if pop.empty else pop.iat[0]
+
+            dados_vacinacao.loc[dados_vacinacao.munic == m, 'populacao'] = pop
+
+        dados_vacinacao.drop(columns='munic', inplace=True)
+
+    def atualiza_estado():
+        nonlocal dados_vacinacao
+        datas = list(dados_vacinacao.data.unique())
+        filtro_e = dados_vacinacao.municipio != 'Estado de São Paulo'
+
+        for d in datas:
+            filtro_d = dados_vacinacao.data == d
+
+            novos_dados = {'data': d,
+                           'municipio': 'Estado de São Paulo',
+                           'doses_recebidas': dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'].sum(),
+                           '1a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'].sum(),
+                           '2a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'].sum(),
+                           'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
+
+            dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+
+    dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
+    hoje = datetime.now()
+
+    if dados_vacinacao.data.max() < hoje and doses_aplicadas is not None:
+        dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+        doses_aplicadas['Municipio'] = doses_aplicadas.Municipio.apply(
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+        doses_recebidas['Município'] = doses_recebidas.Município.apply(
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m) if unicodedata.category(c) != 'Mn'))
+
+        for m in list(doses_aplicadas.Municipio.unique()):
+            atualiza_doses(m)
+
+        dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
+        dados_vacinacao.to_csv('dados/dados_vacinacao.csv', sep=',', index=False)
+
+        atualiza_populacao()
+        atualiza_estado()
+
+    return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao
 
 
 def _converte_semana(data):
