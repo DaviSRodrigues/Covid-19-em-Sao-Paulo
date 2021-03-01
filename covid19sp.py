@@ -52,7 +52,8 @@ def carrega_dados_cidade():
     leitos_municipais_privados = pd.read_csv('dados/leitos_municipais_privados.csv', sep=',')
     leitos_municipais_total = pd.read_csv('dados/leitos_municipais_total.csv', sep=',')
 
-    return extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
+    # return extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
+    return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
 
 def extrair_dados_prefeitura(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
