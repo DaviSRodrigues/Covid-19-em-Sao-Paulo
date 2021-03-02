@@ -40,7 +40,7 @@ def main():
     gera_graficos(dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao)
 
     print('\nAtualizando serviceWorker.js...')
-    atualiza_service_worker(dados_cidade)
+    atualiza_service_worker(dados_estado)
 
     print('\nFim')
 
@@ -617,6 +617,11 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
             dados_vacinacao.loc[dados_vacinacao.municipio == m, 'populacao'] = pop
 
+        pop_estado = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') &
+                                     (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
+
+        dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO', 'populacao'] = pop_estado
+
     def atualiza_estado():
         nonlocal dados_vacinacao
         filtro_e = dados_vacinacao.municipio != 'ESTADO DE SAO PAULO'
@@ -633,6 +638,9 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
 
     def calcula_campos_adicionais(linha):
+        if linha['data'] != hoje.date():
+            return linha
+
         primeira_dose = 0 if linha['1a_dose'] is None or math.isnan(linha['1a_dose']) else linha['1a_dose']
         segunda_dose = 0 if linha['2a_dose'] is None or math.isnan(linha['2a_dose']) else linha['2a_dose']
         populacao = 0 if linha['populacao'] is None or math.isnan(linha['populacao']) else linha['populacao']
@@ -670,7 +678,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
     hoje = data_processamento_estado
 
-    if dados_vacinacao.data.max() < hoje and doses_aplicadas is not None:
+    if dados_vacinacao.data.max().date() < hoje.date() and doses_aplicadas is not None:
         dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
         doses_aplicadas['Municipio'] = doses_aplicadas.Municipio.apply(
@@ -685,9 +693,10 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         atualiza_estado()
         dados_vacinacao = dados_vacinacao.apply(lambda linha: calcula_campos_adicionais(linha), axis=1)
 
-        dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
         dados_vacinacao.sort_values(by=['data', 'municipio'], ascending=True, inplace=True)
+        dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
         dados_vacinacao.to_csv('dados/dados_vacinacao.csv', sep=',', index=False)
+        dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
 
     return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao
 
@@ -2343,9 +2352,9 @@ def gera_hospitais_campanha(hospitais_campanha):
                        include_plotlyjs='directory', auto_open=False, auto_play=False)
 
 
-def atualiza_service_worker(dados_cidade):
-    data_anterior = dados_cidade.data.iat[-2].strftime('%d/%m/%Y')
-    data_atual = dados_cidade.data.iat[-1].strftime('%d/%m/%Y')
+def atualiza_service_worker(dados_estado):
+    data_anterior = dados_estado.data.iat[-2].strftime('%d/%m/%Y')
+    data_atual = dados_estado.data.iat[-1].strftime('%d/%m/%Y')
 
     with open('docs/serviceWorker.js', 'r') as file:
         filedata = file.read()
