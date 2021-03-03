@@ -455,9 +455,16 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
     dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b %y'))
 
-    print('\t\tAtualizando dados de isolamento social...')
-    URL = 'https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no'
-    isolamento_atualizado = pd.read_csv(URL, sep=',')
+    atualiza_isolamento = False
+
+    try:
+        print('\t\tAtualizando dados de isolamento social...')
+        URL = 'https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no'
+        isolamento_atualizado = pd.read_csv(URL, sep=',')
+        atualiza_isolamento = True
+    except Exception:
+        print('\t\tNão foi possível obter os dados atualizados de isolamento social!')
+        atualiza_isolamento = False
 
     def formata_municipio(m):
         return m.title() \
@@ -469,29 +476,30 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
-    ontem = datetime.now() - timedelta(days=1)
-    ontem_str = ontem.strftime('%A, %d/%m')
+    if atualiza_isolamento:
+        ontem = datetime.now() - timedelta(days=1)
+        ontem_str = ontem.strftime('%A, %d/%m')
 
-    isolamento_atualizado.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
-    isolamento_atualizado.drop(columns='codigo_ibge', inplace=True)
-    isolamento_atualizado = isolamento_atualizado.loc[isolamento_atualizado.data == ontem_str]
+        isolamento_atualizado.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
+        isolamento_atualizado.drop(columns='codigo_ibge', inplace=True)
+        isolamento_atualizado = isolamento_atualizado.loc[isolamento_atualizado.data == ontem_str]
+    
+        data_arquivo = pd.to_datetime(isolamento.iloc[-1]['data'])
+        locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-    data_arquivo = pd.to_datetime(isolamento.iloc[-1]['data'])
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+        if data_arquivo.date() < ontem.date() and not isolamento_atualizado.empty:
+            isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
+            isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
+            isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
+                lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(ontem.year), '%d/%m/%Y'))
+            isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b %y'))
 
-    if data_arquivo.date() < ontem.date() and not isolamento_atualizado.empty:
-        isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
-        isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
-        isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
-            lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(ontem.year), '%d/%m/%Y'))
-        isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b %y'))
+            isolamento = isolamento.append(isolamento_atualizado)
+            isolamento['data'] = pd.to_datetime(isolamento.data)
+            isolamento.sort_values(by=['data', 'isolamento'], inplace=True)
+            isolamento.to_csv('dados/isolamento_social.csv', sep=',', index=False)
 
-        isolamento = isolamento.append(isolamento_atualizado)
-        isolamento['data'] = pd.to_datetime(isolamento.data)
-        isolamento.sort_values(by=['data', 'isolamento'], inplace=True)
-        isolamento.to_csv('dados/isolamento_social.csv', sep=',', index=False)
-    else:
-        isolamento['data'] = pd.to_datetime(isolamento.data)
+    isolamento['data'] = pd.to_datetime(isolamento.data)
 
     leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format='%d/%m/%Y')
 
