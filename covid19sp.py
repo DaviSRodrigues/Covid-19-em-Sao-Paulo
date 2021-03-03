@@ -392,7 +392,7 @@ def carrega_dados_estado():
         doses_recebidas = None
 
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col=0)
-    dados_vacinacao = pd.read_csv('dados/dados_vacinacao.csv')
+    dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
 
     return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas
 
@@ -659,13 +659,31 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             linha['perc_vacinadas_2a_dose'] = None
 
         try:
+            if doses_recebidas == 0:
+                indice = pd.Series(dtype='float64')
+                recebidas_anterior = hoje - timedelta(days=1)
+
+                while indice.empty and recebidas_anterior.date() >= dados_vacinacao.data.min().date():
+                    indice = dados_vacinacao.index[(dados_vacinacao.data == recebidas_anterior.date()) &
+                                                   (dados_vacinacao.municipio == linha['doses_recebidas'])]
+                    recebidas_anterior = recebidas_anterior - timedelta(days=1)
+
+                if not indice.empty:
+                    indice = indice.item()
+                    doses_recebidas = dados_vacinacao.loc[indice, 'doses_recebidas']
+
             linha['perc_aplicadas'] = (linha['total_doses'] / doses_recebidas) * 100
         except ZeroDivisionError:
             linha['perc_aplicadas'] = None
 
         # obtém o dia anterior
-        indice = dados_vacinacao.index[(dados_vacinacao.data == linha['data'] - timedelta(days=1)) &
-                                       (dados_vacinacao.municipio == linha['municipio'])]
+        indice = pd.Series(dtype='float64')
+        dia_anterior = hoje - timedelta(days=1)
+
+        while indice.empty and dia_anterior.date() >= dados_vacinacao.data.min().date():
+            indice = dados_vacinacao.index[(dados_vacinacao.data == dia_anterior.date()) &
+                                           (dados_vacinacao.municipio == linha['municipio'])]
+            dia_anterior = dia_anterior - timedelta(days=1)
 
         if indice.empty:
             linha['aplicadas_dia'] = linha['total_doses']
@@ -681,10 +699,13 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     if dados_vacinacao.data.max().date() < hoje.date() and doses_aplicadas is not None:
         dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+
         doses_aplicadas['Municipio'] = doses_aplicadas.Municipio.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
-        doses_recebidas['Município'] = doses_recebidas.Município.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+
+        if doses_recebidas is not None:
+            doses_recebidas['Município'] = doses_recebidas.Município.apply(
+                lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         for m in list(doses_aplicadas.Municipio.unique()):
             atualiza_doses(m)
@@ -695,7 +716,8 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         dados_vacinacao.sort_values(by=['data', 'municipio'], ascending=True, inplace=True)
         dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
-        dados_vacinacao.to_csv('dados/dados_vacinacao.csv', sep=',', index=False)
+        opcoes_zip = dict(method='zip', archive_name='dados_vacinacao.csv')
+        dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
         dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
 
     return dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao
