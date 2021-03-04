@@ -477,7 +477,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
     if atualiza_isolamento:
-        ontem = datetime.now() - timedelta(days=1)
+        ontem = data_processamento_estado - timedelta(days=1)
         ontem_str = ontem.strftime('%A, %d/%m')
 
         isolamento_atualizado.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
