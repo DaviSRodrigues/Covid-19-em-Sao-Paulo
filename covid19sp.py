@@ -483,7 +483,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         isolamento_atualizado.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
         isolamento_atualizado.drop(columns='codigo_ibge', inplace=True)
         isolamento_atualizado = isolamento_atualizado.loc[isolamento_atualizado.data == ontem_str]
-    
+
         data_arquivo = pd.to_datetime(isolamento.iloc[-1]['data'])
         locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
