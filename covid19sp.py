@@ -632,7 +632,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     def atualiza_populacao():
         hoje_str = hoje.strftime('%Y-%m-%d')
-        dados_pop = dados_munic.loc[dados_pop.datahora == hoje_str, ['nome_munic', 'datahora', 'pop']]
+        dados_pop = dados_munic.loc[dados_munic.datahora == hoje_str, ['nome_munic', 'datahora', 'pop']]
         dados_pop['nome_munic'] = dados_pop.nome_munic.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
