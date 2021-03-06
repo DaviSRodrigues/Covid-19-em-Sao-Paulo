@@ -388,6 +388,7 @@ def carrega_dados_estado():
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
         doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
         doses_aplicadas = None
@@ -398,6 +399,7 @@ def carrega_dados_estado():
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
         doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        doses_recebidas.columns = ['municipio', 'contagem']
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
         doses_recebidas = None
@@ -468,24 +470,22 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     dados_munic['datahora'] = pd.to_datetime(dados_munic.datahora)
 
-    atualiza_isolamento = False
+    isolamento_atualizado = None
     tentativas = 0
 
     def busca_isolamento():
         try:
-            nonlocal tentativas
+            nonlocal tentativas, isolamento_atualizado
             tentativas = tentativas + 1
             print(f'\t\t{f"Tentativa {tentativas}: " if tentativas > 1 else ""}'
                   f'Atualizando dados de isolamento social...')
             URL = 'https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no'
             isolamento_atualizado = pd.read_csv(URL, sep=',')
-            return True
         except Exception:
             if tentativas <= 3:
-                return busca_isolamento()
+                busca_isolamento()
             else:
                 print('\t\tErro: não foi possível obter os dados atualizados de isolamento social.')
-                return False
 
     busca_isolamento()
 
@@ -497,9 +497,8 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             .replace(' Das ', ' das ') \
             .replace(' Dos ', ' dos ')
 
-    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-
-    if atualiza_isolamento:
+    if isolamento_atualizado is not None:
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
         ontem = data_processamento_estado - timedelta(days=1)
         ontem_str = ontem.strftime('%A, %d/%m')
 
@@ -607,16 +606,16 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_raciais = dados_raciais.groupby(['obito', 'raca_cor']).agg(contagem=('obito', 'count'))
 
     def atualiza_doses(municipio):
-        temp = doses_aplicadas.loc[doses_aplicadas['Municipio'] == municipio]
+        temp = doses_aplicadas.loc[doses_aplicadas['municipio'] == municipio]
 
-        doses = temp.loc[temp.Dose == '1° Dose', 'Contagem de Id Vacinacao']
+        doses = temp.loc[temp.dose == '1° Dose', 'contagem']
         primeira_dose = int(doses.iat[0]) if not doses.empty else None
 
-        doses = temp.loc[temp.Dose == '2° Dose', 'Contagem de Id Vacinacao']
+        doses = temp.loc[temp.dose == '2° Dose', 'contagem']
         segunda_dose = int(doses.iat[0]) if not doses.empty else None
 
         if doses_recebidas is not None:
-            recebidas = doses_recebidas.loc[doses_recebidas.Município == municipio, 'Qtd Dose']
+            recebidas = doses_recebidas.loc[doses_recebidas.municipio == municipio, 'contagem']
             recebidas = None if recebidas.empty else recebidas.iat[0]
         else:
             recebidas = None
@@ -728,14 +727,14 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        doses_aplicadas['Municipio'] = doses_aplicadas.Municipio.apply(
+        doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         if doses_recebidas is not None:
-            doses_recebidas['Município'] = doses_recebidas.Município.apply(
+            doses_recebidas['municipio'] = doses_recebidas.municipio.apply(
                 lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        for m in list(doses_aplicadas.Municipio.unique()):
+        for m in list(doses_aplicadas.municipio.unique()):
             atualiza_doses(m)
 
         atualiza_populacao()
