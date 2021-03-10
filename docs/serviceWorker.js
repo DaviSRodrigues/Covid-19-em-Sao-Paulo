@@ -25,7 +25,7 @@ const CACHE_URLS = [
 	'graficos/resumo-mobile.html',
 	'graficos/resumo.html',
 	'graficos/resumo-vacinacao-mobile.html',
-	'graficos/resumo-vacinacao.html'
+	'graficos/resumo-vacinacao.html',
 	'graficos/tabela-isolamento-mobile.html',
 	'graficos/tabela-isolamento.html',
 	'graficos/efeito-estado.html',
