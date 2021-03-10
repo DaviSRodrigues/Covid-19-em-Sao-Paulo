@@ -310,7 +310,7 @@ def carrega_dados_estado():
     except Exception as e:
         traceback.print_exception(type(e), e, e.__traceback__)
         print('\tErro ao buscar dados_covid_sp.csv do GitHub: lendo arquivo local.\n')
-        dados_munic = pd.read_csv('dados/dados_munic.zip', sep=';')
+        dados_munic = pd.read_csv('dados/dados_munic.zip', sep=';', decimal=',')
 
     try:
         print('\tAtualizando dados estaduais...')
@@ -1043,7 +1043,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         font=dict(size=15, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
-                          text='<i><b>Fontes:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
+                          text='<i><b>Fonte:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
                                'Governo do Estado de São Paulo</a></i>')],
         height=240
     )
@@ -1074,15 +1074,15 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     info = ['<b>Vacinadas</b>', '<b>Casos</b>', '<b>Casos no dia</b>', '<b>Óbitos</b>', '<b>Óbitos no dia</b>',
             '<b>Letalidade</b>', '<b>Leitos Covid-19</b>', '<b>Ocupação de UTIs</b>', '<b>Isolamento</b>']
 
-    filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data == hoje.date())
+    filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data.dt.date == hoje.date() - timedelta(days=1))
     isolamento_atual = isolamento.loc[filtro, 'isolamento']
     isolamento_atual = 'indisponível' if isolamento_atual.empty else f'{isolamento_atual.item():7.0f}%'.replace(',', '.')
 
-    filtro = (dados_vacinacao.municipio == 'ESTADO DE SAO PAULO') & (dados_vacinacao.data == hoje.date())
+    filtro = (dados_vacinacao.municipio == 'ESTADO DE SAO PAULO') & (dados_vacinacao.data.dt.date == hoje.date())
     vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia']
     vacinadas = 'indisponível' if vacinadas.empty else f'{vacinadas.item():7,.0f}'.replace(',', '.')
 
-    filtro = (dados_estado.data == hoje.date())
+    filtro = (dados_estado.data.dt.date == hoje.date())
 
     total_casos = dados_estado.loc[filtro, 'total_casos']
     total_casos = 'indisponível' if total_casos.empty else f'{total_casos.item():7,.0f}'.replace(',', '.')
@@ -1099,10 +1099,10 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     letalidade_atual = dados_estado.loc[filtro, 'letalidade']
     letalidade_atual = 'indisponível' if letalidade_atual.empty else f'{letalidade_atual.item():7.2f}%'.replace(',', '.')
 
-    leitos_covid = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == hoje.date()), 'total_covid_uti_mm7d']
+    leitos_covid = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'total_covid_uti_mm7d']
     leitos_covid = 'indisponível' if leitos_covid.empty else f'{leitos_covid.item():7,.0f}'.replace(',', '.')
 
-    ocupacao_uti = leitos_estaduais.loc[leitos_estaduais.data == hoje.date(), 'sp_uti']
+    ocupacao_uti = leitos_estaduais.loc[leitos_estaduais.data.dt.date == hoje.date(), 'sp_uti']
     ocupacao_uti = 'indisponível' if ocupacao_uti.empty else f'{ocupacao_uti.item():7.1f}%'.replace(',', '.')
 
     estado = [vacinadas,
@@ -1115,15 +1115,15 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
               ocupacao_uti,
               isolamento_atual]
 
-    filtro = (isolamento.município == 'São Paulo') & (isolamento.data == hoje.date())
+    filtro = (isolamento.município == 'São Paulo') & (isolamento.data.dt.date == hoje.date() - timedelta(days=1))
     isolamento_atual = isolamento.loc[filtro, 'isolamento']
     isolamento_atual = 'indisponível' if isolamento_atual.empty else f'{isolamento_atual.item():7.0f}%'.replace(',', '.')
 
-    filtro = (dados_vacinacao.municipio == 'SAO PAULO') & (dados_vacinacao.data == hoje.date())
+    filtro = (dados_vacinacao.municipio == 'SAO PAULO') & (dados_vacinacao.data.dt.date == hoje.date())
     vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia']
     vacinadas = 'indisponível' if vacinadas.empty else f'{vacinadas.item():7,.0f}'.replace(',', '.')
 
-    filtro = (dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == hoje.date())
+    filtro = (dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora.dt.date == hoje.date())
 
     total_casos = dados_munic.loc[filtro, 'casos']
     total_casos = 'indisponível' if total_casos.empty else f'{total_casos.item():7,.0f}'.replace(',', '.')
@@ -1140,10 +1140,10 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     letalidade_atual = dados_munic.loc[filtro, 'letalidade']
     letalidade_atual = 'indisponível' if letalidade_atual.empty else f'{letalidade_atual.item() * 100:7.2f}%'.replace(',', '.')
 
-    leitos_covid = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data == hoje.date()), 'total_covid_uti_mm7d']
+    leitos_covid = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'total_covid_uti_mm7d']
     leitos_covid = 'indisponível' if leitos_covid.empty else f'{leitos_covid.item():7,.0f}'.replace(',', '.')
 
-    ocupacao_uti = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data == hoje.date()), 'ocupacao_leitos']
+    ocupacao_uti = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'ocupacao_leitos']
     ocupacao_uti = 'indisponível' if ocupacao_uti.empty else f'{ocupacao_uti.item():7.1f}%'.replace(',', '.')
 
     cidade = [vacinadas,
@@ -1171,10 +1171,8 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
         font=dict(size=15, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
-                          text='<i><b>Fontes:</b> <a href = "https://www.seade.gov.br/coronavirus/">Governo do Estado ' +
-                               'de São Paulo</a> e <a href = "https://www.prefeitura.sp.gov.br/cidade/secretarias/' +
-                               'saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572">Prefeitura' +
-                               ' de São Paulo</a></i>')],
+                          text='<i><b>Fonte:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
+                               'Governo do Estado de São Paulo</a></i>')],
         height=415
     )
 
@@ -1313,10 +1311,8 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
         font=dict(size=15, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
-                          text='<i><b>Fontes:</b> <a href = "https://www.seade.gov.br/coronavirus/">Governo do Estado ' +
-                               'de São Paulo</a> e <a href = "https://www.prefeitura.sp.gov.br/cidade/secretarias/' +
-                               'saude/vigilancia_em_saude/doencas_e_agravos/coronavirus/index.php?p=295572">Prefeitura' +
-                               ' de São Paulo</a></i>')],
+                          text='<i><b>Fonte:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
+                               'Governo do Estado de São Paulo</a></i>')],
         height=515
     )
 
