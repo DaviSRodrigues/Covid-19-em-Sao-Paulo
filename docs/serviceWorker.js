@@ -1,4 +1,4 @@
-const VERSAO = '04'
+const VERSAO = '05'
 const CACHE_NAME = 'Covid19-SP-09/03/2021-' + VERSAO;
 
 const CACHE_URLS = [
@@ -24,6 +24,8 @@ const CACHE_URLS = [
 	'graficos/pacaembu.html',
 	'graficos/resumo-mobile.html',
 	'graficos/resumo.html',
+	'graficos/resumo-vacinacao-mobile.html',
+	'graficos/resumo-vacinacao.html'
 	'graficos/tabela-isolamento-mobile.html',
 	'graficos/tabela-isolamento.html',
 	'graficos/efeito-estado.html',
