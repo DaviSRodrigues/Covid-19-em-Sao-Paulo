@@ -1,6 +1,6 @@
-versaoMobile = screen.width <= 478;
-paginaAtual = 'resumo';
-menuAtual = 'Início';
+var versaoMobile = screen.width <= 478;
+var paginaAtual = 'resumo';
+var menuAtual = 'Início';
 
 if('serviceWorker' in navigator) {
 	navigator.serviceWorker.register('serviceWorker.js', { scope: '/Covid-19-em-Sao-Paulo/' })
@@ -114,9 +114,15 @@ function criaIFrame(linkDesktop, linkMobile, versaoMobile) {
 	iframe.src = versaoMobile ? linkMobile : linkDesktop;
 	iframe.style.display = 'block';
 	iframe.style.border = 'none';
-	iframe.style.width = 1200; 
-	iframe.style.height = versaoMobile ? 500 : 400;
-	
+	iframe.style.width = 1200;
+	iframe.onload = function(iframe, versaoMobile) {
+		var versaoMobile = screen.width <= 478;
+		var altura = iframe.currentTarget.contentDocument.body.scrollHeight;
+		if(altura < 276 && versaoMobile) altura = 400;
+		iframe.srcElement.height = altura;
+		iframe.srcElement.style.height = altura;
+	}
+
 	var divConteudo = document.getElementById('conteudo');
 	divConteudo.insertAdjacentElement('beforeEnd', iframe);
 }
@@ -129,6 +135,11 @@ function montaPagina(pagina) {
 	
 	switch(paginaAtual) {
 		case 'resumo':
+			criaTitulo('Campanha de vacinação');
+			
+			criaLink('Ampliar resumo da campanha de vacinação', 'graficos/resumo-vacinacao.html');
+			criaIFrame('graficos/resumo-vacinacao.html', 'graficos/resumo-vacinacao-mobile.html', versaoMobile);
+			
 			criaTitulo('Semana Epidemiológica');
 			
 			criaLink('Ampliar resumo semanal', 'graficos/resumo-semanal.html');

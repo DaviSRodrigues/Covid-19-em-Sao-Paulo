@@ -745,7 +745,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
         opcoes_zip = dict(method='zip', archive_name='dados_vacinacao.csv')
         dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
-        dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
+        dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data)
 
     return dados_munic, dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao
 
@@ -945,6 +945,8 @@ def gera_dados_semana(efeito_cidade, leitos_municipais, efeito_estado, leitos_es
 
 
 def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, efeito_cidade, efeito_estado, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao):
+    print('\tResumo da campanha de vacinação...')
+    gera_resumo_vacinacao(dados_vacinacao)
     print('\tResumo diário...')
     gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes, dados_vacinacao)
     print('\tResumo semanal...')
@@ -981,56 +983,178 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     # gera_hospitais_campanha(hospitais_campanha)
 
 
+def gera_resumo_vacinacao(dados_vacinacao):
+    filtro_data = dados_vacinacao.data.dt.date == data_processamento_estado.date()
+    filtro_estado = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
+    filtro_cidade = dados_vacinacao.municipio == 'SAO PAULO'
+
+    cabecalho = ['<b>Campanha de<br>vacinação</b>',
+                 '<b>Estado de SP</b><br><i>' + data_processamento_estado.strftime('%d/%m/%Y') + '</i>',
+                 '<b>Cidade de SP</b><br><i>' + data_processamento_estado.strftime('%d/%m/%Y') + '</i>']
+
+    info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>População vacinada (%)</b>']
+
+    doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_estado, 'total_doses']
+    doses_aplicadas = 'indisponível' if doses_aplicadas.empty else f'{doses_aplicadas.item():7,.0f}'.replace(',', '.')
+
+    dose_1 = dados_vacinacao.loc[filtro_data & filtro_estado, '1a_dose']
+    dose_1 = 'indisponível' if dose_1.empty else f'{dose_1.item():7,.0f}'.replace(',', '.')
+
+    dose_2 = dados_vacinacao.loc[filtro_data & filtro_estado, '2a_dose']
+    dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
+
+    pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_1a_dose']
+    pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
+
+    estado = [doses_aplicadas,
+              dose_1,
+              dose_2,
+              pop_vacinada]
+
+    doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_cidade, 'total_doses']
+    doses_aplicadas = 'indisponível' if doses_aplicadas.empty else f'{doses_aplicadas.item():7,.0f}'.replace(',', '.')
+
+    dose_1 = dados_vacinacao.loc[filtro_data & filtro_cidade, '1a_dose']
+    dose_1 = 'indisponível' if dose_1.empty else f'{dose_1.item():7,.0f}'.replace(',', '.')
+
+    dose_2 = dados_vacinacao.loc[filtro_data & filtro_cidade, '2a_dose']
+    dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
+
+    pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_1a_dose']
+    pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
+
+    cidade = [doses_aplicadas,
+              dose_1,
+              dose_2,
+              pop_vacinada]
+
+    fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
+                                               fill_color='#00aabb',
+                                               font=dict(color='white'),
+                                               align=['right', 'right', 'right'],
+                                               line=dict(width=5)),
+                                   cells=dict(values=[info, estado, cidade],
+                                              fill_color='lavender',
+                                              align='right',
+                                              line=dict(width=5)),
+                                   columnwidth=[1, 1, 1])])
+
+    fig.update_layout(
+        font=dict(size=15, family='Roboto'),
+        margin=dict(l=1, r=1, b=1, t=30, pad=5),
+        annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
+                          text='<i><b>Fontes:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
+                               'Governo do Estado de São Paulo</a></i>')],
+        height=240
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/resumo-vacinacao.html', include_plotlyjs='directory', auto_open=False)
+
+    fig.update_layout(
+        font=dict(size=13),
+        margin=dict(l=1, r=1, b=1, t=30, pad=5),
+        annotations=[dict(x=0, y=0)],
+        height=260
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/resumo-vacinacao-mobile.html', include_plotlyjs='directory', auto_open=False)
+
+
 def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento, internacoes, dados_vacinacao):
+    hoje = data_processamento_estado
+
     cabecalho = ['<b>Resumo diário</b>',
-                 '<b>Estado de SP</b><br><i>' + dados_estado.tail(1).data.item().strftime('%d/%m/%Y') + '</i>',
-                 # '<b>Cidade de SP</b><br><i>' + dados_cidade.tail(1).data.item().strftime('%d/%m/%Y') + '</i>']
-                 '<b>Cidade de SP</b><br><i>' + dados_munic.loc[(dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == dados_munic.datahora.max()), 'datahora'].item().strftime('%d/%m/%Y') + '</i>']
+                 '<b>Estado de SP</b><br><i>' + hoje.strftime('%d/%m/%Y') + '</i>',
+                 '<b>Cidade de SP</b><br><i>' + hoje.strftime('%d/%m/%Y') + '</i>']
 
     info = ['<b>Vacinadas</b>', '<b>Casos</b>', '<b>Casos no dia</b>', '<b>Óbitos</b>', '<b>Óbitos no dia</b>',
             '<b>Letalidade</b>', '<b>Leitos Covid-19</b>', '<b>Ocupação de UTIs</b>', '<b>Isolamento</b>']
 
-    filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data == isolamento.data.max())
-    indice = isolamento.loc[filtro, 'isolamento'].iloc[0]
+    filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data == hoje.date())
+    isolamento_atual = isolamento.loc[filtro, 'isolamento']
+    isolamento_atual = 'indisponível' if isolamento_atual.empty else f'{isolamento_atual.item():7.0f}%'.replace(',', '.')
 
-    filtro = (dados_vacinacao.municipio == 'ESTADO DE SAO PAULO') & (dados_vacinacao.data == dados_vacinacao.data.max())
-    vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia'].item()
+    filtro = (dados_vacinacao.municipio == 'ESTADO DE SAO PAULO') & (dados_vacinacao.data == hoje.date())
+    vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia']
+    vacinadas = 'indisponível' if vacinadas.empty else f'{vacinadas.item():7,.0f}'.replace(',', '.')
 
-    estado = ['{:7,.0f}'.format(vacinadas).replace(',', '.'),  # Vacinadas
-              '{:7,.0f}'.format(dados_estado.tail(1).total_casos.item()).replace(',', '.'),  # Casos
-              '{:7,.0f}'.format(dados_estado.tail(1).casos_dia.item()).replace(',', '.'),  # Casos por dia
-              '{:7,.0f}'.format(dados_estado.tail(1).total_obitos.item()).replace(',', '.'),  # Óbitos
-              '{:7,.0f}'.format(dados_estado.tail(1).obitos_dia.item()).replace(',', '.'),  # Óbitos por dia
-              '{:7.2f}%'.format(dados_estado.tail(1).letalidade.item()).replace('.', ','),  # Letalidade
-              '{:7,.0f}'.format(internacoes.loc[internacoes.drs == 'Estado de São Paulo', 'total_covid_uti_mm7d'].tail(
-                  1).item()).replace(',', '.'), # Leitos Covid-19
-              '{:7.1f}%'.format(leitos_estaduais.tail(1).sp_uti.item()).replace('.', ','),  # Ocupação de UTI
-              '{:7.0f}%'.format(indice)]  # Isolamento social
+    filtro = (dados_estado.data == hoje.date())
 
-    filtro = (isolamento.município == 'São Paulo') & (isolamento.data == isolamento.data.max())
-    indice = isolamento.loc[filtro, 'isolamento'].iloc[0]
+    total_casos = dados_estado.loc[filtro, 'total_casos']
+    total_casos = 'indisponível' if total_casos.empty else f'{total_casos.item():7,.0f}'.replace(',', '.')
 
-    filtro = (dados_vacinacao.municipio == 'SAO PAULO') & (dados_vacinacao.data == dados_vacinacao.data.max())
-    vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia'].item()
+    casos_dia = dados_estado.loc[filtro, 'casos_dia']
+    casos_dia = 'indisponível' if casos_dia.empty else f'{casos_dia.item():7,.0f}'.replace(',', '.')
 
-    cidade = ['{:7,.0f}'.format(vacinadas).replace(',', '.'),  # Vacinadas
-              # '{:7,.0f}'.format(dados_cidade.tail(1).confirmados.item()).replace(',', '.'),  # Casos
-              '{:7,.0f}'.format(dados_munic.loc[(dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == dados_munic.datahora.max()), 'casos'].item()).replace(',', '.'),  # Casos
-              # '{:7,.0f}'.format(dados_cidade.tail(1).casos_dia.item()).replace(',', '.'),  # Casos por dia
-              '{:7,.0f}'.format(dados_munic.loc[(dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == dados_munic.datahora.max()), 'casos_novos'].item()).replace(',', '.'),  # Casos por dia
-              # '{:7,.0f}'.format(dados_cidade.tail(2).head(1).óbitos.item()).replace(',', '.'),  # Óbitos
-              '{:7,.0f}'.format(dados_munic.loc[(dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == dados_munic.datahora.max()), 'obitos'].item()).replace(',', '.'),  # Óbitos
-              # '{:7,.0f}'.format(dados_cidade.tail(2).head(1).óbitos_dia.item()).replace(',', '.'),  # Óbitos por dia
-              '{:7,.0f}'.format(dados_munic.loc[(dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == dados_munic.datahora.max()), 'obitos_novos'].item()).replace(',', '.'),  # Óbitos por dia
-              # '{:7.2f}%'.format(dados_cidade.tail(2).head(1).letalidade.item()).replace('.', ','),  # Letalidade
-              '{:7.2f}%'.format(dados_munic.loc[(dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == dados_munic.datahora.max()), 'letalidade'].item() * 100).replace('.', ','),  # Letalidade
-              # '{:7,.0f}'.format(leitos_municipais.tail(1).uti_covid_total.item()).replace(',', '.'),  # Leitos Covid-19
-              # '{:7.0f}%'.format(leitos_municipais.tail(1).ocupacao_uti_covid_total.item()),  # Ocupação de UTI
-              '{:7,.0f}'.format(internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data == internacoes.data.max()), 'total_covid_uti_mm7d'].tail(
-                  1).item()).replace(',', '.'),  # Leitos Covid-19
-              '{:7.0f}%'.format(internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data == internacoes.data.max()), 'ocupacao_leitos'].tail(
-                  1).item()).replace(',', '.'),  # Ocupação de UTI
-              '{:7.0f}%'.format(indice)]  # Isolamento social
+    total_obitos = dados_estado.loc[filtro, 'total_obitos']
+    total_obitos = 'indisponível' if total_obitos.empty else f'{total_obitos.item():7,.0f}'.replace(',', '.')
+
+    obitos_dia = dados_estado.loc[filtro, 'obitos_dia']
+    obitos_dia = 'indisponível' if obitos_dia.empty else f'{obitos_dia.item():7,.0f}'.replace(',', '.')
+
+    letalidade_atual = dados_estado.loc[filtro, 'letalidade']
+    letalidade_atual = 'indisponível' if letalidade_atual.empty else f'{letalidade_atual.item():7.2f}%'.replace(',', '.')
+
+    leitos_covid = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == hoje.date()), 'total_covid_uti_mm7d']
+    leitos_covid = 'indisponível' if leitos_covid.empty else f'{leitos_covid.item():7,.0f}'.replace(',', '.')
+
+    ocupacao_uti = leitos_estaduais.loc[leitos_estaduais.data == hoje.date(), 'sp_uti']
+    ocupacao_uti = 'indisponível' if ocupacao_uti.empty else f'{ocupacao_uti.item():7.1f}%'.replace(',', '.')
+
+    estado = [vacinadas,
+              total_casos,
+              casos_dia,
+              total_obitos,
+              obitos_dia,
+              letalidade_atual,
+              leitos_covid,
+              ocupacao_uti,
+              isolamento_atual]
+
+    filtro = (isolamento.município == 'São Paulo') & (isolamento.data == hoje.date())
+    isolamento_atual = isolamento.loc[filtro, 'isolamento']
+    isolamento_atual = 'indisponível' if isolamento_atual.empty else f'{isolamento_atual.item():7.0f}%'.replace(',', '.')
+
+    filtro = (dados_vacinacao.municipio == 'SAO PAULO') & (dados_vacinacao.data == hoje.date())
+    vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia']
+    vacinadas = 'indisponível' if vacinadas.empty else f'{vacinadas.item():7,.0f}'.replace(',', '.')
+
+    filtro = (dados_munic.nome_munic == 'São Paulo') & (dados_munic.datahora == hoje.date())
+
+    total_casos = dados_munic.loc[filtro, 'casos']
+    total_casos = 'indisponível' if total_casos.empty else f'{total_casos.item():7,.0f}'.replace(',', '.')
+
+    casos_dia = dados_munic.loc[filtro, 'casos_novos']
+    casos_dia = 'indisponível' if casos_dia.empty else f'{casos_dia.item():7,.0f}'.replace(',', '.')
+
+    total_obitos = dados_munic.loc[filtro, 'obitos']
+    total_obitos = 'indisponível' if total_obitos.empty else f'{total_obitos.item():7,.0f}'.replace(',', '.')
+
+    obitos_dia = dados_munic.loc[filtro, 'obitos_novos']
+    obitos_dia = 'indisponível' if obitos_dia.empty else f'{obitos_dia.item():7,.0f}'.replace(',', '.')
+
+    letalidade_atual = dados_munic.loc[filtro, 'letalidade']
+    letalidade_atual = 'indisponível' if letalidade_atual.empty else f'{letalidade_atual.item() * 100:7.2f}%'.replace(',', '.')
+
+    leitos_covid = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data == hoje.date()), 'total_covid_uti_mm7d']
+    leitos_covid = 'indisponível' if leitos_covid.empty else f'{leitos_covid.item():7,.0f}'.replace(',', '.')
+
+    ocupacao_uti = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data == hoje.date()), 'ocupacao_leitos']
+    ocupacao_uti = 'indisponível' if ocupacao_uti.empty else f'{ocupacao_uti.item():7.1f}%'.replace(',', '.')
+
+    cidade = [vacinadas,
+              total_casos,
+              casos_dia,
+              total_obitos,
+              obitos_dia,
+              letalidade_atual,
+              leitos_covid,
+              ocupacao_uti,
+              isolamento_atual]
 
     fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
                                                fill_color='#00aabb',
@@ -1062,7 +1186,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
         font=dict(size=13),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=398
+        height=400
     )
 
     # fig.show()
@@ -1071,10 +1195,10 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
 
 
 def _formata_variacao(v):
-    if math.isnan(v):
-        return ''
+    if math.isnan(v) or v is None:
+        return 'indisponível'
 
-    return '+{:02.1f}%'.format(v) if v >= 0 else '{:02.1f}%'.format(v)
+    return f'+{v:02.1f}%'.replace(',', '.') if v >= 0 else f'{v:02.1f}%'.replace(',', '.')
 
 
 def _formata_semana_ordinal(data):
@@ -1090,13 +1214,12 @@ def _formata_semana_ordinal(data):
 
 def gera_resumo_semanal(efeito_cidade, efeito_estado):
     # %W: semana começa na segunda-feira
-    hoje = datetime.now()
+    hoje = data_processamento_estado
     hoje_formatado = _formata_semana_ordinal(hoje)
 
     # %U: semana começa no domingo
-    hoje = datetime.now() - timedelta(days=1)
+    hoje = data_processamento_estado - timedelta(days=1)
     semana = _formata_semana_extenso(_converte_semana(hoje))
-    num_semana = efeito_estado.index[efeito_estado.data == semana].item()
 
     cabecalho = [f'<b>{hoje_formatado}ª semana<br>epidemiológica</b>',
                  f'<b>Estado de SP</b><br>{semana}',
@@ -1109,33 +1232,71 @@ def gera_resumo_semanal(efeito_cidade, efeito_estado):
             '<b>Ocupação de UTIs</b>', '<b>Variação</b>',
             '<b>Isolamento</b>', '<b>Variação</b>']
 
-    estado = ['{:7,.0f}'.format(efeito_estado.loc[num_semana, 'vacinadas_semana']).replace(',', '.'),  # Vacinadas
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_vacinadas']).replace('.', ',') + '</i>', # Variação vacinadas
-              '{:7,.0f}'.format(efeito_estado.loc[num_semana, 'casos_semana']).replace(',', '.'),  # Casos
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_casos']).replace('.', ',') + '</i>', # Variação casos
-              '{:7,.0f}'.format(efeito_estado.loc[num_semana, 'obitos_semana']).replace(',', '.'),  # óbitos
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_obitos']).replace('.', ',') + '</i>', # Variação óbitos
-              '{:7,.0f}'.format(efeito_estado.loc[num_semana, 'internacoes']).replace(',', '.'),  # Internações
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_internacoes']).replace('.', ',') + '</i>', # Variação de internações
-              '{:7.1f}%'.format(efeito_estado.loc[num_semana, 'uti']).replace('.', ','),  # Ocupação de UTIs
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_uti']).replace('.', ',') + '</i>', # Variação ocupação de UTIs
-              '{:7.1f}%'.format(efeito_estado.loc[num_semana, 'isolamento_atual']).replace('.', ','), # Isolamento social
-              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_isolamento']).replace('.', ',') + '</i>'] # Variação isolamento
+    num_semana = efeito_estado.index[efeito_estado.data == semana].item()
+
+    vacinadas_semana = efeito_estado.loc[num_semana, 'vacinadas_semana']
+    vacinadas_semana = 'indisponível' if math.isnan(vacinadas_semana) else f'{vacinadas_semana.item():7,.0f}'.replace(',', '.')
+
+    casos_semana = efeito_estado.loc[num_semana, 'casos_semana']
+    casos_semana = 'indisponível' if math.isnan(casos_semana) else f'{casos_semana.item():7,.0f}'.replace(',', '.')
+
+    obitos_semana = efeito_estado.loc[num_semana, 'obitos_semana']
+    obitos_semana = 'indisponível' if math.isnan(obitos_semana) else f'{obitos_semana.item():7,.0f}'.replace(',', '.')
+
+    internacoes = efeito_estado.loc[num_semana, 'internacoes']
+    internacoes = 'indisponível' if math.isnan(internacoes) else f'{internacoes.item():7,.0f}'.replace('.', ',')
+
+    uti = efeito_estado.loc[num_semana, 'uti']
+    uti = 'indisponível' if math.isnan(uti) else f'{uti.item():7.1f}%'.replace('.', ',')
+
+    isolamento_atual = efeito_estado.loc[num_semana, 'isolamento_atual']
+    isolamento_atual = 'indisponível' if math.isnan(isolamento_atual) else f'{isolamento_atual.item():7.1f}%'.replace(',', '.')
+
+    estado = [vacinadas_semana,  # Vacinadas
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_vacinadas']) + '</i>',  # Variação vacinadas
+              casos_semana,  # Casos
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_casos']) + '</i>',  # Variação casos
+              obitos_semana,  # óbitos
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_obitos']) + '</i>',  # Variação óbitos
+              internacoes,  # Internações
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_internacoes']) + '</i>',  # Variação de internações
+              uti,  # Ocupação de UTIs
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_uti']) + '</i>',  # Variação ocupação de UTIs
+              isolamento_atual, # Isolamento social
+              '<i>' + _formata_variacao(efeito_estado.loc[num_semana, 'variacao_isolamento']) + '</i>']  # Variação isolamento
 
     num_semana = efeito_cidade.index[efeito_cidade.data == semana].item()
 
-    cidade = ['{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'vacinadas_semana']).replace(',', '.'),  # Vacinadas
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_vacinadas']).replace('.', ',') + '</i>', # Variação vacinadas
-              '{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'casos_semana']).replace(',', '.'),  # Casos
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_casos']).replace('.', ',') + '</i>', # Variação casos
-              '{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'obitos_semana']).replace(',', '.'),  # óbitos
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_obitos']).replace('.', ',') + '</i>', # Variação óbitos
-              '{:7,.0f}'.format(efeito_cidade.loc[num_semana, 'internacoes']).replace(',', '.'),  # Internações
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_internacoes']).replace('.', ',') + '</i>',  # Variação de internações
-              '{:7.1f}%'.format(efeito_cidade.loc[num_semana, 'uti']).replace('.', ','),  # Ocupação de UTIs
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_uti']).replace('.', ',') + '</i>', # Variação ocupação de UTIs
-              '{:7.1f}%'.format(efeito_cidade.loc[num_semana, 'isolamento_atual']).replace('.', ','), # Isolamento social
-              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_isolamento']).replace('.', ',') + '</i>'] # Variação isolamento
+    vacinadas_semana = efeito_cidade.loc[num_semana, 'vacinadas_semana']
+    vacinadas_semana = 'indisponível' if math.isnan(vacinadas_semana) else f'{vacinadas_semana.item():7,.0f}'.replace(',', '.')
+
+    casos_semana = efeito_cidade.loc[num_semana, 'casos_semana']
+    casos_semana = 'indisponível' if math.isnan(casos_semana) else f'{casos_semana.item():7,.0f}'.replace(',', '.')
+
+    obitos_semana = efeito_cidade.loc[num_semana, 'obitos_semana']
+    obitos_semana = 'indisponível' if math.isnan(obitos_semana) else f'{obitos_semana.item():7,.0f}'.replace(',', '.')
+
+    internacoes = efeito_cidade.loc[num_semana, 'internacoes']
+    internacoes = 'indisponível' if math.isnan(internacoes) else f'{internacoes.item():7,.0f}'.replace('.', ',')
+
+    uti = efeito_cidade.loc[num_semana, 'uti']
+    uti = 'indisponível' if math.isnan(uti) else f'{uti.item():7.1f}%'.replace('.', ',')
+
+    isolamento_atual = efeito_cidade.loc[num_semana, 'isolamento_atual']
+    isolamento_atual = 'indisponível' if math.isnan(isolamento_atual) else f'{isolamento_atual.item():7.1f}%'.replace(',', '.')
+
+    cidade = [vacinadas_semana,  # Vacinadas
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_vacinadas']) + '</i>',  # Variação vacinadas
+              casos_semana,  # Casos
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_casos']) + '</i>',  # Variação casos
+              obitos_semana,  # óbitos
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_obitos']) + '</i>',  # Variação óbitos
+              internacoes,  # Internações
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_internacoes']) + '</i>',  # Variação de internações
+              uti,  # Ocupação de UTIs
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_uti']) + '</i>',  # Variação ocupação de UTIs
+              isolamento_atual,  # Isolamento social
+              '<i>' + _formata_variacao(efeito_cidade.loc[num_semana, 'variacao_isolamento']) + '</i>']  # Variação isolamento
 
     fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
                                                fill_color='#00aabb',
@@ -1221,7 +1382,8 @@ def gera_casos_estado(dados):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     fig.update_yaxes(title_text='Número de casos ou óbitos', secondary_y=False)
@@ -1240,7 +1402,8 @@ def gera_casos_estado(dados):
     fig.update_layout(
         showlegend=False,
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     # fig.show()
@@ -1312,7 +1475,8 @@ def gera_casos_cidade(dados):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     fig.update_yaxes(title_text='Número de casos ou óbitos', secondary_y=False)
@@ -1331,7 +1495,8 @@ def gera_casos_cidade(dados):
     fig.update_layout(
         showlegend=False,
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=20)
+        margin=dict(l=1, r=1, b=1, t=90, pad=20),
+        height=400
     )
 
     # fig.show()
@@ -1423,7 +1588,8 @@ def gera_doencas_preexistentes_casos(doencas):
         hoverlabel={'namelength': -1},  # para não truncar o nome de cada trace no hover
         template='plotly',
         barmode='overlay',
-        bargap=0.1
+        bargap=0.1,
+        height=600
     )
 
     fig.update_yaxes(range=[0, 105], tickvals=[*range(0, 105, 5)])
@@ -1436,7 +1602,8 @@ def gera_doencas_preexistentes_casos(doencas):
 
     fig.update_layout(
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     pio.write_html(fig, file='docs/graficos/doencas-casos-mobile.html', include_plotlyjs='directory',
@@ -1526,7 +1693,8 @@ def gera_doencas_preexistentes_obitos(doencas):
         hoverlabel={'namelength': -1},  # para não truncar o nome de cada trace no hover
         template='plotly',
         barmode='overlay',
-        bargap=0.1
+        bargap=0.1,
+        height=600
     )
 
     fig.update_yaxes(range=[0, 105], tickvals=[*range(0, 105, 5)])
@@ -1539,7 +1707,8 @@ def gera_doencas_preexistentes_obitos(doencas):
 
     fig.update_layout(
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     pio.write_html(fig, file='docs/graficos/doencas-obitos-mobile.html', include_plotlyjs='directory',
@@ -1578,7 +1747,8 @@ def gera_casos_obitos_por_raca_cor(dados_raciais):
         barmode='stack',
         bargap=0.1,
         hoverlabel={'namelength': -1},
-        template='plotly'
+        template='plotly',
+        height=600
     )
 
     # fig.show()
@@ -1589,7 +1759,8 @@ def gera_casos_obitos_por_raca_cor(dados_raciais):
     # versão mobile
     fig.update_layout(
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     pio.write_html(fig, file='docs/graficos/raca-cor-mobile.html', include_plotlyjs='directory',
@@ -1655,7 +1826,8 @@ def gera_isolamento_grafico(isolamento):
                                           buttons=[opcao_metro, opcao_estado] + list(
                                               s_municipios.apply(lambda m: cria_lista_opcoes(m))),
                                           x=0.001, xanchor='left',
-                                          y=0.990, yanchor='top')]
+                                          y=0.990, yanchor='top')],
+        height=600
     )
 
     # fig.show()
@@ -1670,7 +1842,8 @@ def gera_isolamento_grafico(isolamento):
     fig.update_layout(
         showlegend=False,
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     # fig.show()
@@ -1702,7 +1875,8 @@ def gera_isolamento_tabela(isolamento):
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
                           text='<i><b>Fonte:</b> <a href = "https://www.saopaulo.sp.gov.br/coronavirus/isolamento/">'
-                               'Governo do Estado de São Paulo</a></i>')]
+                               'Governo do Estado de São Paulo</a></i>')],
+        height=600
     )
 
     # fig.show()
@@ -1712,7 +1886,8 @@ def gera_isolamento_tabela(isolamento):
     fig.update_layout(
         font=dict(size=13),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
-        annotations=[dict(x=0, y=0)]
+        annotations=[dict(x=0, y=0)],
+        height=400
     )
 
     # fig.show()
@@ -1781,7 +1956,8 @@ def gera_efeito_estado(efeito_estado):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     # fig.show()
@@ -1797,7 +1973,8 @@ def gera_efeito_estado(efeito_estado):
     fig.update_layout(
         showlegend=False,
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     # fig.show()
@@ -1867,7 +2044,8 @@ def gera_efeito_cidade(efeito_cidade):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     # fig.show()
@@ -1883,7 +2061,8 @@ def gera_efeito_cidade(efeito_cidade):
     fig.update_layout(
         showlegend=False,
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     # fig.show()
@@ -1936,7 +2115,8 @@ def gera_leitos_estaduais(leitos):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     # fig.show()
@@ -1952,7 +2132,8 @@ def gera_leitos_estaduais(leitos):
     fig.update_layout(
         showlegend=False,
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     # fig.show()
@@ -2043,7 +2224,8 @@ def gera_drs(internacoes, internacoes_28):
                                           showactive=True,
                                           buttons=list(s_drs.apply(lambda d: cria_lista_opcoes(d))),
                                           x=0.001, xanchor='left',
-                                          y=0.990, yanchor='top')]
+                                          y=0.990, yanchor='top')],
+        height=600
     )
 
     fig.update_yaxes(title_text='Número de leitos ou internações', secondary_y=False)
@@ -2061,7 +2243,8 @@ def gera_drs(internacoes, internacoes_28):
     fig.update_layout(
         showlegend=False,
         font=dict(size=11),
-        margin=dict(l=1, r=1, b=1, t=90, pad=10)
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        height=400
     )
 
     # fig.show()
@@ -2126,7 +2309,8 @@ def gera_leitos_municipais(leitos):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     fig.update_yaxes(title_text='Número de pacientes', secondary_y=False)
@@ -2145,7 +2329,8 @@ def gera_leitos_municipais(leitos):
     fig.update_layout(
         font=dict(size=11),
         margin=dict(l=1, r=1, b=1, t=90, pad=20),
-        showlegend=False
+        showlegend=False,
+        height=400
     )
 
     # fig.show()
@@ -2211,7 +2396,8 @@ def gera_leitos_municipais_privados(leitos):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     fig.update_yaxes(title_text='Número de pacientes', secondary_y=False)
@@ -2230,7 +2416,8 @@ def gera_leitos_municipais_privados(leitos):
     fig.update_layout(
         font=dict(size=11),
         margin=dict(l=1, r=1, b=1, t=90, pad=20),
-        showlegend=False
+        showlegend=False,
+        height=400
     )
 
     # fig.show()
@@ -2296,7 +2483,8 @@ def gera_leitos_municipais_total(leitos):
         updatemenus=[dict(type='buttons', showactive=False,
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)]
+                          pad=dict(t=0, r=10), buttons=botoes)],
+        height=600
     )
 
     fig.update_yaxes(title_text='Número de pacientes', secondary_y=False)
@@ -2315,7 +2503,8 @@ def gera_leitos_municipais_total(leitos):
     fig.update_layout(
         font=dict(size=11),
         margin=dict(l=1, r=1, b=1, t=90, pad=20),
-        showlegend=False
+        showlegend=False,
+        height=400
     )
 
     # fig.show()
@@ -2389,7 +2578,8 @@ def gera_hospitais_campanha(hospitais_campanha):
             updatemenus=[dict(type='buttons', showactive=False,
                               x=0.05, y=0.95,
                               xanchor='left', yanchor='top',
-                              pad=dict(t=0, r=10), buttons=botoes)]
+                              pad=dict(t=0, r=10), buttons=botoes)],
+            height=600
         )
 
         # fig.show()
@@ -2405,7 +2595,8 @@ def gera_hospitais_campanha(hospitais_campanha):
         fig.update_layout(
             showlegend=False,
             font=dict(size=11),
-            margin=dict(l=1, r=1, b=1, t=90, pad=20)
+            margin=dict(l=1, r=1, b=1, t=90, pad=20),
+            height=400
         )
 
         # fig.show()

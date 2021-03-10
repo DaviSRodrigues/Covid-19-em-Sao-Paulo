@@ -108,8 +108,7 @@ ul {
 }
 
 .container > div > iframe {  
-    width: 100%;  
-    height: auto;  
+    width: 100%; 
     object-fit: cover;
 }
 
@@ -344,7 +343,6 @@ ul {
 	}
 	
 	.container > div > iframe {
-		height: 445px;
 		font-size: 1vw;
 	}
 	
@@ -411,7 +409,6 @@ ul {
 	}
 	
 	.container > div > iframe {
-		height: 500px;
 		font-size: 1vw;
 	}
 	
@@ -463,7 +460,6 @@ ul {
 	
 	.container > div > iframe {
 		font-size: 1vw;
-		height: 600px;
 	}
 	
 	#copyright {

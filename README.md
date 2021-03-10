@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 09/03/2021
+- Tabela dedicada ao estado atual da campanha de vacinação na página inicial
+
 ## 28/02/2021
 - Dados da campanha de vacinação agora estão disponíveis!
 
