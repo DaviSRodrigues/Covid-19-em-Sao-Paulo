@@ -151,7 +151,15 @@ function montaPagina(pagina) {
 			
 			break;
 			
-		case 'casos':
+		case 'evolucao':
+			criaTitulo('Evolução da pandemia');
+			
+			criaLink('Ampliar gráfico da evolução da pandemia no estado', 'graficos/evolucao-estado.html');
+			criaIFrame('graficos/evolucao-estado.html', 'graficos/evolucao-estado-mobile.html', versaoMobile);
+			
+			criaLink('Ampliar gráfico da evolução da pandemia na cidade', 'graficos/evolucao-cidade.html');
+			criaIFrame('graficos/evolucao-cidade.html', 'graficos/evolucao-cidade-mobile.html', versaoMobile);
+			
 			criaTitulo('Casos no Estado');
 			
 			criaLink('Ampliar gráfico de casos no estado', 'graficos/casos-estado.html');
@@ -188,14 +196,6 @@ function montaPagina(pagina) {
 			criaLink('Ampliar tabela do isolamento social', 'graficos/tabela-isolamento.html');
 			criaIFrame('graficos/tabela-isolamento.html', 'graficos/tabela-isolamento-mobile.html', versaoMobile);
 			
-			criaTitulo('Efeito do Isolamento Social');
-			
-			criaLink('Ampliar gráfico do efeito do isolamento social no estado', 'graficos/efeito-estado.html');
-			criaIFrame('graficos/efeito-estado.html', 'graficos/efeito-estado-mobile.html', versaoMobile);
-			
-			criaLink('Ampliar gráfico do efeito do isolamento social na cidade', 'graficos/efeito-cidade.html');
-			criaIFrame('graficos/efeito-cidade.html', 'graficos/efeito-cidade-mobile.html', versaoMobile);
-			
 			break;
 			
 		case 'leitos':
@@ -224,9 +224,6 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico da situação dos leitos em geral', 'graficos/leitos-municipais-total.html');
 			criaIFrame('graficos/leitos-municipais-total.html', 'graficos/leitos-municipais-total-mobile.html', versaoMobile);
 			
-			break;
-			
-		case 'hospitais':
 			criaTitulo('Situação dos Hospitais Municipais de Campanha');
 			
 			criaLink('Ampliar gráfico do HMCamp do Pacaembu', 'graficos/pacaembu.html');
@@ -234,6 +231,20 @@ function montaPagina(pagina) {
 			
 			criaLink('Ampliar gráfico do HMCamp do Anhembi', 'graficos/anhembi.html');
 			criaIFrame('graficos/anhembi.html', 'graficos/anhembi-mobile.html', versaoMobile);
+			
+			break;
+			
+		case 'vacinacao':
+			criaTitulo('Evolução da campanha de vacinação contra a Covid-19');
+			
+			criaLink('Ampliar gráfico da vacinação contra Covid-19 no estado', 'graficos/vacinacao-estado.html');
+			criaIFrame('graficos/vacinacao-estado.html', 'graficos/vacinacao-estado-mobile.html', versaoMobile);
+			
+			criaLink('Ampliar gráfico da vacinação contra Covid-19 na cidade', 'graficos/vacinacao-cidade.html');
+			criaIFrame('graficos/vacinacao-cidade.html', 'graficos/vacinacao-cidade-mobile.html', versaoMobile);
+			
+			criaLink('Ampliar gráfico da população vacinada contra Covid-19', 'graficos/populacao-vacinada.html');
+			criaIFrame('graficos/populacao-vacinada.html', 'graficos/populacao-vacinada-mobile.html', versaoMobile);
 			
 			break;
 			

@@ -7,6 +7,12 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 10/03/2021
+- Reorganização das seções/gráficos
+- Nova seção "Campanha de vacinação"
+	* Número/percentual de pessoas vacinadas
+	* Evolução da vacinação ao longo do tempo
+
 ## 09/03/2021
 - Tabela dedicada ao estado atual da campanha de vacinação na página inicial
 
