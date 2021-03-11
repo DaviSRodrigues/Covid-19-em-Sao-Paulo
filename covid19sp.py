@@ -1656,14 +1656,19 @@ def gera_evolucao_estado(evolucao_estado):
                          name='óbitos na<br>semana atual', textposition='outside',
                          text=grafico['variacao_obitos'].apply(lambda v: _formata_variacao(v))))
 
+    fig.add_trace(go.Bar(x=grafico['data'], y=grafico['vacinadas_semana'], visible='legendonly',
+                         marker_color='black', textposition='outside', name='pessoas vacinadas<br>na semana atual',
+                         text=grafico['variacao_vacinadas'].apply(lambda v: _formata_variacao(v))))
+
     d = grafico.data.size
 
     frames = [dict(data=[dict(type='scatter', x=grafico.data[:d + 1], y=grafico.isolamento[:d + 1]),
                          dict(type='scatter', x=grafico.data[:d + 1], y=grafico.uti[:d + 1]),
                          dict(type='scatter', x=grafico.data[:d + 1], y=grafico.perc_vac_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.casos_semana[:d + 1]),
-                         dict(type='bar', x=grafico.data[:d + 1], y=grafico.obitos_semana[:d + 1])],
-                   traces=[0, 1, 2, 3, 4],
+                         dict(type='bar', x=grafico.data[:d + 1], y=grafico.obitos_semana[:d + 1]),
+                         dict(type='bar', x=grafico.data[:d + 1], y=grafico.vacinadas_semana[:d + 1])],
+                   traces=[0, 1, 2, 3, 4, 5],
                    ) for d in range(0, d)]
 
     fig.frames = frames
@@ -1744,14 +1749,19 @@ def gera_evolucao_cidade(evolucao_cidade):
                          name='óbitos na<br>semana atual', textposition='outside',
                          text=grafico['variacao_obitos'].apply(lambda v: _formata_variacao(v))))
 
+    fig.add_trace(go.Bar(x=grafico['data'], y=grafico['vacinadas_semana'], visible='legendonly',
+                         marker_color='black', textposition='outside', name='pessoas vacinadas<br>na semana atual',
+                         text=grafico['variacao_vacinadas'].apply(lambda v: _formata_variacao(v))))
+
     d = grafico.data.size
 
     frames = [dict(data=[dict(type='scatter', x=grafico.data[:d + 1], y=grafico.isolamento[:d + 1]),
                          dict(type='scatter', x=grafico.data[:d + 1], y=grafico.uti[:d + 1]),
                          dict(type='scatter', x=grafico.data[:d + 1], y=grafico.perc_vac_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.casos_semana[:d + 1]),
-                         dict(type='bar', x=grafico.data[:d + 1], y=grafico.obitos_semana[:d + 1])],
-                   traces=[0, 1, 2, 3, 4],
+                         dict(type='bar', x=grafico.data[:d + 1], y=grafico.obitos_semana[:d + 1]),
+                         dict(type='bar', x=grafico.data[:d + 1], y=grafico.vacinadas_semana[:d + 1])],
+                   traces=[0, 1, 2, 3, 4, 5],
                    ) for d in range(0, d)]
 
     fig.frames = frames
