@@ -7,6 +7,12 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 11/03/2021
+- Novos gráficos e tabelas na seção "Campanha de vacinação"
+	* 1ª e 2ª doses aplicadas pelo estado e pela cidade de São Paulo
+	* Vacinas disponíveis x aplicadas pelo estado e pela cidade de São Paulo
+	* Tabela com os dados da campanha de vacinação em cada município
+
 ## 10/03/2021
 - Reorganização das seções/gráficos
 - Nova seção "Campanha de vacinação"

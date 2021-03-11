@@ -200,6 +200,15 @@ def pre_processamento_cidade(dados_munic, hospitais_campanha, leitos_municipais,
     return dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total
 
 
+def formata_municipio(m):
+    return m.title() \
+        .replace(' Da ', ' da ') \
+        .replace(' De ', ' de ') \
+        .replace(' Do ', ' do ') \
+        .replace(' Das ', ' das ') \
+        .replace(' Dos ', ' dos ')
+
+
 def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, internacoes_28, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic):
     dados_estado.columns = ['data', 'total_casos', 'total_obitos']
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
@@ -225,14 +234,6 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                 print('\t\tErro: não foi possível obter os dados atualizados de isolamento social.')
 
     busca_isolamento()
-
-    def formata_municipio(m):
-        return m.title() \
-            .replace(' Da ', ' da ') \
-            .replace(' De ', ' de ') \
-            .replace(' Do ', ' do ') \
-            .replace(' Das ', ' das ') \
-            .replace(' Dos ', ' dos ')
 
     if isolamento_atualizado is not None:
         locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -717,6 +718,12 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     gera_evolucao_vacinacao_cidade(dados_vacinacao)
     print('\tPopulação vacinada...')
     gera_populacao_vacinada(dados_vacinacao)
+    print('\t1ª dose x 2ª dose...')
+    gera_tipo_doses(dados_vacinacao)
+    print('\tDoses recebidas x aplicadas...')
+    gera_doses_aplicadas(dados_vacinacao)
+    print('\tTabela da campanha de vacinação...')
+    gera_tabela_vacinacao(dados_vacinacao)
     # print('\tHospitais de campanha...')
     # gera_hospitais_campanha(hospitais_campanha)
 
@@ -791,7 +798,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     pio.write_html(fig, file='docs/graficos/resumo-vacinacao.html', include_plotlyjs='directory', auto_open=False)
 
     fig.update_layout(
-        font=dict(size=13),
+        font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
         height=260
@@ -919,7 +926,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     pio.write_html(fig, file='docs/graficos/resumo.html', include_plotlyjs='directory', auto_open=False)
 
     fig.update_layout(
-        font=dict(size=13),
+        font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
         height=400
@@ -1064,7 +1071,7 @@ def gera_resumo_semanal(evolucao_cidade, evolucao_estado):
     pio.write_html(fig, file='docs/graficos/resumo-semanal.html', include_plotlyjs='directory', auto_open=False)
 
     fig.update_layout(
-        font=dict(size=13),
+        font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
         height=500
@@ -1140,7 +1147,7 @@ def gera_casos_estado(dados):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1216,7 +1223,7 @@ def gera_casos_cidade(dados):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=20),
         height=400
     )
@@ -1323,7 +1330,7 @@ def gera_doencas_preexistentes_casos(doencas):
     fig.update_yaxes(range=[0, 105], tickvals=[*range(0, 105, 10)])
 
     fig.update_layout(
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1428,7 +1435,7 @@ def gera_doencas_preexistentes_obitos(doencas):
     fig.update_yaxes(range=[0, 105], tickvals=[*range(0, 105, 10)])
 
     fig.update_layout(
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1480,7 +1487,7 @@ def gera_casos_obitos_por_raca_cor(dados_raciais):
 
     # versão mobile
     fig.update_layout(
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1563,7 +1570,7 @@ def gera_isolamento_grafico(isolamento):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1595,7 +1602,7 @@ def gera_isolamento_tabela(isolamento):
     fig.update_layout(
         font=dict(size=15, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
-        annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
+        annotations=[dict(x=0, y=1.05, showarrow=False, font=dict(size=13),
                           text='<i><b>Fonte:</b> <a href = "https://www.saopaulo.sp.gov.br/coronavirus/isolamento/">'
                                'Governo do Estado de São Paulo</a></i>')],
         height=600
@@ -1606,9 +1613,9 @@ def gera_isolamento_tabela(isolamento):
     pio.write_html(fig, file='docs/graficos/tabela-isolamento.html', include_plotlyjs='directory', auto_open=False)
 
     fig.update_layout(
-        font=dict(size=13),
+        font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
-        annotations=[dict(x=0, y=0)],
+        annotations=[dict(x=0, y=1.05)],
         height=400
     )
 
@@ -1695,7 +1702,7 @@ def gera_evolucao_estado(evolucao_estado):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1783,7 +1790,7 @@ def gera_evolucao_cidade(evolucao_cidade):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1854,7 +1861,7 @@ def gera_leitos_estaduais(leitos):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -1965,7 +1972,7 @@ def gera_drs(internacoes, internacoes_28):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -2050,7 +2057,7 @@ def gera_leitos_municipais(leitos):
     fig.update_xaxes(nticks=10)
 
     fig.update_layout(
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=20),
         showlegend=False,
         height=400
@@ -2137,7 +2144,7 @@ def gera_leitos_municipais_privados(leitos):
     fig.update_xaxes(nticks=10)
 
     fig.update_layout(
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=20),
         showlegend=False,
         height=400
@@ -2224,7 +2231,7 @@ def gera_leitos_municipais_total(leitos):
     fig.update_xaxes(nticks=10)
 
     fig.update_layout(
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=20),
         showlegend=False,
         height=400
@@ -2317,7 +2324,7 @@ def gera_hospitais_campanha(hospitais_campanha):
 
         fig.update_layout(
             showlegend=False,
-            font=dict(size=11),
+            font=dict(size=11, family='Roboto'),
             margin=dict(l=1, r=1, b=1, t=90, pad=20),
             height=400
         )
@@ -2329,9 +2336,9 @@ def gera_hospitais_campanha(hospitais_campanha):
 
 
 def gera_evolucao_vacinacao_estado(dados_vacinacao):
-    dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO']
-    dados.loc[:, 'data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
-    dados.loc[:, :] = dados[1:]
+    dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'].copy()
+    dados['data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+    dados = dados[1:]
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -2390,7 +2397,7 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -2402,9 +2409,9 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
 
 
 def gera_evolucao_vacinacao_cidade(dados_vacinacao):
-    dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'SAO PAULO']
-    dados.loc[:, 'data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
-    dados.loc[:, :] = dados[1:]
+    dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'SAO PAULO'].copy()
+    dados['data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+    dados = dados[1:]
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -2463,7 +2470,7 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
 
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
         height=400
     )
@@ -2479,13 +2486,13 @@ def gera_populacao_vacinada(dados):
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
     filtro_cidade = dados.municipio == 'SAO PAULO'
 
-    dados_estado = dados.loc[filtro_data & filtro_estado]
+    dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
 
-    dados_cidade = dados.loc[filtro_data & filtro_cidade]
+    dados_cidade = dados.loc[filtro_data & filtro_cidade].copy()
     dados_cidade.loc[:, 'data'] = dados_cidade.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
 
-    rotulos = ['vacinada', 'aguardando']
+    rotulos = ['população vacinada', 'população aguardando vacinação']
     pizza_estado = [dados_estado['1a_dose'].item(), dados_estado['populacao'].item() - dados_estado['1a_dose'].item()]
     pizza_cidade = [dados_cidade['1a_dose'].item(), dados_cidade['populacao'].item() - dados_cidade['1a_dose'].item()]
 
@@ -2502,8 +2509,9 @@ def gera_populacao_vacinada(dados):
         title='População vacinada no estado e na cidade de São Paulo'
               '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
               'Governo do Estado de São Paulo</a></i>',
-        annotations=[dict(text='Estado de SP', x=0.17, y=0.5, font_size=15, showarrow=False),
-                     dict(text='Cidade de SP', x=0.80, y=0.5, font_size=15, showarrow=False)],
+        font=dict(family='Roboto'),
+        annotations=[dict(text='Estado de SP', x=0.17, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False),
+                     dict(text='Cidade de SP', x=0.80, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False)],
         height=600
     )
 
@@ -2515,10 +2523,10 @@ def gera_populacao_vacinada(dados):
     # versão mobile
     fig.update_layout(
         showlegend=False,
-        font=dict(size=11),
+        font=dict(size=11, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=90, pad=10),
-        annotations=[dict(text='Estado', x=0.17, y=0.5, font_size=9, showarrow=False),
-                     dict(text='Cidade', x=0.85, y=0.5, font_size=9, showarrow=False)],
+        annotations=[dict(text='Estado', x=0.17, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False),
+                     dict(text='Cidade', x=0.85, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False)],
         height=400
     )
 
@@ -2526,6 +2534,196 @@ def gera_populacao_vacinada(dados):
 
     pio.write_html(fig, file='docs/graficos/populacao-vacinada-mobile.html',
                    include_plotlyjs='directory', auto_open=False, auto_play=False)
+
+
+def gera_tipo_doses(dados):
+    filtro_data = dados.data == dados.data.max()
+    filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
+    filtro_cidade = dados.municipio == 'SAO PAULO'
+
+    dados_estado = dados.loc[filtro_data & filtro_estado].copy()
+    dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    dados_cidade = dados.loc[filtro_data & filtro_cidade].copy()
+    dados_cidade.loc[:, 'data'] = dados_cidade.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    rotulos = ['1ª dose', '2ª dose']
+    pizza_estado = [dados_estado['1a_dose'].item(), dados_estado['2a_dose'].item()]
+    pizza_cidade = [dados_cidade['1a_dose'].item(), dados_cidade['2a_dose'].item()]
+
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+
+    fig.add_trace(go.Pie(labels=rotulos, values=pizza_estado, name='Estado',
+                         marker=dict(colors=['green', 'blue'])), 1, 1)
+    fig.add_trace(go.Pie(labels=rotulos, values=pizza_cidade, name='Cidade',
+                         marker=dict(colors=['green', 'blue'])), 1, 2)
+
+    fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
+
+    fig.update_layout(
+        title='1ª e 2ª doses aplicadas pelo estado e pela cidade de São Paulo'
+              '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+              'Governo do Estado de São Paulo</a></i>',
+        font=dict(family='Roboto'),
+        annotations=[dict(text='Estado de SP', x=0.17, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False),
+                     dict(text='Cidade de SP', x=0.80, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False)],
+        height=600
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/vacinas-tipo.html',
+                   include_plotlyjs='directory', auto_open=False, auto_play=False)
+
+    # versão mobile
+    fig.update_layout(
+        showlegend=False,
+        font=dict(size=11, family='Roboto'),
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        annotations=[dict(text='Estado', x=0.17, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False),
+                     dict(text='Cidade', x=0.85, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False)],
+        height=400
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/vacinas-tipo-mobile.html',
+                   include_plotlyjs='directory', auto_open=False, auto_play=False)
+
+
+def gera_doses_aplicadas(dados):
+    filtro_data = dados.data == dados.data.max()
+    filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
+    filtro_cidade = dados.municipio == 'SAO PAULO'
+
+    dados_estado = dados.loc[filtro_data & filtro_estado].copy()
+    dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    dados_cidade = dados.loc[filtro_data & filtro_cidade].copy()
+    dados_cidade.loc[:, 'data'] = dados_cidade.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    rotulos = ['doses aplicadas', 'doses disponíveis para aplicação']
+    pizza_estado = [dados_estado['total_doses'].item(), dados_estado['doses_recebidas'].item() - dados_estado['total_doses'].item()]
+    pizza_cidade = [dados_cidade['total_doses'].item(), dados_cidade['doses_recebidas'].item() - dados_cidade['total_doses'].item()]
+
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+
+    fig.add_trace(go.Pie(labels=rotulos, values=pizza_estado, name='Estado',
+                         marker=dict(colors=['green', 'red'])), 1, 1)
+    fig.add_trace(go.Pie(labels=rotulos, values=pizza_cidade, name='Cidade',
+                         marker=dict(colors=['green', 'red'])), 1, 2)
+
+    fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
+
+    fig.update_layout(
+        title='Vacinas disponíveis x aplicadas pelo estado e pela cidade de São Paulo'
+              '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+              'Governo do Estado de São Paulo</a></i>',
+        font=dict(family='Roboto'),
+        annotations=[dict(text='Estado de SP', x=0.17, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False),
+                     dict(text='Cidade de SP', x=0.80, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False)],
+        height=600
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/vacinas-aplicadas.html',
+                   include_plotlyjs='directory', auto_open=False, auto_play=False)
+
+    # versão mobile
+    fig.update_layout(
+        showlegend=False,
+        font=dict(size=11, family='Roboto'),
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        annotations=[dict(text='Estado', x=0.17, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False),
+                     dict(text='Cidade', x=0.85, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False)],
+        height=400
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/vacinas-aplicadas-mobile.html',
+                   include_plotlyjs='directory', auto_open=False, auto_play=False)
+
+
+def gera_tabela_vacinacao(dados):
+    dados_tab = dados.loc[dados.data == dados.data.max()].copy()
+    dados_tab.columns = ['Data', 'Município', '1ª dose', '2ª dose', 'Aplicadas no dia', 'Doses aplicadas',
+                         'Doses recebidas', 'Aplicadas (%)', '1ª dose (%)', '2ª dose (%)', 'População']
+
+    dados_tab.drop(columns='Aplicadas no dia', inplace=True)
+
+    dados_tab['Município'] = dados_tab['Município'].apply(lambda m: formata_municipio(m))
+    dados_tab['1ª dose'] = dados_tab['1ª dose'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['1ª dose (%)'] = dados_tab['1ª dose (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
+    dados_tab['2ª dose'] = dados_tab['2ª dose'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['2ª dose (%)'] = dados_tab['2ª dose (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
+    dados_tab['Doses aplicadas'] = dados_tab['Doses aplicadas'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['Doses recebidas'] = dados_tab['Doses recebidas'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['Aplicadas (%)'] = dados_tab['Aplicadas (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
+    dados_tab['População'] = dados_tab['População'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+
+    cabecalho = ['<b>Município</b>', '<b>1ª dose</b>', '<b>1ª dose (%)</b>', '<b>2ª dose</b>',
+                 '<b>2ª dose (%)</b>', '<b>Doses aplicadas</b>', '<b>Doses recebidas</b>',
+                 '<b>Aplicadas (%)</b>', '<b>População</b>']
+
+    valores = [dados_tab['Município'], dados_tab['1ª dose'], dados_tab['1ª dose (%)'],
+               dados_tab['2ª dose'], dados_tab['2ª dose (%)'],
+               dados_tab['Doses aplicadas'], dados_tab['Doses recebidas'], dados_tab['Aplicadas (%)'],
+               dados_tab['População']]
+
+    fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
+                                               fill_color='#00aabb',
+                                               font=dict(color='white'),
+                                               align='right',
+                                               line=dict(width=5)),
+                                   cells=dict(values=valores,
+                                              fill_color='lavender',
+                                              align='right',
+                                              line=dict(width=5),
+                                              height=30),
+                                   columnwidth=[1, 1, 1, 1, 1, 1, 1, 1, 1])])
+
+    fig.update_layout(
+        font=dict(size=15, family='Roboto'),
+        margin=dict(l=1, r=1, b=1, t=30, pad=5),
+        annotations=[dict(x=0, y=1.05, showarrow=False, font=dict(size=13),
+                          text='<i><b>Fonte:</b> <a href = "https://www.saopaulo.sp.gov.br/coronavirus">'
+                               'Governo do Estado de São Paulo</a></i>')],
+        height=600
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/tabela-vacinacao.html', include_plotlyjs='directory', auto_open=False)
+
+    cabecalho = ['<b>Município</b>', '<b>População vacinada (%)</b>']
+
+    fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
+                                               fill_color='#00aabb',
+                                               font=dict(color='white'),
+                                               align='right',
+                                               line=dict(width=5)),
+                                   cells=dict(values=[dados_tab['Município'], dados_tab['1ª dose (%)']],
+                                              fill_color='lavender',
+                                              align='right',
+                                              line=dict(width=5),
+                                              height=30),
+                                   columnwidth=[1, 1, 1, 1, 1, 1, 1, 1, 1])])
+
+    fig.update_layout(
+        font=dict(size=13, family='Roboto'),
+        margin=dict(l=1, r=1, b=1, t=30, pad=5),
+        annotations=[dict(x=0, y=1.05, showarrow=False, font=dict(size=13, family='Roboto'),
+                          text='<i><b>Fonte:</b> <a href = "https://www.saopaulo.sp.gov.br/coronavirus">'
+                               'Governo do Estado de São Paulo</a></i>')],
+        height=400
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/tabela-vacinacao-mobile.html', include_plotlyjs='directory',
+                   auto_open=False)
 
 
 def atualiza_service_worker(dados_estado):

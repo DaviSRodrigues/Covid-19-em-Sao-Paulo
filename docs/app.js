@@ -246,6 +246,22 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico da população vacinada contra Covid-19', 'graficos/populacao-vacinada.html');
 			criaIFrame('graficos/populacao-vacinada.html', 'graficos/populacao-vacinada-mobile.html', versaoMobile);
 			
+			criaLink('Ampliar gráfico das doses de vacinas aplicadas', 'graficos/vacinas-tipo.html');
+			criaIFrame('graficos/vacinas-tipo.html', 'graficos/vacinas-tipo-mobile.html', versaoMobile);
+			
+			criaLink('Ampliar gráfico das vacinas disponíveis x aplicadas', 'graficos/vacinas-aplicadas.html');
+			criaIFrame('graficos/vacinas-aplicadas.html', 'graficos/vacinas-aplicadas-mobile.html', versaoMobile);
+			
+			var descricao = '';
+			
+			if(versaoMobile)
+				descricao = 'Ver a tabela completa da vacinação nos municípios', 'graficos/tabela-vacinacao.html';
+			else
+				descricao = 'Ampliar tabela da vacinação nos municípios', 'graficos/tabela-vacinacao.html'
+			
+			criaLink(descricao);
+			criaIFrame('graficos/tabela-vacinacao.html', 'graficos/tabela-vacinacao-mobile.html', versaoMobile);
+			
 			break;
 			
 		default:
