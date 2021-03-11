@@ -255,11 +255,11 @@ function montaPagina(pagina) {
 			var descricao = '';
 			
 			if(versaoMobile)
-				descricao = 'Ver a tabela completa da vacinação nos municípios', 'graficos/tabela-vacinacao.html';
+				descricao = 'Ver a tabela completa da vacinação nos municípios';
 			else
-				descricao = 'Ampliar tabela da vacinação nos municípios', 'graficos/tabela-vacinacao.html'
+				descricao = 'Ampliar tabela da vacinação nos municípios';
 			
-			criaLink(descricao);
+			criaLink(descricao, 'graficos/tabela-vacinacao.html');
 			criaIFrame('graficos/tabela-vacinacao.html', 'graficos/tabela-vacinacao-mobile.html', versaoMobile);
 			
 			break;
