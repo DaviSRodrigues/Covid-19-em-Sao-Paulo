@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 14/03/2021
+- Inclusão da média diária e da semanal de pessoas vacinadas na página inicial.
+
 ## 11/03/2021
 - Na seção "Evolução da pandemia", agora é possível ver o número de pessoas vacinadas por semana (disponível apenas na versão para computador)
 - Novos gráficos e tabelas na seção "Campanha de vacinação"

@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from io import StringIO
 import locale
 import math
+import numpy as np
 import traceback
 import unicodedata
 
@@ -55,7 +56,7 @@ def carrega_dados_cidade():
 
 
 def carrega_dados_estado():
-    hoje = data_processamento_estado
+    hoje = data_processamento
     ano = hoje.strftime('%Y')
     mes = hoje.strftime('%m')
     data = hoje.strftime('%Y%m%d')
@@ -231,7 +232,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     if isolamento_atualizado is not None:
         locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-        ontem = data_processamento_estado - timedelta(days=1)
+        ontem = data_processamento - timedelta(days=1)
         ontem_str = ontem.strftime('%A, %d/%m')
 
         isolamento_atualizado.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
@@ -449,7 +450,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         return linha
 
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
-    hoje = data_processamento_estado
+    hoje = data_processamento
 
     if dados_vacinacao.data.max().date() < hoje.date() and doses_aplicadas is not None:
         dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
@@ -719,15 +720,17 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
 
 
 def gera_resumo_vacinacao(dados_vacinacao):
-    filtro_data = dados_vacinacao.data.dt.date == data_processamento_estado.date()
+    filtro_data = dados_vacinacao.data.dt.date == data_processamento.date()
+    filtro_data_max = dados_vacinacao.data == dados_vacinacao.data.max()
     filtro_estado = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
     filtro_cidade = dados_vacinacao.municipio == 'SAO PAULO'
 
     cabecalho = ['<b>Campanha de<br>vacinação</b>',
-                 '<b>Estado de SP</b><br><i>' + data_processamento_estado.strftime('%d/%m/%Y') + '</i>',
-                 '<b>Cidade de SP</b><br><i>' + data_processamento_estado.strftime('%d/%m/%Y') + '</i>']
+                 '<b>Estado de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>',
+                 '<b>Cidade de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>']
 
-    info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>População vacinada (%)</b>']
+    info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>Média diária</b>',
+            '<b>Média semanal</b>', '<b>População vacinada (%)</b>']
 
     doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_estado, 'total_doses']
     doses_aplicadas = 'indisponível' if doses_aplicadas.empty else f'{doses_aplicadas.item():7,.0f}'.replace(',', '.')
@@ -738,12 +741,25 @@ def gera_resumo_vacinacao(dados_vacinacao):
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_estado, '2a_dose']
     dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
 
+    inicio_vacinacao = pd.to_datetime('2021-01-17')
+
+    total_doses = dados_vacinacao.loc[filtro_data_max & filtro_estado, 'total_doses'].item()
+    dias = (data_processamento - inicio_vacinacao).days
+    media_diaria = total_doses / dias
+    media_diaria = f'{media_diaria:7,.0f}'.replace(',', '.')
+
+    semanas = (data_processamento - inicio_vacinacao) // np.timedelta64(1, 'W')
+    media_semanal = total_doses / semanas
+    media_semanal = f'{media_semanal:7,.0f}'.replace(',', '.')
+
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
     estado = [doses_aplicadas,
               dose_1,
               dose_2,
+              media_diaria,
+              media_semanal,
               pop_vacinada]
 
     doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_cidade, 'total_doses']
@@ -755,12 +771,24 @@ def gera_resumo_vacinacao(dados_vacinacao):
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_cidade, '2a_dose']
     dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
 
+    inicio_vacinacao = pd.to_datetime('2021-01-17')
+    total_doses = dados_vacinacao.loc[filtro_data_max & filtro_cidade, 'total_doses'].item()
+    dias = (data_processamento - inicio_vacinacao).days
+    media_diaria = total_doses / dias
+    media_diaria = f'{media_diaria:7,.0f}'.replace(',', '.')
+
+    semanas = (data_processamento - inicio_vacinacao) // np.timedelta64(1, 'W')
+    media_semanal = total_doses / semanas
+    media_semanal = f'{media_semanal:7,.0f}'.replace(',', '.')
+
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
     cidade = [doses_aplicadas,
               dose_1,
               dose_2,
+              media_diaria,
+              media_semanal,
               pop_vacinada]
 
     fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
@@ -780,7 +808,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
                           text='<i><b>Fonte:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
                                'Governo do Estado de São Paulo</a></i>')],
-        height=240
+        height=310
     )
 
     # fig.show()
@@ -791,7 +819,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=260
+        height=320
     )
 
     # fig.show()
@@ -800,7 +828,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
 
 
 def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estado, leitos_estaduais, isolamento, internacoes, dados_vacinacao):
-    hoje = data_processamento_estado
+    hoje = data_processamento
 
     cabecalho = ['<b>Resumo diário</b>',
                  '<b>Estado de SP</b><br><i>' + hoje.strftime('%d/%m/%Y') + '</i>',
@@ -950,11 +978,11 @@ def _formata_semana_ordinal(data):
 
 def gera_resumo_semanal(evolucao_cidade, evolucao_estado):
     # %W: semana começa na segunda-feira
-    hoje = data_processamento_estado
+    hoje = data_processamento
     hoje_formatado = _formata_semana_ordinal(hoje)
 
     # %U: semana começa no domingo
-    hoje = data_processamento_estado - timedelta(days=1)
+    hoje = data_processamento - timedelta(days=1)
     semana = _formata_semana_extenso(_converte_semana(hoje), inclui_ano=False)
 
     cabecalho = [f'<b>{hoje_formatado}ª semana<br>epidemiológica</b>',
@@ -1064,7 +1092,7 @@ def gera_resumo_semanal(evolucao_cidade, evolucao_estado):
         font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=500
+        height=495
     )
 
     # fig.show()
@@ -2755,7 +2783,6 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento_cidade = datetime.now()
-    data_processamento_estado = datetime.now()
+    data_processamento = datetime.now()
 
     main()
