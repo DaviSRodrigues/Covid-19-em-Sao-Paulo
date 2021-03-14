@@ -21,7 +21,6 @@ import plotly.graph_objects as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
 import requests
-import tabula
 
 
 def main():
