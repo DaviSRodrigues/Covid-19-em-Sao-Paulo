@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 from io import StringIO
 import locale
 import math
-import numpy as np
 import traceback
 import unicodedata
 
@@ -724,6 +723,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     filtro_data_max = dados_vacinacao.data == dados_vacinacao.data.max()
     filtro_estado = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
     filtro_cidade = dados_vacinacao.municipio == 'SAO PAULO'
+    inicio_vacinacao = pd.to_datetime('2021-01-17')
 
     cabecalho = ['<b>Campanha de<br>vacinação</b>',
                  '<b>Estado de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>',
@@ -741,14 +741,13 @@ def gera_resumo_vacinacao(dados_vacinacao):
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_estado, '2a_dose']
     dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
 
-    inicio_vacinacao = pd.to_datetime('2021-01-17')
-
     total_doses = dados_vacinacao.loc[filtro_data_max & filtro_estado, 'total_doses'].item()
-    dias = (data_processamento - inicio_vacinacao).days
+    data_max = dados_vacinacao.loc[filtro_data_max & filtro_estado, 'data'].item()
+    dias = (data_max - inicio_vacinacao).days + 1
     media_diaria = total_doses / dias
     media_diaria = f'{media_diaria:7,.0f}'.replace(',', '.')
 
-    semanas = (data_processamento - inicio_vacinacao) // np.timedelta64(1, 'W')
+    semanas = dias / 7
     media_semanal = total_doses / semanas
     media_semanal = f'{media_semanal:7,.0f}'.replace(',', '.')
 
@@ -771,13 +770,13 @@ def gera_resumo_vacinacao(dados_vacinacao):
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_cidade, '2a_dose']
     dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
 
-    inicio_vacinacao = pd.to_datetime('2021-01-17')
     total_doses = dados_vacinacao.loc[filtro_data_max & filtro_cidade, 'total_doses'].item()
-    dias = (data_processamento - inicio_vacinacao).days
+    data_max = dados_vacinacao.loc[filtro_data_max & filtro_cidade, 'data'].item()
+    dias = (data_max - inicio_vacinacao).days
     media_diaria = total_doses / dias
     media_diaria = f'{media_diaria:7,.0f}'.replace(',', '.')
 
-    semanas = (data_processamento - inicio_vacinacao) // np.timedelta64(1, 'W')
+    semanas = dias / 7
     media_semanal = total_doses / semanas
     media_semanal = f'{media_semanal:7,.0f}'.replace(',', '.')
 
