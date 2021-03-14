@@ -21,14 +21,14 @@ jobs:
              event_name: ${{ github.event_name }}
              git_ref: ${{ github.event.ref }}
         
-      - name: Instalar Java 11 - requisito tabula-py
-        uses: actions/setup-java@v1
-        with:
-          java-version: '11'
-          java-package: jdk
+      #- name: Instalar Java 11 - requisito tabula-py
+      #  uses: actions/setup-java@v1
+      #  with:
+      #    java-version: '11'
+      #    java-package: jdk
           
-      - name: Testar Java 11
-        run: java -version
+      #- name: Testar Java 11
+      #  run: java -version
 
       - name: Configurar Python
         uses: actions/setup-python@v2
@@ -41,7 +41,7 @@ jobs:
       - name: Instalar dependências Python
         run: |
              python -m pip install --upgrade pip
-             pip install pandas>=1.2.1 plotly requests beautifulsoup4 tabula-py
+             pip install pandas>=1.2.1 plotly requests beautifulsoup4 #tabula-py
       
       - name: Mudar locale para pt_BR.UTF-8 e horário para BRT
         run: |
