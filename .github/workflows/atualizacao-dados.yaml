@@ -1,6 +1,5 @@
 name: Atualização dos dados
 on:
-  push:
   schedule:
     - cron: '0 21,1 * * *'
 
