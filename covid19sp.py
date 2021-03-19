@@ -728,8 +728,8 @@ def gera_resumo_vacinacao(dados_vacinacao):
                  '<b>Estado de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>',
                  '<b>Cidade de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>']
 
-    info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>Média diária</b>',
-            '<b>Média semanal</b>', '<b>População vacinada (%)</b>']
+    info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>População vacinada (%)</b>',
+            '<b>Média diária</b>', '<b>Média móvel 7 dias</b>', '<b>Média semanal</b>']
 
     doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_estado, 'total_doses']
     doses_aplicadas = 'indisponível' if doses_aplicadas.empty else f'{doses_aplicadas.item():7,.0f}'.replace(',', '.')
@@ -746,6 +746,12 @@ def gera_resumo_vacinacao(dados_vacinacao):
     media_diaria = total_doses / dias
     media_diaria = f'{media_diaria:7,.0f}'.replace(',', '.')
 
+    media_movel = dados_vacinacao.loc[filtro_estado, ['data', 'aplicadas_dia']] \
+                                 .rolling('7D', on='data') \
+                                 .mean() \
+                                 .iat[-1,1]
+    media_movel = f'{media_movel:7,.0f}'.replace(',', '.')
+
     semanas = dias / 7
     media_semanal = total_doses / semanas
     media_semanal = f'{media_semanal:7,.0f}'.replace(',', '.')
@@ -756,9 +762,10 @@ def gera_resumo_vacinacao(dados_vacinacao):
     estado = [doses_aplicadas,
               dose_1,
               dose_2,
+              pop_vacinada,
               media_diaria,
-              media_semanal,
-              pop_vacinada]
+              media_movel,
+              media_semanal]
 
     doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_cidade, 'total_doses']
     doses_aplicadas = 'indisponível' if doses_aplicadas.empty else f'{doses_aplicadas.item():7,.0f}'.replace(',', '.')
@@ -775,6 +782,12 @@ def gera_resumo_vacinacao(dados_vacinacao):
     media_diaria = total_doses / dias
     media_diaria = f'{media_diaria:7,.0f}'.replace(',', '.')
 
+    media_movel = dados_vacinacao.loc[filtro_cidade, ['data', 'aplicadas_dia']] \
+                                 .rolling('7D', on='data') \
+                                 .mean() \
+                                 .iat[-1,1]
+    media_movel = f'{media_movel:7,.0f}'.replace(',', '.')
+
     semanas = dias / 7
     media_semanal = total_doses / semanas
     media_semanal = f'{media_semanal:7,.0f}'.replace(',', '.')
@@ -785,9 +798,10 @@ def gera_resumo_vacinacao(dados_vacinacao):
     cidade = [doses_aplicadas,
               dose_1,
               dose_2,
+              pop_vacinada,
               media_diaria,
-              media_semanal,
-              pop_vacinada]
+              media_movel,
+              media_semanal]
 
     fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
                                                fill_color='#00aabb',
@@ -806,7 +820,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
                           text='<i><b>Fonte:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
                                'Governo do Estado de São Paulo</a></i>')],
-        height=310
+        height=345
     )
 
     # fig.show()
@@ -817,7 +831,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=320
+        height=370
     )
 
     # fig.show()
@@ -2361,28 +2375,42 @@ def gera_hospitais_campanha(hospitais_campanha):
 
 def gera_evolucao_vacinacao_estado(dados_vacinacao):
     dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'].copy()
-    dados['data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
     dados = dados[1:]
+
+    media_movel = dados.loc[:, ['data', 'aplicadas_dia']].rolling('7D', on='data').mean()
+    media_movel['data'] = media_movel.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    dados['data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(go.Scatter(x=dados['data'], y=dados['total_doses'], line=dict(color='green'),
-                             mode='lines+markers', name='doses aplicadas'))
+                             mode='lines+markers', name='doses aplicadas', visible='legendonly'))
 
     fig.add_trace(go.Bar(x=dados['data'], y=dados['aplicadas_dia'], marker_color='blue',
                          name='doses aplicadas<br>por dia'))
 
+    fig.add_trace(go.Scatter(x=media_movel['data'], y=media_movel['aplicadas_dia'], line=dict(color='red'),
+                             mode='lines+markers', name='média móvel de doses<br>aplicadas em 7 dias'))
+
     fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_1a_dose'], line=dict(color='orange'),
-                             mode='lines+markers', name='população vacinada',
+                             mode='lines+markers', name='população vacinada<br>1ª dose',
                              hovertemplate='%{y:.2f}%'),
+                  secondary_y=True)
+
+    fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_2a_dose'], line=dict(color='goldenrod'),
+                             mode='lines+markers', name='população vacinada<br>2ª dose',
+                             hovertemplate='%{y:.2f}%', visible='legendonly'),
                   secondary_y=True)
 
     d = dados.data.size
 
     frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
                          dict(type='bar', x=dados.data[:d + 1], y=dados.aplicadas_dia[:d + 1]),
-                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1])],
-                   traces=[0, 1, 2, 3],
+                         dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
+                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
+                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
+                   traces=[0, 1, 2, 3, 4],
                    ) for d in range(0, d)]
 
     fig.frames = frames
@@ -2434,28 +2462,42 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
 
 def gera_evolucao_vacinacao_cidade(dados_vacinacao):
     dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'SAO PAULO'].copy()
-    dados['data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
     dados = dados[1:]
+
+    media_movel = dados.loc[:, ['data', 'aplicadas_dia']].rolling('7D', on='data').mean()
+    media_movel['data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    dados['data'] = dados.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(go.Scatter(x=dados['data'], y=dados['total_doses'], line=dict(color='green'),
-                             mode='lines+markers', name='doses aplicadas'))
+                             mode='lines+markers', name='doses aplicadas', visible='legendonly'))
 
     fig.add_trace(go.Bar(x=dados['data'], y=dados['aplicadas_dia'], marker_color='blue',
                          name='doses aplicadas<br>por dia'))
 
+    fig.add_trace(go.Scatter(x=media_movel['data'], y=media_movel['aplicadas_dia'], line=dict(color='red'),
+                             mode='lines+markers', name='média móvel de doses<br>aplicadas em 7 dias'))
+
     fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_1a_dose'], line=dict(color='orange'),
-                             mode='lines+markers', name='população vacinada',
+                             mode='lines+markers', name='população vacinada<br>1ª dose',
                              hovertemplate='%{y:.2f}%'),
+                  secondary_y=True)
+
+    fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_2a_dose'], line=dict(color='goldenrod'),
+                             mode='lines+markers', name='população vacinada<br>2ª dose',
+                             hovertemplate='%{y:.2f}%', visible='legendonly'),
                   secondary_y=True)
 
     d = dados.data.size
 
     frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
                          dict(type='bar', x=dados.data[:d + 1], y=dados.aplicadas_dia[:d + 1]),
-                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1])],
-                   traces=[0, 1, 2, 3],
+                         dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
+                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
+                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
+                   traces=[0, 1, 2, 3, 4],
                    ) for d in range(0, d)]
 
     fig.frames = frames

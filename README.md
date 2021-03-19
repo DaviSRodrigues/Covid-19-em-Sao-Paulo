@@ -7,6 +7,13 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 19/03/2021
+- Novos dados na página inicial:
+	* Média móvel de doses aplicadas nos últimos 7 dias
+-Novos dados nos gráficos da Campanha de Vacinação:
+	* Média móvel de doses aplicadas nos últimos 7 dias
+	* População vacinada (%) com a segunda dose
+
 ## 14/03/2021
 - Inclusão da média diária e da semanal de pessoas vacinadas na página inicial.
 
