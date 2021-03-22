@@ -405,6 +405,9 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO', 'populacao'] = pop_estado
 
     def atualiza_estado():
+        if doses_aplicadas is None:
+            return
+
         nonlocal dados_vacinacao
         filtro_m = dados_vacinacao.municipio != 'ESTADO DE SAO PAULO'
         filtro_e = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
