@@ -419,7 +419,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
                 while indice.empty and recebidas_anterior.date() >= dados_vacinacao.data.min().date():
                     indice = dados_vacinacao.index[(dados_vacinacao.data == recebidas_anterior.date()) &
-                                                   (dados_vacinacao.municipio == linha['doses_recebidas'])]
+                                                   (dados_vacinacao.municipio == linha['municipio'])]
                     recebidas_anterior = recebidas_anterior - timedelta(days=1)
 
                 if not indice.empty:
