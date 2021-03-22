@@ -2839,6 +2839,7 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
+    # data_processamento = datetime.now()
+    data_processamento = pd.to_datetime('21/03/2021', format='%d/%m/%Y')
 
     main()
