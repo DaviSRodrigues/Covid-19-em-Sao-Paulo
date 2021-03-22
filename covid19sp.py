@@ -332,29 +332,57 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_raciais['raca_cor'] = dados_raciais.raca_cor.str.title()
     dados_raciais = dados_raciais.groupby(['obito', 'raca_cor']).agg(contagem=('obito', 'count'))
 
+    def obtem_dado_anterior(municipio, coluna):
+        indice = pd.Series(dtype='float64')
+        dia_anterior = data_processamento - timedelta(days=1)
+
+        while indice.empty and dia_anterior.date() >= dados_vacinacao.data.min().date():
+            indice = dados_vacinacao.index[(dados_vacinacao.data.dt.date == dia_anterior.date()) &
+                                           (dados_vacinacao.municipio == municipio)]
+            dia_anterior = dia_anterior - timedelta(days=1)
+
+        if not indice.empty:
+            return dados_vacinacao.loc[indice.item(), coluna]
+
+        return None
+
     def atualiza_doses(municipio):
         temp = doses_aplicadas.loc[doses_aplicadas['municipio'] == municipio]
 
         doses = temp.loc[temp.dose == '1° Dose', 'contagem']
         primeira_dose = int(doses.iat[0]) if not doses.empty else None
 
+        if primeira_dose is None:
+            primeira_dose = obtem_dado_anterior(municipio, '1a_dose')
+
         doses = temp.loc[temp.dose == '2° Dose', 'contagem']
         segunda_dose = int(doses.iat[0]) if not doses.empty else None
 
-        if doses_recebidas is not None:
+        if segunda_dose is None:
+            segunda_dose = obtem_dado_anterior(municipio, '2a_dose')
+
+        if doses_recebidas is None:
+            recebidas = obtem_dado_anterior(municipio, 'doses_recebidas')
+        else:
             recebidas = doses_recebidas.loc[doses_recebidas.municipio == municipio, 'contagem']
             recebidas = None if recebidas.empty else recebidas.iat[0]
-        else:
-            recebidas = None
-
-        novos_dados = {'data': hoje.date(),
-                       'municipio': municipio,
-                       'doses_recebidas': recebidas,
-                       '1a_dose': primeira_dose,
-                       '2a_dose': segunda_dose}
 
         nonlocal dados_vacinacao
-        dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+        filtro = (dados_vacinacao.municipio == municipio) & (dados_vacinacao.data.dt.date == data_processamento.date())
+        busca = dados_vacinacao.loc[filtro, 'municipio']
+
+        if busca.empty:
+            novos_dados = {'data': data_processamento,
+                           'municipio': municipio,
+                           'doses_recebidas': recebidas,
+                           '1a_dose': primeira_dose,
+                           '2a_dose': segunda_dose}
+
+            dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+        else:
+            dados_vacinacao.loc[filtro, 'doses_recebidas'] = recebidas
+            dados_vacinacao.loc[filtro, '1a_dose'] = primeira_dose
+            dados_vacinacao.loc[filtro, '2a_dose'] = segunda_dose
 
     def atualiza_populacao():
         hoje_str = hoje.strftime('%Y-%m-%d')
@@ -378,18 +406,25 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     def atualiza_estado():
         nonlocal dados_vacinacao
-        filtro_e = dados_vacinacao.municipio != 'ESTADO DE SAO PAULO'
-        data_atual = pd.to_datetime(hoje.strftime('%Y-%m-%d'))  # para tirar as horas
-        filtro_d = dados_vacinacao.data == data_atual
+        filtro_m = dados_vacinacao.municipio != 'ESTADO DE SAO PAULO'
+        filtro_e = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
+        filtro_d = dados_vacinacao.data.dt.date == data_processamento.date()
 
-        novos_dados = {'data': data_atual,
-                       'municipio': 'ESTADO DE SAO PAULO',
-                       'doses_recebidas': dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'].sum(),
-                       '1a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'].sum(),
-                       '2a_dose': dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'].sum(),
-                       'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
+        busca = dados_vacinacao.loc[filtro_d & filtro_e, 'municipio']
 
-        dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+        if busca.empty:
+            novos_dados = {'data': data_processamento,
+                           'municipio': 'ESTADO DE SAO PAULO',
+                           'doses_recebidas': dados_vacinacao.loc[filtro_d & filtro_m, 'doses_recebidas'].sum(),
+                           '1a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '1a_dose'].sum(),
+                           '2a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '2a_dose'].sum(),
+                           'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
+
+            dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+        else:
+            dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = dados_vacinacao.loc[filtro_d & filtro_m, 'doses_recebidas'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '1a_dose'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '2a_dose'].sum()
 
     def calcula_campos_adicionais(linha):
         if linha['data'] != hoje.date():
@@ -404,65 +439,48 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         try:
             linha['perc_vacinadas_1a_dose'] = (primeira_dose / populacao) * 100
-        except ZeroDivisionError:
+        except Exception:
             linha['perc_vacinadas_1a_dose'] = None
 
         try:
             linha['perc_vacinadas_2a_dose'] = (segunda_dose / populacao) * 100
-        except ZeroDivisionError:
+        except Exception:
             linha['perc_vacinadas_2a_dose'] = None
 
         try:
             if doses_recebidas == 0:
-                indice = pd.Series(dtype='float64')
-                recebidas_anterior = hoje - timedelta(days=1)
-
-                while indice.empty and recebidas_anterior.date() >= dados_vacinacao.data.min().date():
-                    indice = dados_vacinacao.index[(dados_vacinacao.data == recebidas_anterior.date()) &
-                                                   (dados_vacinacao.municipio == linha['municipio'])]
-                    recebidas_anterior = recebidas_anterior - timedelta(days=1)
-
-                if not indice.empty:
-                    indice = indice.item()
-                    doses_recebidas = dados_vacinacao.loc[indice, 'doses_recebidas']
+                doses_recebidas = obtem_dado_anterior(linha['municipio'], 'doses_recebidas')
 
             linha['perc_aplicadas'] = (linha['total_doses'] / doses_recebidas) * 100
-        except ZeroDivisionError:
+        except Exception:
             linha['perc_aplicadas'] = None
 
-        # obtém o dia anterior
-        indice = pd.Series(dtype='float64')
-        dia_anterior = hoje - timedelta(days=1)
+        total_doses_anterior = obtem_dado_anterior(linha['municipio'], 'total_doses')
 
-        while indice.empty and dia_anterior.date() >= dados_vacinacao.data.min().date():
-            indice = dados_vacinacao.index[(dados_vacinacao.data == dia_anterior.date()) &
-                                           (dados_vacinacao.municipio == linha['municipio'])]
-            dia_anterior = dia_anterior - timedelta(days=1)
-
-        if indice.empty:
+        if total_doses_anterior is None:
             linha['aplicadas_dia'] = linha['total_doses']
         else:
-            indice = indice.item()
-            linha['aplicadas_dia'] = linha['total_doses'] - dados_vacinacao.loc[indice, 'total_doses']
+            linha['aplicadas_dia'] = linha['total_doses'] - total_doses_anterior
 
         return linha
 
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
     hoje = data_processamento
 
-    if dados_vacinacao.data.max().date() < hoje.date() and doses_aplicadas is not None:
+    if dados_vacinacao.data.max().date() <= hoje.date():
         dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
-
-        doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         if doses_recebidas is not None:
             doses_recebidas['municipio'] = doses_recebidas.municipio.apply(
                 lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        for m in list(doses_aplicadas.municipio.unique()):
-            atualiza_doses(m)
+        if doses_aplicadas is not None:
+            doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
+                lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+
+            for m in list(doses_aplicadas.municipio.unique()):
+                atualiza_doses(m)
 
         atualiza_populacao()
         atualiza_estado()
@@ -713,8 +731,6 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     gera_doses_aplicadas(dados_vacinacao)
     print('\tTabela da campanha de vacinação...')
     gera_tabela_vacinacao(dados_vacinacao)
-    # print('\tHospitais de campanha...')
-    # gera_hospitais_campanha(hospitais_campanha)
 
 
 def gera_resumo_vacinacao(dados_vacinacao):
@@ -774,7 +790,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     dose_1 = 'indisponível' if dose_1.empty else f'{dose_1.item():7,.0f}'.replace(',', '.')
 
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_cidade, '2a_dose']
-    dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
+    dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.') if not math.isnan(dose_2.item()) else 'indisponível'
 
     total_doses = dados_vacinacao.loc[filtro_data_max & filtro_cidade, 'total_doses'].item()
     data_max = dados_vacinacao.loc[filtro_data_max & filtro_cidade, 'data'].item()
@@ -2823,6 +2839,7 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
+    # data_processamento = datetime.now()
+    data_processamento = pd.to_datetime('21/03/2021', format='%d/%m/%Y')
 
     main()
