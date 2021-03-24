@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 24/03/2021
+- Na seção da Campanha de Vacinação, os gráficos de evolução e a tabela agora mostram as doses aplicadas no dia separadas por tipo (1ª dose ou 2ª dose)
+
 ## 19/03/2021
 - Novos dados na página inicial:
 	* Média móvel de doses aplicadas nos últimos 7 dias

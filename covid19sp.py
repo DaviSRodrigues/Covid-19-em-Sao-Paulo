@@ -465,6 +465,20 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         else:
             linha['aplicadas_dia'] = linha['total_doses'] - total_doses_anterior
 
+        primeira_dose_anterior = obtem_dado_anterior(linha['municipio'], '1a_dose')
+
+        if primeira_dose_anterior is None:
+            linha['primeira_dose_dia'] = linha['1a_dose']
+        else:
+            linha['primeira_dose_dia'] = linha['1a_dose'] - primeira_dose_anterior
+
+        segunda_dose_anterior = obtem_dado_anterior(linha['municipio'], '2a_dose')
+
+        if segunda_dose_anterior is None:
+            linha['segunda_dose_dia'] = linha['2a_dose']
+        else:
+            linha['segunda_dose_dia'] = linha['2a_dose'] - segunda_dose_anterior
+
         return linha
 
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
@@ -2403,11 +2417,14 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    fig.add_trace(go.Scatter(x=dados['data'], y=dados['total_doses'], line=dict(color='green'),
+    fig.add_trace(go.Scatter(x=dados['data'], y=dados['total_doses'], line=dict(color='purple'),
                              mode='lines+markers', name='doses aplicadas', visible='legendonly'))
 
-    fig.add_trace(go.Bar(x=dados['data'], y=dados['aplicadas_dia'], marker_color='blue',
-                         name='doses aplicadas<br>por dia'))
+    fig.add_trace(go.Bar(x=dados['data'], y=dados['primeira_dose_dia'], marker_color='blue',
+                         name='doses aplicadas<br>por dia (1ª dose)'))
+
+    fig.add_trace(go.Bar(x=dados['data'], y=dados['segunda_dose_dia'], marker_color='green',
+                         name='doses aplicadas<br>por dia (2ª dose)'))
 
     fig.add_trace(go.Scatter(x=media_movel['data'], y=media_movel['aplicadas_dia'], line=dict(color='red'),
                              mode='lines+markers', name='média móvel de doses<br>aplicadas em 7 dias'))
@@ -2425,11 +2442,12 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
     d = dados.data.size
 
     frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.aplicadas_dia[:d + 1]),
+                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
+                         dict(type='bar', x=dados.data[:d + 1], y=dados.primeira_dose_dia[:d + 1]),
                          dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
-                   traces=[0, 1, 2, 3, 4],
+                   traces=[0, 1, 2, 3, 4, 5],
                    ) for d in range(0, d)]
 
     fig.frames = frames
@@ -2450,6 +2468,7 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
                           pad=dict(t=0, r=10), buttons=botoes)],
+        barmode='stack',
         height=600
     )
 
@@ -2493,8 +2512,11 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
     fig.add_trace(go.Scatter(x=dados['data'], y=dados['total_doses'], line=dict(color='green'),
                              mode='lines+markers', name='doses aplicadas', visible='legendonly'))
 
-    fig.add_trace(go.Bar(x=dados['data'], y=dados['aplicadas_dia'], marker_color='blue',
-                         name='doses aplicadas<br>por dia'))
+    fig.add_trace(go.Bar(x=dados['data'], y=dados['primeira_dose_dia'], marker_color='blue',
+                         name='doses aplicadas<br>por dia (1ª dose)'))
+
+    fig.add_trace(go.Bar(x=dados['data'], y=dados['segunda_dose_dia'], marker_color='green',
+                         name='doses aplicadas<br>por dia (2ª dose)'))
 
     fig.add_trace(go.Scatter(x=media_movel['data'], y=media_movel['aplicadas_dia'], line=dict(color='red'),
                              mode='lines+markers', name='média móvel de doses<br>aplicadas em 7 dias'))
@@ -2512,11 +2534,12 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
     d = dados.data.size
 
     frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.aplicadas_dia[:d + 1]),
+                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
+                         dict(type='bar', x=dados.data[:d + 1], y=dados.primeira_dose_dia[:d + 1]),
                          dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
-                   traces=[0, 1, 2, 3, 4],
+                   traces=[0, 1, 2, 3, 4, 5],
                    ) for d in range(0, d)]
 
     fig.frames = frames
@@ -2537,6 +2560,7 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
                           x=0.05, y=0.95,
                           xanchor='left', yanchor='top',
                           pad=dict(t=0, r=10), buttons=botoes)],
+        barmode='stack',
         height=600
     )
 
@@ -2734,7 +2758,8 @@ def gera_doses_aplicadas(dados):
 def gera_tabela_vacinacao(dados):
     dados_tab = dados.loc[dados.data == dados.data.max()].copy()
     dados_tab.columns = ['Data', 'Município', '1ª dose', '2ª dose', 'Aplicadas no dia', 'Doses aplicadas',
-                         'Doses recebidas', 'Aplicadas (%)', '1ª dose (%)', '2ª dose (%)', 'População']
+                         'Doses recebidas', 'Aplicadas (%)', '1ª dose (dia)', '1ª dose (%)',
+                         '2ª dose (dia)', '2ª dose (%)', 'População']
 
     dados_tab.drop(columns='Aplicadas no dia', inplace=True)
 
@@ -2744,18 +2769,20 @@ def gera_tabela_vacinacao(dados):
     dados_tab['2ª dose'] = dados_tab['2ª dose'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['2ª dose (%)'] = dados_tab['2ª dose (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
     dados_tab['Doses aplicadas'] = dados_tab['Doses aplicadas'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['1ª dose (dia)'] = dados_tab['1ª dose (dia)'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['2ª dose (dia)'] = dados_tab['2ª dose (dia)'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['Doses recebidas'] = dados_tab['Doses recebidas'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['Aplicadas (%)'] = dados_tab['Aplicadas (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
     dados_tab['População'] = dados_tab['População'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
 
     cabecalho = ['<b>Município</b>', '<b>1ª dose</b>', '<b>1ª dose (%)</b>', '<b>2ª dose</b>',
-                 '<b>2ª dose (%)</b>', '<b>Doses aplicadas</b>', '<b>Doses recebidas</b>',
-                 '<b>Aplicadas (%)</b>', '<b>População</b>']
+                 '<b>2ª dose (%)</b>', '<b>Doses aplicadas</b>', '<b>1ª dose (dia)</b>', '<b>2ª dose (dia)</b>',
+                 '<b>Doses recebidas</b>', '<b>Aplicadas (%)</b>', '<b>População</b>']
 
     valores = [dados_tab['Município'], dados_tab['1ª dose'], dados_tab['1ª dose (%)'],
                dados_tab['2ª dose'], dados_tab['2ª dose (%)'],
-               dados_tab['Doses aplicadas'], dados_tab['Doses recebidas'], dados_tab['Aplicadas (%)'],
-               dados_tab['População']]
+               dados_tab['Doses aplicadas'], dados_tab['1ª dose (dia)'], dados_tab['2ª dose (dia)'],
+               dados_tab['Doses recebidas'], dados_tab['Aplicadas (%)'], dados_tab['População']]
 
     fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
                                                fill_color='#00aabb',
