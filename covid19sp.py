@@ -140,7 +140,6 @@ def carrega_dados_estado():
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
         doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
-        doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
         doses_aplicadas = None
@@ -151,7 +150,6 @@ def carrega_dados_estado():
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
         doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
-        doses_recebidas.columns = ['municipio', 'contagem']
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
         doses_recebidas = None
@@ -366,13 +364,13 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     def atualiza_doses(municipio):
         temp = doses_aplicadas.loc[doses_aplicadas['municipio'] == municipio]
 
-        doses = temp.loc[temp.dose == '1° Dose', 'contagem']
+        doses = temp.loc[temp.dose == '1° DOSE', 'contagem']
         primeira_dose = int(doses.iat[0]) if not doses.empty else None
 
         if primeira_dose is None:
             primeira_dose = obtem_dado_anterior(municipio, '1a_dose')
 
-        doses = temp.loc[temp.dose == '2° Dose', 'contagem']
+        doses = temp.loc[temp.dose == '2° DOSE', 'contagem']
         segunda_dose = int(doses.iat[0]) if not doses.empty else None
 
         if segunda_dose is None:
@@ -506,12 +504,15 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         if doses_recebidas is not None:
-            doses_recebidas['municipio'] = doses_recebidas.municipio.apply(
-                lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+            doses_recebidas.columns = ['municipio', 'contagem']
+
+            doses_recebidas['municipio'] = doses_recebidas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         if doses_aplicadas is not None:
-            doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
-                lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+            doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
+
+            doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
+            doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
             for m in list(doses_aplicadas.municipio.unique()):
                 atualiza_doses(m)
