@@ -2818,6 +2818,8 @@ def gera_tabela_vacinacao(dados):
 
     dados_tab.drop(columns='Aplicadas no dia', inplace=True)
 
+    dados_tab.sort_values(by='1ª dose (%)', ascending=False, inplace=True)
+
     dados_tab['Município'] = dados_tab['Município'].apply(lambda m: formata_municipio(m))
     dados_tab['1ª dose'] = dados_tab['1ª dose'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['1ª dose (%)'] = dados_tab['1ª dose (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
