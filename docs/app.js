@@ -252,6 +252,9 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico das vacinas disponíveis x aplicadas', 'graficos/vacinas-aplicadas.html');
 			criaIFrame('graficos/vacinas-aplicadas.html', 'graficos/vacinas-aplicadas-mobile.html', versaoMobile);
 			
+			criaLink('Ampliar gráfico dos imunizantes distribuídos', 'graficos/imunizantes.html');
+			criaIFrame('graficos/imunizantes.html', 'graficos/imunizantes-mobile.html', versaoMobile);
+			
 			var descricao = '';
 			
 			if(versaoMobile)

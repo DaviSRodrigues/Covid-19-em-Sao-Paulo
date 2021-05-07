@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 07/05/2021
+- Novo gráfico da Campanha de Vacinação: distribuição de vacinas no Estado por fabricante.
+
 ## 24/03/2021
 - Na seção da Campanha de Vacinação, os gráficos de evolução e a tabela agora mostram as doses aplicadas no dia separadas por tipo (1ª dose ou 2ª dose)
 

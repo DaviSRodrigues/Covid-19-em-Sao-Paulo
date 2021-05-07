@@ -28,15 +28,15 @@ def main():
 
     print('Carregando dados...')
     hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = carrega_dados_cidade()
-    dados_munic, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas = carrega_dados_estado()
+    dados_munic, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_imunizantes, atualizacao_imunizantes = carrega_dados_estado()
 
     print('\nLimpando e enriquecendo dos dados...')
-    dados_cidade, dados_munic, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao = pre_processamento(hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic)
+    dados_cidade, dados_munic, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_imunizantes = pre_processamento(hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic, dados_imunizantes, atualizacao_imunizantes)
     evolucao_cidade, evolucao_estado = gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_vacinacao, internacoes)
     evolucao_cidade, evolucao_estado = gera_dados_semana(evolucao_cidade, evolucao_estado, leitos_estaduais, isolamento, internacoes)
 
     print('\nGerando gráficos e tabelas...')
-    gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, evolucao_cidade, evolucao_estado, internacoes, doencas, dados_raciais, dados_vacinacao)
+    gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, evolucao_cidade, evolucao_estado, internacoes, doencas, dados_raciais, dados_vacinacao, dados_imunizantes)
 
     print('\nAtualizando serviceWorker.js...')
     atualiza_service_worker(dados_estado)
@@ -154,19 +154,30 @@ def carrega_dados_estado():
         print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
         doses_recebidas = None
 
+    try:
+        print('\t\tDistribuição de imunizantes...')
+        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_estatiscas_gerais.csv'
+        req = requests.get(URL, headers=headers, stream=True)
+        req.encoding = req.apparent_encoding
+        atualizacao_imunizantes = pd.read_csv(StringIO(req.text), sep=';')
+    except Exception as e:
+        print(f'\t\tErro ao buscar {data}_estatiscas_gerais.csv da Seade: {e}')
+        atualizacao_imunizantes = None
+
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col=0)
     dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
+    dados_imunizantes = pd.read_csv('dados/dados_imunizantes.csv')
 
-    return dados_munic, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas
+    return dados_munic, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_imunizantes, atualizacao_imunizantes
 
 
-def pre_processamento(hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic):
+def pre_processamento(hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic, dados_imunizantes, atualizacao_imunizantes):
     print('\tDados municipais...')
     dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total = pre_processamento_cidade(dados_munic, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total)
     print('\tDados estaduais...')
-    dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_munic = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic)
+    dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_munic, dados_imunizantes = pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic, dados_imunizantes, atualizacao_imunizantes)
 
-    return dados_cidade, dados_munic, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao
+    return dados_cidade, dados_munic, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_imunizantes
 
 
 def pre_processamento_cidade(dados_munic, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
@@ -200,7 +211,7 @@ def formata_municipio(m):
         .replace(' Dos ', ' dos ')
 
 
-def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic):
+def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, doses_aplicadas, doses_recebidas, dados_munic, dados_imunizantes, atualizacao_imunizantes):
     dados_estado.columns = ['data', 'total_casos', 'total_obitos']
     dados_estado['data'] = pd.to_datetime(dados_estado.data)
     dados_estado['dia'] = dados_estado.data.apply(lambda d: d.strftime('%d %b %y'))
@@ -527,7 +538,25 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
         dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
 
-    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_munic
+    dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes['data'])
+
+    if atualizacao_imunizantes is not None:
+        if dados_imunizantes.data.max().date() < data_processamento.date():
+            novos_dados = atualizacao_imunizantes.groupby('Imunibiológico_Ajustado') \
+                                                 .agg(aplicadas=('Contagem de Id Vacinacao', sum)) \
+                                                 .reset_index()
+
+            novos_dados.columns = ['vacina', 'aplicadas']
+            novos_dados['data'] = data_processamento
+            novos_dados.sort_values(by=['data', 'vacina'], inplace=True)
+            novos_dados = novos_dados[['data', 'vacina', 'aplicadas']]
+
+            dados_imunizantes = dados_imunizantes.append(novos_dados)
+            dados_imunizantes['data'] = dados_imunizantes['data'].apply(lambda d: d.strftime('%d/%m/%Y'))
+            dados_imunizantes.to_csv('dados/dados_imunizantes.csv', index=False)
+            dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
+
+    return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_munic, dados_imunizantes
 
 
 def _converte_semana(data):
@@ -728,7 +757,7 @@ def gera_dados_semana(evolucao_cidade, evolucao_estado, leitos_estaduais, isolam
     return evolucao_cidade, evolucao_estado
 
 
-def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, evolucao_cidade, evolucao_estado, internacoes, doencas, dados_raciais, dados_vacinacao):
+def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, evolucao_cidade, evolucao_estado, internacoes, doencas, dados_raciais, dados_vacinacao, dados_imunizantes):
     print('\tResumo da campanha de vacinação...')
     gera_resumo_vacinacao(dados_vacinacao)
     print('\tResumo diário...')
@@ -769,6 +798,8 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     gera_doses_aplicadas(dados_vacinacao)
     print('\tTabela da campanha de vacinação...')
     gera_tabela_vacinacao(dados_vacinacao)
+    print('\tDistribuição de imunizantes por fabricante...')
+    gera_distribuicao_imunizantes(dados_imunizantes)
 
 
 def gera_resumo_vacinacao(dados_vacinacao):
@@ -2497,8 +2528,8 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
     d = dados.data.size
 
     frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
                          dict(type='bar', x=dados.data[:d + 1], y=dados.primeira_dose_dia[:d + 1]),
+                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
                          dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
@@ -2589,8 +2620,8 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
     d = dados.data.size
 
     frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
                          dict(type='bar', x=dados.data[:d + 1], y=dados.primeira_dose_dia[:d + 1]),
+                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
                          dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
                          dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
@@ -2897,6 +2928,60 @@ def gera_tabela_vacinacao(dados):
 
     pio.write_html(fig, file='docs/graficos/tabela-vacinacao-mobile.html', include_plotlyjs='directory',
                    auto_open=False)
+
+
+def gera_distribuicao_imunizantes(dados_imunizantes):
+    fig = go.Figure()
+
+    for v in dados_imunizantes['vacina'].unique():
+        fig.add_trace(go.Scatter(x=dados_imunizantes.loc[dados_imunizantes['vacina'] == v, 'data'].apply(lambda d: d.strftime('%d/%b/%y')),
+                                 y=dados_imunizantes.loc[dados_imunizantes['vacina'] == v, 'aplicadas'],
+                                 mode='lines', line=dict(width=0.5), stackgroup='one', name=v,
+                                 text=dados_imunizantes.loc[dados_imunizantes['vacina'] == v, 'aplicadas'] \
+                                                       .apply(lambda a: f'{a:,.0f}'.replace(',', '.') if a is not None else ''),
+                                 hovertemplate='<br>Percentual: %{y:.2f}%<br>'
+                                               'Doses aplicadas: %{text}<br>',
+                                 groupnorm='percent'))
+
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=False)
+
+    fig.update_layout(
+        title='Distribuição de imunizantes no estado de São Paulo'
+              '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+              'Governo do Estado de São Paulo</a></i>',
+        font=dict(family='Roboto'),
+        showlegend=True,
+        xaxis_tickangle=45,
+        hovermode='x unified',
+        hoverlabel={'namelength': -1},
+        template='plotly',
+        xaxis_type='category',
+        yaxis=dict(type='linear',
+                   range=[1, 100],
+                   ticksuffix='%'),
+        height=600
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/imunizantes.html', include_plotlyjs='directory',
+                   auto_open=False)
+
+    # versão mobile
+    fig.update_xaxes(nticks=10)
+
+    fig.update_layout(
+        showlegend=False,
+        font=dict(size=11, family='Roboto'),
+        margin=dict(l=1, r=1, b=1, t=90, pad=1),
+        height=400
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/imunizantes-mobile.html',
+                   include_plotlyjs='directory', auto_open=False, auto_play=False)
 
 
 def atualiza_service_worker(dados_estado):
