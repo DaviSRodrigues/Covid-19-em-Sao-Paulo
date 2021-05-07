@@ -538,7 +538,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
         dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
 
-    dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes['data'])
+    dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
 
     if atualizacao_imunizantes is not None:
         if dados_imunizantes.data.max().date() < data_processamento.date():
