@@ -1396,6 +1396,9 @@ def gera_doencas_preexistentes_casos(doencas):
     casos_sem_doencas_m_neg = [-valor for valor in casos_sem_doencas_m]
     casos_com_doencas_m_neg = [[-valor for valor in lista] for lista in casos_com_doencas_m]
 
+    if max(idades) < 10:
+        idades = [i * 100 for i in idades]
+
     fig = go.Figure()
 
     cont = 0
@@ -1500,6 +1503,9 @@ def gera_doencas_preexistentes_obitos(doencas):
     obitos_ignorados_m_neg = [-valor for valor in obitos_ignorados_m]
     obitos_sem_doencas_m_neg = [-valor for valor in obitos_sem_doencas_m]
     obitos_com_doencas_m_neg = [[-valor for valor in lista] for lista in obitos_com_doencas_m]
+
+    if max(idades) < 10:
+        idades = [i * 100 for i in idades]
 
     fig = go.Figure()
 
