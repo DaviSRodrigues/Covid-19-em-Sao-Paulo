@@ -139,7 +139,7 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=',', encoding='utf-8-sig')
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
         doses_aplicadas = None
@@ -149,7 +149,7 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        doses_recebidas = pd.read_csv(StringIO(req.text), sep=',', encoding='utf-8-sig')
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
         doses_recebidas = None
@@ -159,7 +159,7 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_estatiscas_gerais.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        atualizacao_imunizantes = pd.read_csv(StringIO(req.text), sep=';')
+        atualizacao_imunizantes = pd.read_csv(StringIO(req.text), sep=',')
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_estatiscas_gerais.csv da Seade: {e}')
         atualizacao_imunizantes = None
@@ -263,6 +263,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     isolamento['data'] = pd.to_datetime(isolamento.data)
 
+    print('\t\tAtualizando dados de internações...')
     leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format='%d/%m/%Y')
 
     internacoes.columns = ['data', 'drs', 'pacientes_uti_mm7d', 'total_covid_uti_mm7d', 'ocupacao_leitos',
@@ -318,6 +319,8 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     colunas = ['data', 'sp_uti', 'sp_enfermaria', 'rmsp_uti', 'rmsp_enfermaria']
     leitos_estaduais[colunas].to_csv('dados/leitos_estaduais.csv', sep=',')
     leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format='%d/%m/%Y')
+
+    print('\t\tAtualizando dados de doenças preexistentes...')
 
     doencas.columns = ['municipio', 'codigo_ibge', 'idade', 'sexo', 'covid19', 'data_inicio_sintomas', 'obito', 'asma',
                        'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica',
@@ -507,6 +510,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         return linha
 
+    print('\t\tAtualizando dados da campanha de vacinação...')
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
     hoje = data_processamento
 
@@ -543,7 +547,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     if atualizacao_imunizantes is not None:
         if dados_imunizantes.data.max().date() < data_processamento.date():
             novos_dados = atualizacao_imunizantes.groupby('Imunibiológico_Ajustado') \
-                                                 .agg(aplicadas=('Contagem de Id Vacinacao', sum)) \
+                                                 .agg(aplicadas=('Count of Id Vacinacao', sum)) \
                                                  .reset_index()
 
             novos_dados.columns = ['vacina', 'aplicadas']
