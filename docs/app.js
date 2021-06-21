@@ -246,6 +246,9 @@ function montaPagina(pagina) {
 			criaLink('Ampliar gráfico da população vacinada contra Covid-19', 'graficos/populacao-vacinada.html');
 			criaIFrame('graficos/populacao-vacinada.html', 'graficos/populacao-vacinada-mobile.html', versaoMobile);
 			
+			criaLink('Ampliar gráfico da população imunizada contra Covid-19', 'graficos/populacao-imunizada.html');
+			criaIFrame('graficos/populacao-imunizada.html', 'graficos/populacao-imunizada-mobile.html', versaoMobile);
+			
 			criaLink('Ampliar gráfico das doses de vacinas aplicadas', 'graficos/vacinas-tipo.html');
 			criaIFrame('graficos/vacinas-tipo.html', 'graficos/vacinas-tipo-mobile.html', versaoMobile);
 			

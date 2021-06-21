@@ -796,6 +796,8 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     gera_evolucao_vacinacao_cidade(dados_vacinacao)
     print('\tPopulação vacinada...')
     gera_populacao_vacinada(dados_vacinacao)
+    print('\tPopulação imunizada...')
+    gera_populacao_imunizada(dados_vacinacao)
     print('\t1ª dose x 2ª dose...')
     gera_tipo_doses(dados_vacinacao)
     print('\tDoses recebidas x aplicadas...')
@@ -818,7 +820,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
                  '<b>Cidade de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>']
 
     info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>População vacinada (%)</b>',
-            '<b>Média diária</b>', '<b>Média móvel 7 dias</b>', '<b>Média semanal</b>']
+            '<b>População imunizada (%)</b>', '<b>Média diária</b>', '<b>Média móvel 7 dias</b>', '<b>Média semanal</b>']
 
     doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_estado, 'total_doses']
     doses_aplicadas = 'indisponível' if doses_aplicadas.empty else f'{doses_aplicadas.item():7,.0f}'.replace(',', '.')
@@ -848,10 +850,14 @@ def gera_resumo_vacinacao(dados_vacinacao):
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
+    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_2a_dose']
+    pop_imunizada = 'indisponível' if pop_imunizada.empty else f'{pop_imunizada.item():7.2f}%'.replace('.', ',')
+
     estado = [doses_aplicadas,
               dose_1,
               dose_2,
               pop_vacinada,
+              pop_imunizada,
               media_diaria,
               media_movel,
               media_semanal]
@@ -884,10 +890,14 @@ def gera_resumo_vacinacao(dados_vacinacao):
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
+    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_2a_dose']
+    pop_imunizada = 'indisponível' if pop_imunizada.empty else f'{pop_imunizada.item():7.2f}%'.replace('.', ',')
+
     cidade = [doses_aplicadas,
               dose_1,
               dose_2,
               pop_vacinada,
+              pop_imunizada,
               media_diaria,
               media_movel,
               media_semanal]
@@ -909,7 +919,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
                           text='<i><b>Fonte:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
                                'Governo do Estado de São Paulo</a></i>')],
-        height=345
+        height=380
     )
 
     # fig.show()
@@ -920,7 +930,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=370
+        height=420
     )
 
     # fig.show()
@@ -2711,7 +2721,7 @@ def gera_populacao_vacinada(dados):
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
 
     fig.update_layout(
-        title='População vacinada no estado e na cidade de São Paulo'
+        title='População vacinada (1ª dose) no estado e na cidade de São Paulo'
               '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
               'Governo do Estado de São Paulo</a></i>',
         font=dict(family='Roboto'),
@@ -2741,6 +2751,61 @@ def gera_populacao_vacinada(dados):
                    include_plotlyjs='directory', auto_open=False, auto_play=False)
 
 
+def gera_populacao_imunizada(dados):
+    filtro_data = dados.data == dados.data.max()
+    filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
+    filtro_cidade = dados.municipio == 'SAO PAULO'
+
+    dados_estado = dados.loc[filtro_data & filtro_estado].copy()
+    dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    dados_cidade = dados.loc[filtro_data & filtro_cidade].copy()
+    dados_cidade.loc[:, 'data'] = dados_cidade.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
+
+    rotulos = ['população imunizada', 'população aguardando vacinação']
+    pizza_estado = [dados_estado['2a_dose'].item(), dados_estado['populacao'].item() - dados_estado['2a_dose'].item()]
+    pizza_cidade = [dados_cidade['2a_dose'].item(), dados_cidade['populacao'].item() - dados_cidade['2a_dose'].item()]
+
+    fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
+
+    fig.add_trace(go.Pie(labels=rotulos, values=pizza_estado, name='Estado',
+                         marker=dict(colors=['green', 'red'])), 1, 1)
+    fig.add_trace(go.Pie(labels=rotulos, values=pizza_cidade, name='Cidade',
+                         marker=dict(colors=['green', 'red'])), 1, 2)
+
+    fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
+
+    fig.update_layout(
+        title='População imunizada (2ª dose) no estado e na cidade de São Paulo'
+              '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
+              'Governo do Estado de São Paulo</a></i>',
+        font=dict(family='Roboto'),
+        annotations=[dict(text='Estado de SP', x=0.17, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False),
+                     dict(text='Cidade de SP', x=0.80, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False)],
+        height=600
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/populacao-imunizada.html',
+                   include_plotlyjs='directory', auto_open=False, auto_play=False)
+
+    # versão mobile
+    fig.update_layout(
+        showlegend=False,
+        font=dict(size=11, family='Roboto'),
+        margin=dict(l=1, r=1, b=1, t=90, pad=10),
+        annotations=[dict(text='Estado', x=0.17, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False),
+                     dict(text='Cidade', x=0.85, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False)],
+        height=400
+    )
+
+    # fig.show()
+
+    pio.write_html(fig, file='docs/graficos/populacao-imunizada-mobile.html',
+                   include_plotlyjs='directory', auto_open=False, auto_play=False)
+
+
 def gera_tipo_doses(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
@@ -2759,9 +2824,9 @@ def gera_tipo_doses(dados):
     fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
 
     fig.add_trace(go.Pie(labels=rotulos, values=pizza_estado, name='Estado',
-                         marker=dict(colors=['green', 'blue'])), 1, 1)
+                         marker=dict(colors=['mediumturquoise', 'gold'])), 1, 1)
     fig.add_trace(go.Pie(labels=rotulos, values=pizza_cidade, name='Cidade',
-                         marker=dict(colors=['green', 'blue'])), 1, 2)
+                         marker=dict(colors=['mediumturquoise', 'gold'])), 1, 2)
 
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
 
@@ -2814,9 +2879,9 @@ def gera_doses_aplicadas(dados):
     fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
 
     fig.add_trace(go.Pie(labels=rotulos, values=pizza_estado, name='Estado',
-                         marker=dict(colors=['green', 'red'])), 1, 1)
+                         marker=dict(colors=['aquamarine', 'darkturquoise'])), 1, 1)
     fig.add_trace(go.Pie(labels=rotulos, values=pizza_cidade, name='Cidade',
-                         marker=dict(colors=['green', 'red'])), 1, 2)
+                         marker=dict(colors=['aquamarine', 'darkturquoise'])), 1, 2)
 
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
 

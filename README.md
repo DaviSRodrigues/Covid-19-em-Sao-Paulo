@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 21/06/2021
+- Indicação do percentual de pessoas imunizadas contra a Covid-19 (2ª dose) na página inicial (tabela) e na página da campanha de vacinação (gráfico).
+
 ## 07/05/2021
 - Novo gráfico da Campanha de Vacinação: distribuição de vacinas no Estado por fabricante.
 
