@@ -139,7 +139,7 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=',', encoding='utf-8-sig')
+        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
         doses_aplicadas = None
@@ -149,7 +149,7 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        doses_recebidas = pd.read_csv(StringIO(req.text), sep=',', encoding='utf-8-sig')
+        doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
         doses_recebidas = None
