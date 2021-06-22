@@ -547,7 +547,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     if atualizacao_imunizantes is not None:
         if dados_imunizantes.data.max().date() < data_processamento.date():
             novos_dados = atualizacao_imunizantes.groupby('Imunibiológico_Ajustado') \
-                                                 .agg(aplicadas=('Count of Id Vacinacao', sum)) \
+                                                 .agg(aplicadas=('Contagem de Id Vacinacao', sum)) \
                                                  .reset_index()
 
             novos_dados.columns = ['vacina', 'aplicadas']
