@@ -159,7 +159,7 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_estatiscas_gerais.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        atualizacao_imunizantes = pd.read_csv(StringIO(req.text), sep=',')
+        atualizacao_imunizantes = pd.read_csv(StringIO(req.text), sep=';')
     except Exception as e:
         print(f'\t\tErro ao buscar {data}_estatiscas_gerais.csv da Seade: {e}')
         atualizacao_imunizantes = None
