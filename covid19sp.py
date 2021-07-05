@@ -373,7 +373,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if not indice.empty:
             return dados_vacinacao.loc[indice.item(), coluna]
 
-        return None
+        return None if coluna != 'dose_unica' else 0
 
     def atualiza_doses(municipio):
         temp = doses_aplicadas.loc[doses_aplicadas['municipio'] == municipio]
@@ -390,6 +390,12 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if segunda_dose is None:
             segunda_dose = obtem_dado_anterior(municipio, '2a_dose')
 
+        doses = temp.loc[temp.dose == 'UNICA', 'contagem']
+        dose_unica = int(doses.iat[0]) if not doses.empty else None
+
+        if dose_unica is None:
+            dose_unica = obtem_dado_anterior(municipio, 'dose_unica')
+
         if doses_recebidas is None:
             recebidas = obtem_dado_anterior(municipio, 'doses_recebidas')
         else:
@@ -405,13 +411,15 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            'municipio': municipio,
                            'doses_recebidas': recebidas,
                            '1a_dose': primeira_dose,
-                           '2a_dose': segunda_dose}
+                           '2a_dose': segunda_dose,
+                           'dose_unica': dose_unica}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
         else:
             dados_vacinacao.loc[filtro, 'doses_recebidas'] = recebidas
             dados_vacinacao.loc[filtro, '1a_dose'] = primeira_dose
             dados_vacinacao.loc[filtro, '2a_dose'] = segunda_dose
+            dados_vacinacao.loc[filtro, 'dose_unica'] = dose_unica
 
     def atualiza_populacao():
         hoje_str = hoje.strftime('%Y-%m-%d')
@@ -420,18 +428,21 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         nonlocal dados_vacinacao
-        dados_vacinacao['populacao'] = None
 
         for m in list(dados_vacinacao['municipio'].unique()):
             pop = dados_pop.loc[dados_pop.nome_munic == m, 'pop']
             pop = None if pop.empty else pop.iat[0]
+
+            if pop is None:
+                continue
 
             dados_vacinacao.loc[dados_vacinacao.municipio == m, 'populacao'] = pop
 
         pop_estado = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') &
                                      (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
-        dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO', 'populacao'] = pop_estado
+        if pop_estado is not None:
+            dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO', 'populacao'] = pop_estado
 
     def atualiza_estado():
         if doses_aplicadas is None:
@@ -450,6 +461,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            'doses_recebidas': dados_vacinacao.loc[filtro_d & filtro_m, 'doses_recebidas'].sum(),
                            '1a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '1a_dose'].sum(),
                            '2a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '2a_dose'].sum(),
+                           'dose_unica': dados_vacinacao.loc[filtro_d & filtro_m, 'dose_unica'].sum(),
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
@@ -457,6 +469,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = dados_vacinacao.loc[filtro_d & filtro_m, 'doses_recebidas'].sum()
             dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '1a_dose'].sum()
             dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '2a_dose'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = dados_vacinacao.loc[filtro_d & filtro_m, 'dose_unica'].sum()
 
     def calcula_campos_adicionais(linha):
         if linha['data'] != hoje.date():
@@ -464,10 +477,11 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         primeira_dose = 0 if linha['1a_dose'] is None or math.isnan(linha['1a_dose']) else linha['1a_dose']
         segunda_dose = 0 if linha['2a_dose'] is None or math.isnan(linha['2a_dose']) else linha['2a_dose']
+        dose_unica = 0 if linha['dose_unica'] is None or math.isnan(linha['dose_unica']) else linha['dose_unica']
         populacao = 0 if linha['populacao'] is None or math.isnan(linha['populacao']) else linha['populacao']
         doses_recebidas = 0 if linha['doses_recebidas'] is None or math.isnan(linha['doses_recebidas']) else linha['doses_recebidas']
 
-        linha['total_doses'] = primeira_dose + segunda_dose
+        linha['total_doses'] = primeira_dose + segunda_dose + dose_unica
 
         try:
             linha['perc_vacinadas_1a_dose'] = (primeira_dose / populacao) * 100
@@ -478,6 +492,21 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             linha['perc_vacinadas_2a_dose'] = (segunda_dose / populacao) * 100
         except Exception:
             linha['perc_vacinadas_2a_dose'] = None
+
+        try:
+            linha['perc_vacinadas_dose_unica'] = (dose_unica / populacao) * 100
+        except Exception:
+            linha['perc_vacinadas_dose_unica'] = None
+
+        try:
+            linha['perc_vacinadas_1a_dose_dose_unica'] = ((primeira_dose + dose_unica) / populacao) * 100
+        except Exception:
+            linha['perc_vacinadas_1a_dose_dose_unica'] = None
+
+        try:
+            linha['perc_imunizadas'] = ((segunda_dose + dose_unica) / populacao) * 100
+        except Exception:
+            linha['perc_imunizadas'] = None
 
         try:
             if doses_recebidas == 0:
@@ -507,6 +536,13 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             linha['segunda_dose_dia'] = linha['2a_dose']
         else:
             linha['segunda_dose_dia'] = linha['2a_dose'] - segunda_dose_anterior
+
+        dose_unica_anterior = obtem_dado_anterior(linha['municipio'], 'dose_unica')
+
+        if segunda_dose_anterior is None:
+            linha['dose_unica_dia'] = linha['dose_unica']
+        else:
+            linha['dose_unica_dia'] = linha['dose_unica'] - dose_unica_anterior
 
         return linha
 
@@ -600,9 +636,9 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
     estado = esquerda.merge(estado, on=['data'], how='outer', suffixes=('_isolamento', '_estado'))
 
     filtro = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
-    colunas = ['data', 'aplicadas_dia', 'perc_vacinadas_1a_dose']
+    colunas = ['data', 'aplicadas_dia', 'perc_imunizadas']
     vacinacao = dados_vacinacao.loc[filtro, colunas].groupby(['data']).sum().reset_index()
-    vacinacao.columns = ['data', 'vacinadas_semana', 'perc_vac_semana']
+    vacinacao.columns = ['data', 'vacinadas_semana', 'perc_imu_semana']
 
     estado = vacinacao.merge(estado, on=['data'], how='outer', suffixes=('_vacinacao', '_estado'))
 
@@ -617,7 +653,7 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
 
     estado = estado.groupby('data') \
                    .agg({'isolamento': 'mean', 'obitos_semana': sum, 'casos_semana': sum,
-                         'vacinadas_semana': sum, 'perc_vac_semana': max, 'internacoes_semana': sum}) \
+                         'vacinadas_semana': sum, 'perc_imu_semana': max, 'internacoes_semana': sum}) \
                    .reset_index()
 
     estado['data'] = estado.data.apply(lambda d: _formata_semana_extenso(d))
@@ -642,9 +678,9 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
     cidade = esquerda.merge(cidade, on=['data'], how='outer', suffixes=('_isolamento', '_cidade'))
 
     filtro = dados_vacinacao.municipio == 'SAO PAULO'
-    colunas = ['data', 'aplicadas_dia', 'perc_vacinadas_1a_dose']
+    colunas = ['data', 'aplicadas_dia', 'perc_imunizadas']
     vacinacao = dados_vacinacao.loc[filtro, colunas].groupby(['data']).sum().reset_index()
-    vacinacao.columns = ['data', 'vacinadas_semana', 'perc_vac_semana']
+    vacinacao.columns = ['data', 'vacinadas_semana', 'perc_imu_semana']
 
     cidade = vacinacao.merge(cidade, on=['data'], how='outer', suffixes=('_vacinacao', '_cidade'))
 
@@ -659,7 +695,7 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
 
     cidade = cidade.groupby('data') \
                    .agg({'isolamento': 'mean', 'obitos_semana': sum, 'casos_semana': sum,
-                         'vacinadas_semana': sum, 'perc_vac_semana': max, 'internacoes_semana': sum}) \
+                         'vacinadas_semana': sum, 'perc_imu_semana': max, 'internacoes_semana': sum}) \
                    .reset_index()
 
     cidade['data'] = cidade.data.apply(lambda d: _formata_semana_extenso(d))
@@ -687,7 +723,7 @@ def gera_dados_semana(evolucao_cidade, evolucao_estado, leitos_estaduais, isolam
             isolamento_anterior = dados.loc[indice, 'isolamento_atual']
             isolamento_2sem_anterior = dados.loc[indice, 'isolamento']
             vacinadas_anterior = dados.loc[indice, 'vacinadas_semana']
-            perc_vac_semana_anterior = dados.loc[indice, 'perc_vac_semana']
+            perc_imu_semana_anterior = dados.loc[indice, 'perc_imu_semana']
             internacoes_semana_anterior = dados.loc[indice, 'internacoes_semana']
 
             if casos_anterior > 0:
@@ -708,8 +744,8 @@ def gera_dados_semana(evolucao_cidade, evolucao_estado, leitos_estaduais, isolam
             if vacinadas_anterior > 0:
                 linha['variacao_vacinadas'] = ((linha['vacinadas_semana'] / vacinadas_anterior) - 1) * 100
 
-            if perc_vac_semana_anterior > 0:
-                linha['variacao_perc_vac'] = ((linha['perc_vac_semana'] / perc_vac_semana_anterior) - 1) * 100
+            if perc_imu_semana_anterior > 0:
+                linha['variacao_perc_imu'] = ((linha['perc_imu_semana'] / perc_imu_semana_anterior) - 1) * 100
 
             if internacoes_semana_anterior > 0:
                 linha['variacao_internacoes'] = ((linha['internacoes_semana'] / internacoes_semana_anterior) - 1) * 100
@@ -819,7 +855,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
                  '<b>Estado de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>',
                  '<b>Cidade de SP</b><br><i>' + data_processamento.strftime('%d/%m/%Y') + '</i>']
 
-    info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>População vacinada (%)</b>',
+    info = ['<b>Doses aplicadas</b>', '<b>1ª dose</b>', '<b>2ª dose</b>', '<b>Dose única</b>', '<b>População vacinada (%)</b>',
             '<b>População imunizada (%)</b>', '<b>Média diária</b>', '<b>Média móvel 7 dias</b>', '<b>Média semanal</b>']
 
     doses_aplicadas = dados_vacinacao.loc[filtro_data & filtro_estado, 'total_doses']
@@ -830,6 +866,9 @@ def gera_resumo_vacinacao(dados_vacinacao):
 
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_estado, '2a_dose']
     dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.')
+
+    dose_unica = dados_vacinacao.loc[filtro_data & filtro_estado, 'dose_unica']
+    dose_unica = 'indisponível' if dose_unica.empty else f'{dose_unica.item():7,.0f}'.replace(',', '.')
 
     total_doses = dados_vacinacao.loc[filtro_data_max & filtro_estado, 'total_doses'].item()
     data_max = dados_vacinacao.loc[filtro_data_max & filtro_estado, 'data'].item()
@@ -850,12 +889,13 @@ def gera_resumo_vacinacao(dados_vacinacao):
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
-    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_2a_dose']
+    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_imunizadas']
     pop_imunizada = 'indisponível' if pop_imunizada.empty else f'{pop_imunizada.item():7.2f}%'.replace('.', ',')
 
     estado = [doses_aplicadas,
               dose_1,
               dose_2,
+              dose_unica,
               pop_vacinada,
               pop_imunizada,
               media_diaria,
@@ -870,6 +910,9 @@ def gera_resumo_vacinacao(dados_vacinacao):
 
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_cidade, '2a_dose']
     dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.') if not math.isnan(dose_2.item()) else 'indisponível'
+
+    dose_unica = dados_vacinacao.loc[filtro_data & filtro_cidade, 'dose_unica']
+    dose_unica = 'indisponível' if dose_unica.empty else f'{dose_unica.item():7,.0f}'.replace(',', '.')
 
     total_doses = dados_vacinacao.loc[filtro_data_max & filtro_cidade, 'total_doses'].item()
     data_max = dados_vacinacao.loc[filtro_data_max & filtro_cidade, 'data'].item()
@@ -890,12 +933,13 @@ def gera_resumo_vacinacao(dados_vacinacao):
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
-    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_2a_dose']
+    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_imunizadas']
     pop_imunizada = 'indisponível' if pop_imunizada.empty else f'{pop_imunizada.item():7.2f}%'.replace('.', ',')
 
     cidade = [doses_aplicadas,
               dose_1,
               dose_2,
+              dose_unica,
               pop_vacinada,
               pop_imunizada,
               media_diaria,
@@ -919,7 +963,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         annotations=[dict(x=0, y=0, showarrow=False, font=dict(size=13),
                           text='<i><b>Fonte:</b> <a href = "https://www.seade.gov.br/coronavirus/">'
                                'Governo do Estado de São Paulo</a></i>')],
-        height=380
+        height=420
     )
 
     # fig.show()
@@ -930,7 +974,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
         font=dict(size=13, family='Roboto'),
         margin=dict(l=1, r=1, b=1, t=30, pad=5),
         annotations=[dict(x=0, y=0)],
-        height=420
+        height=460
     )
 
     # fig.show()
@@ -1420,16 +1464,14 @@ def gera_doencas_preexistentes_casos(doencas):
     for lista_m in casos_com_doencas_m_neg:
         fig.add_trace(go.Bar(x=lista_m, y=idades, orientation='h',
                              hoverinfo='text+y+name', text=casos_com_doencas_m[cont],
-                             marker_color='red', name=doencas.columns[cont],
-                             visible=True if cont == 0 else 'legendonly'))
+                             marker_color='red', name=doencas.columns[cont], visible=True))
         cont = cont + 1
 
     cont = 0
 
     for lista_h in casos_com_doencas_h:
         fig.add_trace(go.Bar(x=lista_h, y=idades, orientation='h', hoverinfo='x+y+name',
-                             marker_color='blue', name=doencas.columns[cont],
-                             visible=True if cont == 0 else 'legendonly'))
+                             marker_color='blue', name=doencas.columns[cont], visible=True))
         cont = cont + 1
 
     fig.add_trace(go.Bar(x=casos_sem_doencas_m_neg, y=idades, orientation='h',
@@ -1528,16 +1570,14 @@ def gera_doencas_preexistentes_obitos(doencas):
     for lista_m in obitos_com_doencas_m_neg:
         fig.add_trace(go.Bar(x=lista_m, y=idades, orientation='h',
                              hoverinfo='text+y+name', text=obitos_com_doencas_m[cont],
-                             marker_color='red', name=doencas.columns[cont],
-                             visible=True if cont == 0 else 'legendonly'))
+                             marker_color='red', name=doencas.columns[cont], visible=True))
         cont = cont + 1
 
     cont = 0
 
     for lista_h in obitos_com_doencas_h:
         fig.add_trace(go.Bar(x=lista_h, y=idades, orientation='h', hoverinfo='x+y+name',
-                             marker_color='blue', name=doencas.columns[cont],
-                             visible=True if cont == 0 else 'legendonly'))
+                             marker_color='blue', name=doencas.columns[cont], visible=True))
         cont = cont + 1
 
     fig.add_trace(go.Bar(x=obitos_sem_doencas_m_neg, y=idades, orientation='h',
@@ -1785,10 +1825,10 @@ def gera_evolucao_estado(evolucao_estado):
                              text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
-    fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['perc_vac_semana'], line=dict(color='black'),
-                             name='população vacinada', hovertemplate='%{y:.2f}%',
+    fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['perc_imu_semana'], line=dict(color='black'),
+                             name='população imunizada', hovertemplate='%{y:.2f}%',
                              mode='lines+markers+text', textposition='top center',
-                             text=grafico['variacao_perc_vac'].apply(lambda v: _formata_variacao(v))),
+                             text=grafico['variacao_perc_imu'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
     fig.add_trace(go.Bar(x=grafico['data'], y=grafico['casos_semana'], marker_color='blue',
@@ -1811,7 +1851,7 @@ def gera_evolucao_estado(evolucao_estado):
 
     frames = [dict(data=[dict(type='scatter', x=grafico.data[:d + 1], y=grafico.isolamento[:d + 1]),
                          dict(type='scatter', x=grafico.data[:d + 1], y=grafico.uti[:d + 1]),
-                         dict(type='scatter', x=grafico.data[:d + 1], y=grafico.perc_vac_semana[:d + 1]),
+                         dict(type='scatter', x=grafico.data[:d + 1], y=grafico.perc_imu_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.casos_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.obitos_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.vacinadas_semana[:d + 1]),
@@ -1883,10 +1923,10 @@ def gera_evolucao_cidade(evolucao_cidade):
                              text=grafico['variacao_uti'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
-    fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['perc_vac_semana'], line=dict(color='black'),
-                             name='população vacinada', hovertemplate='%{y:.2f}%',
+    fig.add_trace(go.Scatter(x=grafico['data'], y=grafico['perc_imu_semana'], line=dict(color='black'),
+                             name='população imunizada', hovertemplate='%{y:.2f}%',
                              mode='lines+markers+text', textposition='top center',
-                             text=grafico['variacao_perc_vac'].apply(lambda v: _formata_variacao(v))),
+                             text=grafico['variacao_perc_imu'].apply(lambda v: _formata_variacao(v))),
                   secondary_y=True)
 
     fig.add_trace(go.Bar(x=grafico['data'], y=grafico['casos_semana'], marker_color='blue',
@@ -1909,7 +1949,7 @@ def gera_evolucao_cidade(evolucao_cidade):
 
     frames = [dict(data=[dict(type='scatter', x=grafico.data[:d + 1], y=grafico.isolamento[:d + 1]),
                          dict(type='scatter', x=grafico.data[:d + 1], y=grafico.uti[:d + 1]),
-                         dict(type='scatter', x=grafico.data[:d + 1], y=grafico.perc_vac_semana[:d + 1]),
+                         dict(type='scatter', x=grafico.data[:d + 1], y=grafico.perc_imu_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.casos_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.obitos_semana[:d + 1]),
                          dict(type='bar', x=grafico.data[:d + 1], y=grafico.vacinadas_semana[:d + 1]),
@@ -2532,6 +2572,8 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
     fig.add_trace(go.Bar(x=dados['data'], y=dados['segunda_dose_dia'], marker_color='green',
                          name='doses aplicadas<br>por dia (2ª dose)'))
 
+    fig.add_trace(go.Bar(x=dados['data'], y=dados['dose_unica_dia'], name='doses aplicadas<br>por dia (dose única)'))
+
     fig.add_trace(go.Scatter(x=media_movel['data'], y=media_movel['aplicadas_dia'], line=dict(color='red'),
                              mode='lines+markers', name='média móvel de doses<br>aplicadas em 7 dias'))
 
@@ -2542,6 +2584,11 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
 
     fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_2a_dose'], line=dict(color='goldenrod'),
                              mode='lines+markers', name='população vacinada<br>2ª dose',
+                             hovertemplate='%{y:.2f}%', visible='legendonly'),
+                  secondary_y=True)
+
+    fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_dose_unica'], mode='lines+markers',
+                             name='população vacinada<br>dose única',
                              hovertemplate='%{y:.2f}%', visible='legendonly'),
                   secondary_y=True)
 
@@ -2624,6 +2671,8 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
     fig.add_trace(go.Bar(x=dados['data'], y=dados['segunda_dose_dia'], marker_color='green',
                          name='doses aplicadas<br>por dia (2ª dose)'))
 
+    fig.add_trace(go.Bar(x=dados['data'], y=dados['dose_unica_dia'], name='doses aplicadas<br>por dia (dose única)'))
+
     fig.add_trace(go.Scatter(x=media_movel['data'], y=media_movel['aplicadas_dia'], line=dict(color='red'),
                              mode='lines+markers', name='média móvel de doses<br>aplicadas em 7 dias'))
 
@@ -2634,6 +2683,11 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
 
     fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_2a_dose'], line=dict(color='goldenrod'),
                              mode='lines+markers', name='população vacinada<br>2ª dose',
+                             hovertemplate='%{y:.2f}%', visible='legendonly'),
+                  secondary_y=True)
+
+    fig.add_trace(go.Scatter(x=dados['data'], y=dados['perc_vacinadas_dose_unica'], mode='lines+markers',
+                             name='população vacinada<br>dose única',
                              hovertemplate='%{y:.2f}%', visible='legendonly'),
                   secondary_y=True)
 
@@ -2763,8 +2817,8 @@ def gera_populacao_imunizada(dados):
     dados_cidade.loc[:, 'data'] = dados_cidade.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
 
     rotulos = ['população imunizada', 'população aguardando vacinação']
-    pizza_estado = [dados_estado['2a_dose'].item(), dados_estado['populacao'].item() - dados_estado['2a_dose'].item()]
-    pizza_cidade = [dados_cidade['2a_dose'].item(), dados_cidade['populacao'].item() - dados_cidade['2a_dose'].item()]
+    pizza_estado = [dados_estado['2a_dose'].item() + dados_estado['dose_unica'].item(), dados_estado['populacao'].item() - dados_estado['2a_dose'].item() - dados_estado['dose_unica'].item()]
+    pizza_cidade = [dados_cidade['2a_dose'].item() + dados_cidade['dose_unica'].item(), dados_cidade['populacao'].item() - dados_cidade['2a_dose'].item() - dados_cidade['dose_unica'].item()]
 
     fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
 
@@ -2776,7 +2830,7 @@ def gera_populacao_imunizada(dados):
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
 
     fig.update_layout(
-        title='População imunizada (2ª dose) no estado e na cidade de São Paulo'
+        title='População imunizada (2ª dose ou dose única) no estado e na cidade de São Paulo'
               '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
               'Governo do Estado de São Paulo</a></i>',
         font=dict(family='Roboto'),
@@ -2817,9 +2871,9 @@ def gera_tipo_doses(dados):
     dados_cidade = dados.loc[filtro_data & filtro_cidade].copy()
     dados_cidade.loc[:, 'data'] = dados_cidade.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
 
-    rotulos = ['1ª dose', '2ª dose']
-    pizza_estado = [dados_estado['1a_dose'].item(), dados_estado['2a_dose'].item()]
-    pizza_cidade = [dados_cidade['1a_dose'].item(), dados_cidade['2a_dose'].item()]
+    rotulos = ['1ª dose', '2ª dose', 'Dose única']
+    pizza_estado = [dados_estado['1a_dose'].item(), dados_estado['2a_dose'].item(), dados_estado['dose_unica'].item()]
+    pizza_cidade = [dados_cidade['1a_dose'].item(), dados_cidade['2a_dose'].item(), dados_cidade['dose_unica'].item()]
 
     fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'domain'}, {'type': 'domain'}]])
 
@@ -2831,7 +2885,7 @@ def gera_tipo_doses(dados):
     fig.update_traces(hole=.4, hoverinfo="label+percent+name+value")
 
     fig.update_layout(
-        title='1ª e 2ª doses aplicadas pelo estado e pela cidade de São Paulo'
+        title='Tipos de doses aplicadas pelo estado e pela cidade de São Paulo'
               '<br><i>Fonte: <a href = "https://www.seade.gov.br/coronavirus/">' +
               'Governo do Estado de São Paulo</a></i>',
         font=dict(family='Roboto'),
@@ -2918,9 +2972,9 @@ def gera_doses_aplicadas(dados):
 
 def gera_tabela_vacinacao(dados):
     dados_tab = dados.loc[dados.data == dados.data.max()].copy()
-    dados_tab.columns = ['Data', 'Município', '1ª dose', '2ª dose', 'Aplicadas no dia', 'Doses aplicadas',
-                         'Doses recebidas', 'Aplicadas (%)', '1ª dose (dia)', '1ª dose (%)',
-                         '2ª dose (dia)', '2ª dose (%)', 'População']
+    dados_tab.columns = ['Data', 'Município', '1ª dose', '2ª dose', 'Dose única', 'Aplicadas no dia', 'Doses aplicadas',
+                         'Doses recebidas', 'Aplicadas (%)', '1ª dose (dia)', '1ª dose (%)', '2ª dose (dia)', '2ª dose (%)',
+                         'Dose única (dia)', 'Dose única (%)', '1ª dose ou Dose única (%)', 'Imunizados (%)', 'População']
 
     dados_tab.drop(columns='Aplicadas no dia', inplace=True)
 
@@ -2931,21 +2985,27 @@ def gera_tabela_vacinacao(dados):
     dados_tab['1ª dose (%)'] = dados_tab['1ª dose (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
     dados_tab['2ª dose'] = dados_tab['2ª dose'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['2ª dose (%)'] = dados_tab['2ª dose (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
+    dados_tab['Dose única'] = dados_tab['Dose única'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['Dose única (%)'] = dados_tab['Dose única (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
+    dados_tab['Imunizados (%)'] = dados_tab['Imunizados (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
     dados_tab['Doses aplicadas'] = dados_tab['Doses aplicadas'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['1ª dose (dia)'] = dados_tab['1ª dose (dia)'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['2ª dose (dia)'] = dados_tab['2ª dose (dia)'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
+    dados_tab['Dose única (dia)'] = dados_tab['Dose única (dia)'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['Doses recebidas'] = dados_tab['Doses recebidas'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
     dados_tab['Aplicadas (%)'] = dados_tab['Aplicadas (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
     dados_tab['População'] = dados_tab['População'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
 
-    cabecalho = ['<b>Município</b>', '<b>1ª dose</b>', '<b>1ª dose (%)</b>', '<b>2ª dose</b>',
-                 '<b>2ª dose (%)</b>', '<b>Doses aplicadas</b>', '<b>1ª dose (dia)</b>', '<b>2ª dose (dia)</b>',
+    cabecalho = ['<b>Município</b>', '<b>1ª dose</b>', '<b>1ª dose (%)</b>', '<b>2ª dose</b>', '<b>2ª dose (%)</b>',
+                 '<b>Dose única</b>', '<b>Dose única (%)</b>', '<b>Imunizados (%)</b>', '<b>Doses aplicadas</b>',
+                 '<b>1ª dose (dia)</b>', '<b>2ª dose (dia)</b>', '<b>Dose única (dia)</b>',
                  '<b>Doses recebidas</b>', '<b>Aplicadas (%)</b>', '<b>População</b>']
 
     valores = [dados_tab['Município'], dados_tab['1ª dose'], dados_tab['1ª dose (%)'],
-               dados_tab['2ª dose'], dados_tab['2ª dose (%)'],
-               dados_tab['Doses aplicadas'], dados_tab['1ª dose (dia)'], dados_tab['2ª dose (dia)'],
-               dados_tab['Doses recebidas'], dados_tab['Aplicadas (%)'], dados_tab['População']]
+               dados_tab['2ª dose'], dados_tab['2ª dose (%)'], dados_tab['Dose única'], dados_tab['Dose única (%)'],
+               dados_tab['Imunizados (%)'], dados_tab['Doses aplicadas'], dados_tab['1ª dose (dia)'],
+               dados_tab['2ª dose (dia)'], dados_tab['Dose única (dia)'], dados_tab['Doses recebidas'],
+               dados_tab['Aplicadas (%)'], dados_tab['População']]
 
     fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
                                                fill_color='#00aabb',
@@ -2975,14 +3035,15 @@ def gera_tabela_vacinacao(dados):
 
     pio.write_html(fig, file='docs/graficos/tabela-vacinacao.html', include_plotlyjs='directory', auto_open=False)
 
-    cabecalho = ['<b>Município</b>', '<b>População vacinada (%)</b>']
+    cabecalho = ['<b>Município</b>', '<b>População imunizada (%)</b>']
+    dados_tab.sort_values(by='Imunizados (%)', ascending=False, inplace=True)
 
     fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
                                                fill_color='#00aabb',
                                                font=dict(color='white'),
                                                align='right',
                                                line=dict(width=5)),
-                                   cells=dict(values=[dados_tab['Município'], dados_tab['1ª dose (%)']],
+                                   cells=dict(values=[dados_tab['Município'], dados_tab['Imunizados (%)']],
                                               fill_color='lavender',
                                               align='right',
                                               line=dict(width=5),

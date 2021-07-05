@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 05/07/2021
+- Inclusão de vacinas de dose única em todos os gráficos e tabelas de vacinação.
+
 ## 21/06/2021
 - Indicação do percentual de pessoas imunizadas contra a Covid-19 (2ª dose) na página inicial (tabela) e na página da campanha de vacinação (gráfico).
 
