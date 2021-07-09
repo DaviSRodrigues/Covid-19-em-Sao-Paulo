@@ -580,18 +580,18 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
 
-    if atualizacao_imunizantes is not None:
-        if dados_imunizantes.data.max().date() < data_processamento.date():
-            atualizacao_imunizantes.columns = ['vacina', 'aplicadas', 'coluna']
-            novos_dados = atualizacao_imunizantes[['vacina', 'aplicadas']]
-            novos_dados['data'] = data_processamento
-            novos_dados = novos_dados[['data', 'vacina', 'aplicadas']]
-            novos_dados.sort_values(by='vacina', inplace=True)
-
-            dados_imunizantes = dados_imunizantes.append(novos_dados)
-            dados_imunizantes['data'] = dados_imunizantes['data'].apply(lambda d: d.strftime('%d/%m/%Y'))
-            dados_imunizantes.to_csv('dados/dados_imunizantes.csv', index=False)
-            dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
+    # if atualizacao_imunizantes is not None:
+    #     if dados_imunizantes.data.max().date() < data_processamento.date():
+    #         atualizacao_imunizantes.columns = ['vacina', 'aplicadas', 'coluna']
+    #         novos_dados = atualizacao_imunizantes[['vacina', 'aplicadas']]
+    #         novos_dados['data'] = data_processamento
+    #         novos_dados = novos_dados[['data', 'vacina', 'aplicadas']]
+    #         novos_dados.sort_values(by='vacina', inplace=True)
+    #
+    #         dados_imunizantes = dados_imunizantes.append(novos_dados)
+    #         dados_imunizantes['data'] = dados_imunizantes['data'].apply(lambda d: d.strftime('%d/%m/%Y'))
+    #         dados_imunizantes.to_csv('dados/dados_imunizantes.csv', index=False)
+    #         dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
 
     return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_munic, dados_imunizantes
 
