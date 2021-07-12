@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from io import StringIO
 import locale
 import math
+from tableauscraper import TableauScraper
 import traceback
 import unicodedata
 
@@ -155,13 +156,18 @@ def carrega_dados_estado():
         doses_recebidas = None
 
     try:
-        print('\t\tDistribuição de imunizantes...')
-        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_estatiscas_gerais.csv'
-        req = requests.get(URL, headers=headers, stream=True)
-        req.encoding = req.apparent_encoding
-        atualizacao_imunizantes = pd.read_csv(StringIO(req.text), sep=';')
+        print('\t\tAtualizando doses aplicadas por vacina...')
+        url = 'https://www2.simi.sp.gov.br/views/PaineldeEstatsticasGerais_v4/PaineldeEstatsticasGerais'
+        scraper = TableauScraper()
+        scraper.loads(url)
+        sheet = scraper.getWorkbook().getWorksheet('donuts imunibiológico')
+        atualizacao_imunizantes = sheet.data.copy()
+        atualizacao_imunizantes.columns = ['aplicadas', 'info1', 'info2', 'vacina']
+        atualizacao_imunizantes['data'] = data_processamento
+        atualizacao_imunizantes = atualizacao_imunizantes[['data', 'vacina', 'aplicadas']]
+        atualizacao_imunizantes.sort_values(by='vacina', inplace=True)
     except Exception as e:
-        print(f'\t\tErro ao buscar {data}_estatiscas_gerais.csv da Seade: {e}')
+        print(f'\t\tErro ao buscar dados de vacinas do Tableau: {e}')
         atualizacao_imunizantes = None
 
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col=0)
@@ -580,18 +586,20 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
 
-    # if atualizacao_imunizantes is not None:
-    #     if dados_imunizantes.data.max().date() < data_processamento.date():
-    #         atualizacao_imunizantes.columns = ['vacina', 'aplicadas', 'coluna']
-    #         novos_dados = atualizacao_imunizantes[['vacina', 'aplicadas']]
-    #         novos_dados['data'] = data_processamento
-    #         novos_dados = novos_dados[['data', 'vacina', 'aplicadas']]
-    #         novos_dados.sort_values(by='vacina', inplace=True)
-    #
-    #         dados_imunizantes = dados_imunizantes.append(novos_dados)
-    #         dados_imunizantes['data'] = dados_imunizantes['data'].apply(lambda d: d.strftime('%d/%m/%Y'))
-    #         dados_imunizantes.to_csv('dados/dados_imunizantes.csv', index=False)
-    #         dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
+    if atualizacao_imunizantes is not None:
+        if dados_imunizantes.data.max().date() <= data_processamento.date():
+            busca = dados_imunizantes.loc[dados_imunizantes.data.dt.date == data_processamento.date(), 'data']
+
+            if busca.empty:
+                dados_imunizantes = dados_imunizantes.append(atualizacao_imunizantes)
+            else:
+                for v in dados_imunizantes.vacina.unique():
+                    dados_imunizantes.loc[(dados_imunizantes.data.dt.date == data_processamento.date()) & (dados_imunizantes.vacina == v), 'aplicadas'] = atualizacao_imunizantes.loc[(atualizacao_imunizantes.data.dt.date == data_processamento.date()) & (atualizacao_imunizantes.vacina == v), 'aplicadas'].iat[0]
+
+            dados_imunizantes['data'] = dados_imunizantes['data'].apply(lambda d: d.strftime('%d/%m/%Y'))
+            dados_imunizantes = dados_imunizantes.astype({'aplicadas': 'int32'})
+            dados_imunizantes.to_csv('dados/dados_imunizantes.csv', index=False)
+            dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
 
     return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_munic, dados_imunizantes
 
