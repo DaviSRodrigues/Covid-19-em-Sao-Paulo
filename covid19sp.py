@@ -16,7 +16,6 @@ from tableauscraper import TableauScraper
 import traceback
 import unicodedata
 
-from bs4 import BeautifulSoup
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
