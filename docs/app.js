@@ -118,6 +118,7 @@ function criaIFrame(linkDesktop, linkMobile, versaoMobile) {
 	iframe.onload = function(iframe, versaoMobile) {
 		var altura = iframe.currentTarget.contentDocument.body.scrollHeight;
 		if(altura < 256) altura = 500;
+		if(altura > 800) altura = 650;
 		iframe.srcElement.height = altura;
 		iframe.srcElement.style.height = altura;
 	}

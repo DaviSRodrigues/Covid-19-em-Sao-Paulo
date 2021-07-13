@@ -2976,13 +2976,14 @@ def gera_doses_aplicadas(dados):
 
 def gera_tabela_vacinacao(dados):
     dados_tab = dados.loc[dados.data == dados.data.max()].copy()
-    dados_tab.columns = ['Data', 'Município', '1ª dose', '2ª dose', 'Dose única', 'Aplicadas no dia', 'Doses aplicadas',
-                         'Doses recebidas', 'Aplicadas (%)', '1ª dose (dia)', '1ª dose (%)', '2ª dose (dia)', '2ª dose (%)',
-                         'Dose única (dia)', 'Dose única (%)', '1ª dose ou Dose única (%)', 'Imunizados (%)', 'População']
+    dados_tab.columns = ['Data', 'Município', '1ª dose', '2ª dose', 'Dose única', 'Aplicadas no dia',
+                         'Doses aplicadas', 'Doses recebidas', 'Aplicadas (%)', '1ª dose (dia)', '1ª dose (%)',
+                         '2ª dose (dia)', '2ª dose (%)', 'Dose única (dia)', 'Dose única (%)',
+                         '1ª dose ou Dose única (%)', 'Imunizados (%)', 'População']
 
     dados_tab.drop(columns='Aplicadas no dia', inplace=True)
-
-    dados_tab.sort_values(by='1ª dose (%)', ascending=False, inplace=True)
+    dados_tab.fillna(0, inplace=True)
+    dados_tab.sort_values(by='Imunizados (%)', ascending=False, inplace=True)
 
     dados_tab['Município'] = dados_tab['Município'].apply(lambda m: formata_municipio(m))
     dados_tab['1ª dose'] = dados_tab['1ª dose'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
@@ -3000,74 +3001,58 @@ def gera_tabela_vacinacao(dados):
     dados_tab['Aplicadas (%)'] = dados_tab['Aplicadas (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
     dados_tab['População'] = dados_tab['População'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
 
-    cabecalho = ['<b>Município</b>', '<b>1ª dose</b>', '<b>1ª dose (%)</b>', '<b>2ª dose</b>', '<b>2ª dose (%)</b>',
-                 '<b>Dose única</b>', '<b>Dose única (%)</b>', '<b>Imunizados (%)</b>', '<b>Doses aplicadas</b>',
-                 '<b>1ª dose (dia)</b>', '<b>2ª dose (dia)</b>', '<b>Dose única (dia)</b>',
-                 '<b>Doses recebidas</b>', '<b>Aplicadas (%)</b>', '<b>População</b>']
+    html_inicial = '<!DOCTYPE html>' \
+                   '<html lang="pt-br">' \
+                   '<head>' \
+                   '	<meta charset="utf-8"/>' \
+                   '	<meta name="viewport" content="width=device-width, initial-scale=1"/>' \
+                   '	<meta name="theme-color" content="#00AABB"/>' \
+                   '	<meta name="description" content="Acompanhe os casos de Covid-19 na cidade e no estado de São Paulo"/>' \
+                   '	<meta name="author" content="Davi Silva Rodrigues"/>' \
+                   '	<title>Covid-19 em São Paulo</title>' \
+                   '	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap"/>' \
+                   '	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css"/>' \
+                   '</head>' \
+                   '<style>' \
+                   '	body {font-family: "Roboto", sans-serif;}' \
+                   '    @media only screen and (max-width: 478px) {body {font-size: 3vw;}}' \
+                   '    @media only screen and (min-width: 479px) {body {font-size: 2.25vw;}}' \
+                   '    @media only screen and (min-width: 768px) {body {font-size: 1vw;}}' \
+                   '</style>' \
+                   '<body>'
 
-    valores = [dados_tab['Município'], dados_tab['1ª dose'], dados_tab['1ª dose (%)'],
-               dados_tab['2ª dose'], dados_tab['2ª dose (%)'], dados_tab['Dose única'], dados_tab['Dose única (%)'],
-               dados_tab['Imunizados (%)'], dados_tab['Doses aplicadas'], dados_tab['1ª dose (dia)'],
-               dados_tab['2ª dose (dia)'], dados_tab['Dose única (dia)'], dados_tab['Doses recebidas'],
-               dados_tab['Aplicadas (%)'], dados_tab['População']]
+    html_tabela = dados_tab.to_html(classes='display" id="tabela', index=False,
+                                    columns=['Município', '1ª dose', '1ª dose (%)', '2ª dose', '2ª dose (%)',
+                                             'Dose única',
+                                             'Dose única (%)', 'Imunizados (%)', 'Doses aplicadas', '1ª dose (dia)',
+                                             '2ª dose (dia)', 'Dose única (dia)', 'Doses recebidas', 'Aplicadas (%)',
+                                             'População'])
 
-    fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
-                                               fill_color='#00aabb',
-                                               font=dict(color='white'),
-                                               align='right',
-                                               line=dict(width=5)),
-                                   cells=dict(values=valores,
-                                              fill_color='lavender',
-                                              align='right',
-                                              line=dict(width=5),
-                                              height=30),
-                                   columnwidth=[1, 1, 1, 1, 1, 1, 1, 1, 1])])
+    html_final = '<script src="https://code.jquery.com/jquery-3.5.1.js"></script>' \
+                 '<script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>' \
+                 '<script>' \
+                 '$(document).ready(function() {' \
+                 '$("#tabela").DataTable({' \
+                 '      scrollY:        "490px",' \
+                 '      scrollCollapse: true,' \
+                 '      paging:         false,' \
+                 '      order: [[ 7, "desc" ]],' \
+                 '      language: {decimal: ",",thousands: "."},' \
+                 '      columnDefs: [{targets: -1,className: "dt-body-right"}]' \
+                 '});});' \
+                 '</script>' \
+                 '</body>' \
+                 '</html>'
 
-    atualizado_em = dados.data.max().strftime('%d/%m/%y')
+    with open('docs/graficos/tabela-vacinacao.html', 'w+', encoding='utf-8') as fo:
+        fo.write(html_inicial + html_tabela + html_final)
 
-    fig.update_layout(
-        font=dict(size=15, family='Roboto'),
-        margin=dict(l=1, r=1, b=1, t=30, pad=5),
-        annotations=[dict(x=0, y=1.05, showarrow=False, font=dict(size=13),
-                          text=f'Dados de {atualizado_em} | <i><b>Fonte:</b> <a href = '
-                               f'"https://www.saopaulo.sp.gov.br/coronavirus">'
-                               f'Governo do Estado de São Paulo</a></i>')],
-        height=600
-    )
+    html_tabela = dados_tab.to_html(classes='display" id="tabela', index=False, columns=['Município', 'Imunizados (%)'])
+    html_final = html_final.replace('scrollY:        "490px"', 'scrollY:        "530px"')
+    html_final = html_final.replace('order: [[ 7, "desc" ]]', 'order: [[ 1, "desc" ]]')
 
-    # fig.show()
-
-    pio.write_html(fig, file='docs/graficos/tabela-vacinacao.html', include_plotlyjs='directory', auto_open=False)
-
-    cabecalho = ['<b>Município</b>', '<b>População imunizada (%)</b>']
-    dados_tab.sort_values(by='Imunizados (%)', ascending=False, inplace=True)
-
-    fig = go.Figure(data=[go.Table(header=dict(values=cabecalho,
-                                               fill_color='#00aabb',
-                                               font=dict(color='white'),
-                                               align='right',
-                                               line=dict(width=5)),
-                                   cells=dict(values=[dados_tab['Município'], dados_tab['Imunizados (%)']],
-                                              fill_color='lavender',
-                                              align='right',
-                                              line=dict(width=5),
-                                              height=30),
-                                   columnwidth=[1, 1, 1, 1, 1, 1, 1, 1, 1])])
-
-    fig.update_layout(
-        font=dict(size=13, family='Roboto'),
-        margin=dict(l=1, r=1, b=1, t=30, pad=5),
-        annotations=[dict(x=0, y=1.05, showarrow=False, font=dict(size=13, family='Roboto'),
-                          text=f'Dados de {atualizado_em} | <i><b>Fonte:</b> <a href = '
-                               f'"https://www.saopaulo.sp.gov.br/coronavirus">'
-                               f'Governo do Estado de São Paulo</a></i>')],
-        height=400
-    )
-
-    # fig.show()
-
-    pio.write_html(fig, file='docs/graficos/tabela-vacinacao-mobile.html', include_plotlyjs='directory',
-                   auto_open=False)
+    with open('docs/graficos/tabela-vacinacao-mobile.html', 'w+', encoding='utf-8') as fo:
+        fo.write(html_inicial + html_tabela + html_final)
 
 
 def gera_distribuicao_imunizantes(dados_imunizantes):
