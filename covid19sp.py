@@ -477,7 +477,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = dados_vacinacao.loc[filtro_d & filtro_m, 'dose_unica'].sum()
 
     def calcula_campos_adicionais(linha):
-        if linha['data'] != hoje.date():
+        if linha['data'].date() != hoje.date():
             return linha
 
         primeira_dose = 0 if linha['1a_dose'] is None or math.isnan(linha['1a_dose']) else linha['1a_dose']
@@ -3038,7 +3038,7 @@ def gera_tabela_vacinacao(dados):
                  '      paging:         false,' \
                  '      order: [[ 7, "desc" ]],' \
                  '      language: {decimal: ",",thousands: "."},' \
-                 '      columnDefs: [{targets: -1,className: "dt-body-right"}]' \
+                 '      columnDefs: [{targets: "_all",className: "dt-right"}]' \
                  '});});' \
                  '</script>' \
                  '</body>' \
