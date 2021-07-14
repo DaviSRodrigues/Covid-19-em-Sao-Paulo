@@ -3001,25 +3001,25 @@ def gera_tabela_vacinacao(dados):
     dados_tab['Aplicadas (%)'] = dados_tab['Aplicadas (%)'].apply(lambda x: f'{x:8.2f}%'.replace('.', ','))
     dados_tab['População'] = dados_tab['População'].apply(lambda x: f'{x:8,.0f}'.replace(',', '.'))
 
-    html_inicial = '<!DOCTYPE html>' \
-                   '<html lang="pt-br">' \
-                   '<head>' \
-                   '	<meta charset="utf-8"/>' \
-                   '	<meta name="viewport" content="width=device-width, initial-scale=1"/>' \
-                   '	<meta name="theme-color" content="#00AABB"/>' \
-                   '	<meta name="description" content="Acompanhe os casos de Covid-19 na cidade e no estado de São Paulo"/>' \
-                   '	<meta name="author" content="Davi Silva Rodrigues"/>' \
-                   '	<title>Covid-19 em São Paulo</title>' \
-                   '	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap"/>' \
-                   '	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css"/>' \
-                   '</head>' \
-                   '<style>' \
-                   '	body {font-family: "Roboto", sans-serif;}' \
-                   '    @media only screen and (max-width: 478px) {body {font-size: 3vw;}}' \
-                   '    @media only screen and (min-width: 479px) {body {font-size: 2.25vw;}}' \
-                   '    @media only screen and (min-width: 768px) {body {font-size: 1vw;}}' \
-                   '</style>' \
-                   '<body>'
+    html_inicial = '''<!DOCTYPE html>
+    <html lang="pt-br"> 
+    <head> 
+      <meta charset="utf-8"/> 
+      <meta name="viewport" content="width=device-width, initial-scale=1"/> 
+      <meta name="theme-color" content="#00AABB"/> 
+      <meta name="description" content="Acompanhe os casos de Covid-19 na cidade e no estado de São Paulo"/> 
+      <meta name="author" content="Davi Silva Rodrigues"/> 
+      <title>Covid-19 em São Paulo</title> 
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap"/> 
+      <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css"/> 
+    </head> 
+    <style>
+      body {font-family: "Roboto", sans-serif;} 
+      @media only screen and (max-width: 478px) {body {font-size: 3vw;}} 
+      @media only screen and (min-width: 479px) {body {font-size: 2.25vw;}} 
+      @media only screen and (min-width: 768px) {body {font-size: 1vw;}} 
+    </style> 
+    <body>'''
 
     html_tabela = dados_tab.to_html(classes='display" id="tabela', index=False,
                                     columns=['Município', '1ª dose', '1ª dose (%)', '2ª dose', '2ª dose (%)',
@@ -3028,28 +3028,29 @@ def gera_tabela_vacinacao(dados):
                                              '2ª dose (dia)', 'Dose única (dia)', 'Doses recebidas', 'Aplicadas (%)',
                                              'População'])
 
-    html_final = '<script src="https://code.jquery.com/jquery-3.5.1.js"></script>' \
-                 '<script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>' \
-                 '<script>' \
-                 '$(document).ready(function() {' \
-                 '$("#tabela").DataTable({' \
-                 '      scrollY:        "490px",' \
-                 '      scrollCollapse: true,' \
-                 '      paging:         false,' \
-                 '      order: [[ 7, "desc" ]],' \
-                 '      language: {decimal: ",",thousands: "."},' \
-                 '      columnDefs: [{targets: "_all",className: "dt-right"}]' \
-                 '});});' \
-                 '</script>' \
-                 '</body>' \
-                 '</html>'
+    html_final = '''<script src="https://code.jquery.com/jquery-3.5.1.js"></script> 
+    <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script> 
+    <script> 
+        $(document).ready(function() { 
+            $("#tabela").DataTable({ 
+                  scrollY:        "490px", 
+                  scrollCollapse: true, 
+                  paging:         false, 
+                  order:          [[ 7, "desc" ]], 
+                  language:       {decimal: ",",thousands: "."}, 
+                  columnDefs:     [{targets: "_all",className: "dt-right"}] 
+            });
+        }); 
+    </script> 
+    </body> 
+    </html>'''
 
     with open('docs/graficos/tabela-vacinacao.html', 'w+', encoding='utf-8') as fo:
         fo.write(html_inicial + html_tabela + html_final)
 
     html_tabela = dados_tab.to_html(classes='display" id="tabela', index=False, columns=['Município', 'Imunizados (%)'])
     html_final = html_final.replace('scrollY:        "490px"', 'scrollY:        "530px"')
-    html_final = html_final.replace('order: [[ 7, "desc" ]]', 'order: [[ 1, "desc" ]]')
+    html_final = html_final.replace('order:          [[ 7, "desc" ]]', 'order:          [[ 1, "desc" ]]')
 
     with open('docs/graficos/tabela-vacinacao-mobile.html', 'w+', encoding='utf-8') as fo:
         fo.write(html_inicial + html_tabela + html_final)
