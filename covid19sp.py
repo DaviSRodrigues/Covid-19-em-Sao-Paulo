@@ -167,6 +167,7 @@ def carrega_dados_estado():
         atualizacao_imunizantes.sort_values(by='vacina', inplace=True)
     except Exception as e:
         print(f'\t\tErro ao buscar dados de vacinas do Tableau: {e}')
+        traceback.print_exception(type(e), e, e.__traceback__)
         atualizacao_imunizantes = None
 
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col=0)
