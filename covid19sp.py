@@ -161,9 +161,9 @@ def carrega_dados_estado():
         scraper.loads(url)
         sheet = scraper.getWorkbook().getWorksheet('donuts imunibiológico')
         atualizacao_imunizantes = sheet.data.copy()
-        atualizacao_imunizantes.columns = ['aplicadas', 'info1', 'info2', 'vacina']
         atualizacao_imunizantes['data'] = data_processamento
-        atualizacao_imunizantes = atualizacao_imunizantes[['data', 'vacina', 'aplicadas']]
+        atualizacao_imunizantes = atualizacao_imunizantes[['data', 'Imunibiológico_Ajustado-alias', 'CNT(Imunibiológico_Ajustado)-alias']]
+        atualizacao_imunizantes.columns = ['data', 'vacina', 'aplicadas']
         atualizacao_imunizantes.sort_values(by='vacina', inplace=True)
     except Exception as e:
         print(f'\t\tErro ao buscar dados de vacinas do Tableau: {e}')
