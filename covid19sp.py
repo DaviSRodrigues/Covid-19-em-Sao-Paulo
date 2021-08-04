@@ -995,7 +995,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
                  '<b>Cidade de SP</b><br><i>' + hoje.strftime('%d/%m/%Y') + '</i>']
 
     info = ['<b>Vacinadas</b>', '<b>Casos</b>', '<b>Casos no dia</b>', '<b>Óbitos</b>', '<b>Óbitos no dia</b>',
-            '<b>Letalidade</b>', '<b>Leitos Covid-19</b>', '<b>Internações dia</b>', '<b>Ocupação de UTIs</b>', '<b>Isolamento</b>']
+            '<b>Letalidade</b>', '<b>Leitos Covid-19</b>', '<b>Internados UTI</b>', '<b>Ocupação de UTIs</b>', '<b>Isolamento</b>']
 
     filtro = (isolamento.município == 'Estado de São Paulo') & (isolamento.data.dt.date == hoje.date() - timedelta(days=1))
     isolamento_atual = isolamento.loc[filtro, 'isolamento']
@@ -1025,7 +1025,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     leitos_covid = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'total_covid_uti_ultimo_dia']
     leitos_covid = 'indisponível' if leitos_covid.empty else f'{leitos_covid.item():7,.0f}'.replace(',', '.')
 
-    internacoes_dia = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'internacoes_ultimo_dia']
+    internacoes_dia = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'pacientes_uti_ultimo_dia']
     internacoes_dia = 'indisponível' if internacoes_dia.empty else f'{internacoes_dia.item():7,.0f}'.replace(',', '.')
 
     ocupacao_uti = leitos_estaduais.loc[leitos_estaduais.data.dt.date == hoje.date(), 'sp_uti']
@@ -1070,7 +1070,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     leitos_covid = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'total_covid_uti_ultimo_dia']
     leitos_covid = 'indisponível' if leitos_covid.empty else f'{leitos_covid.item():7,.0f}'.replace(',', '.')
 
-    internacoes_dia = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'internacoes_ultimo_dia']
+    internacoes_dia = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'pacientes_uti_ultimo_dia']
     internacoes_dia = 'indisponível' if internacoes_dia.empty else f'{internacoes_dia.item():7,.0f}'.replace(',', '.')
 
     ocupacao_uti = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'ocupacao_leitos_ultimo_dia']
@@ -3024,10 +3024,9 @@ def gera_tabela_vacinacao(dados):
 
     html_tabela = dados_tab.to_html(classes='display" id="tabela', index=False,
                                     columns=['Município', '1ª dose', '1ª dose (%)', '2ª dose', '2ª dose (%)',
-                                             'Dose única',
-                                             'Dose única (%)', 'Imunizados (%)', 'Doses aplicadas', '1ª dose (dia)',
-                                             '2ª dose (dia)', 'Dose única (dia)', 'Doses recebidas', 'Aplicadas (%)',
-                                             'População'])
+                                             'Dose única', 'Dose única (%)', 'Imunizados (%)', 'Doses aplicadas',
+                                             '1ª dose (dia)', '2ª dose (dia)', 'Dose única (dia)', 'Doses recebidas',
+                                             'Aplicadas (%)', 'População'])
 
     html_final = '''<script src="https://code.jquery.com/jquery-3.5.1.js"></script> 
     <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script> 
