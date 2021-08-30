@@ -224,50 +224,59 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     dados_munic['datahora'] = pd.to_datetime(dados_munic.datahora)
 
-    isolamento_atualizado = None
+    isolamento['data'] = pd.to_datetime(isolamento.data)
+
+    dias_faltantes = []
+    data_atual = datetime.strptime('01/01/2021', '%d/%m/%Y')
+    data_final = isolamento['data'].max()
+
+    while data_atual.date() < data_final.date():
+        if len(isolamento.loc[isolamento.data.dt.date == data_atual.date()]) == 0:
+            dias_faltantes.append(data_atual.date())
+        data_atual = data_atual + timedelta(days=1)
+
+    dias_faltantes.append(data_processamento.date() - timedelta(days=1))
+
     tentativas = 0
+    dados_atualizados = None
 
     def busca_isolamento():
         try:
-            nonlocal tentativas, isolamento_atualizado
+            nonlocal dados_atualizados, tentativas, isolamento_atualizado
             tentativas = tentativas + 1
             print(f'\t\t{f"Tentativa {tentativas}: " if tentativas > 1 else ""}'
                   f'Atualizando dados de isolamento social...')
             URL = 'https://public.tableau.com/views/IsolamentoSocial/DADOS.csv?:showVizHome=no'
-            isolamento_atualizado = pd.read_csv(URL, sep=',')
+            dados_atualizados = pd.read_csv(URL, sep=',')
+            return True
         except Exception:
             if tentativas <= 3:
                 busca_isolamento()
             else:
                 print('\t\tErro: não foi possível obter os dados atualizados de isolamento social.')
+                return False
 
-    busca_isolamento()
+    if busca_isolamento():
+        dados_atualizados.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
+        dados_atualizados.drop(columns='codigo_ibge', inplace=True)
 
-    if isolamento_atualizado is not None:
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-        ontem = data_processamento - timedelta(days=1)
-        ontem_str = ontem.strftime('%A, %d/%m')
+        for data in dias_faltantes:
+            locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+            data_str = data.strftime('%A, %d/%m')
+            isolamento_atualizado = dados_atualizados.loc[dados_atualizados.data == data_str].copy()
+            locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-        isolamento_atualizado.columns = ['codigo_ibge', 'data', 'município', 'populacao', 'UF', 'isolamento']
-        isolamento_atualizado.drop(columns='codigo_ibge', inplace=True)
-        isolamento_atualizado = isolamento_atualizado.loc[isolamento_atualizado.data == ontem_str]
+            if not isolamento_atualizado.empty and isolamento.loc[isolamento.data.dt.date == data, 'data'].empty:
+                isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
+                isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
+                isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
+                    lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(data.year), '%d/%m/%Y'))
+                isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b %y'))
 
-        data_arquivo = pd.to_datetime(isolamento.iloc[-1]['data'])
-        locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-
-        if data_arquivo.date() < ontem.date() and not isolamento_atualizado.empty:
-            isolamento_atualizado['isolamento'] = pd.to_numeric(isolamento_atualizado.isolamento.str.replace('%', ''))
-            isolamento_atualizado['município'] = isolamento_atualizado.município.apply(lambda m: formata_municipio(m))
-            isolamento_atualizado['data'] = isolamento_atualizado.data.apply(
-                lambda d: datetime.strptime(d.split(', ')[1] + '/' + str(ontem.year), '%d/%m/%Y'))
-            isolamento_atualizado['dia'] = isolamento_atualizado.data.apply(lambda d: d.strftime('%d %b %y'))
-
-            isolamento = isolamento.append(isolamento_atualizado)
-            isolamento['data'] = pd.to_datetime(isolamento.data)
-            isolamento.sort_values(by=['data', 'isolamento'], inplace=True)
-            isolamento.to_csv('dados/isolamento_social.csv', sep=',', index=False)
-
-    isolamento['data'] = pd.to_datetime(isolamento.data)
+                isolamento = isolamento.append(isolamento_atualizado)
+                isolamento['data'] = pd.to_datetime(isolamento.data)
+                isolamento.sort_values(by=['data', 'isolamento'], inplace=True)
+                isolamento.to_csv('dados/isolamento_social.csv', sep=',', index=False)
 
     print('\t\tAtualizando dados de internações...')
     leitos_estaduais['data'] = pd.to_datetime(leitos_estaduais.data, format='%d/%m/%Y')
