@@ -105,8 +105,13 @@ def carrega_dados_estado():
         print('\tAtualizando dados de doenças preexistentes...')
         URL = ('https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/casos_obitos_doencas_preexistentes.csv.zip')
         doencas = pd.read_csv(URL, sep=';')
-        opcoes_zip = dict(method='zip', archive_name='doencas_preexistentes.csv')
-        doencas.to_csv('dados/doencas_preexistentes.zip', sep=';', compression=opcoes_zip)
+        if len(doencas.asma.unique()) == 3:
+            opcoes_zip = dict(method='zip', archive_name='doencas_preexistentes.csv')
+            doencas.to_csv('dados/doencas_preexistentes.zip', sep=';', compression=opcoes_zip)
+        else:
+            global processa_doencas
+            processa_doencas = False
+            raise Exception('O arquivo de doeças preexistentes não possui registros SIM/NÃO/IGNORADO para todas as doenças.')
     except Exception as e:
         try:
             print(f'\tErro ao buscar doencas_preexistentes.csv do GitHub: lendo arquivo local.\n\t{e}')
@@ -342,14 +347,15 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                        'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                        'sindrome_de_down']
 
-    doencas = doencas.groupby(
-        ['obito', 'covid19', 'idade', 'sexo', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica',
-         'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros',
-         'pneumopatia', 'puerpera', 'sindrome_de_down']) \
-        .agg({'asma': 'count', 'cardiopatia': 'count', 'diabetes': 'count', 'doenca_hematologica': 'count',
-              'doenca_hepatica': 'count', 'doenca_neurologica': 'count', 'doenca_renal': 'count',
-              'imunodepressao': 'count', 'obesidade': 'count', 'outros': 'count', 'pneumopatia': 'count',
-              'puerpera': 'count', 'sindrome_de_down': 'count'})
+    if processa_doencas:
+        doencas = doencas.groupby(
+            ['obito', 'covid19', 'idade', 'sexo', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica',
+             'doenca_hepatica', 'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros',
+             'pneumopatia', 'puerpera', 'sindrome_de_down']) \
+            .agg({'asma': 'count', 'cardiopatia': 'count', 'diabetes': 'count', 'doenca_hematologica': 'count',
+                  'doenca_hepatica': 'count', 'doenca_neurologica': 'count', 'doenca_renal': 'count',
+                  'imunodepressao': 'count', 'obesidade': 'count', 'outros': 'count', 'pneumopatia': 'count',
+                  'puerpera': 'count', 'sindrome_de_down': 'count'})
 
     def calcula_letalidade(series):
         # localiza a linha atual passada como parâmetro e obtém a o índice da linha anterior
@@ -826,10 +832,6 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     gera_casos_estado(dados_estado)
     print('\tCasos na cidade...')
     gera_casos_cidade(dados_cidade)
-    print('\tDoenças preexistentes nos casos estaduais...')
-    gera_doencas_preexistentes_casos(doencas)
-    print('\tDoenças preexistentes nos óbitos estaduais...')
-    gera_doencas_preexistentes_obitos(doencas)
     print('\tCasos e óbitos estaduais por raça/cor...')
     gera_casos_obitos_por_raca_cor(dados_raciais)
     print('\tIsolamento social...')
@@ -856,6 +858,12 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     gera_tabela_vacinacao(dados_vacinacao)
     print('\tDistribuição de imunizantes por fabricante...')
     gera_distribuicao_imunizantes(dados_imunizantes)
+
+    if processa_doencas:
+        print('\tDoenças preexistentes nos casos estaduais...')
+        gera_doencas_preexistentes_casos(doencas)
+        print('\tDoenças preexistentes nos óbitos estaduais...')
+        gera_doencas_preexistentes_obitos(doencas)
 
 
 def gera_resumo_vacinacao(dados_vacinacao):
@@ -3146,6 +3154,7 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
+    data_processamento = datetime.now() - timedelta(days=1)
+    processa_doencas = True
 
     main()
