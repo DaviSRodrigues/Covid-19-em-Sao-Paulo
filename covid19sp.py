@@ -161,7 +161,7 @@ def carrega_dados_estado():
 
     try:
         print('\t\tAtualizando doses aplicadas por vacina...')
-        url = 'https://www2.simi.sp.gov.br/views/PaineldeEstatsticasGerais_v4/PaineldeEstatsticasGerais'
+        url = 'https://www2.simi.sp.gov.br/views/PaineldeEstatsticasGerais_14_09_2021_16316423974680/PaineldeEstatsticasGerais'
         scraper = TableauScraper()
         scraper.loads(url)
         sheet = scraper.getWorkbook().getWorksheet('donuts imunibiológico')
