@@ -7,6 +7,9 @@ Acesse: https://davisrodrigues.github.io/Covid-19-em-Sao-Paulo/
 
 # Atualizações
 
+## 26/11/2021
+- Inclusão da 3ª dose em todos os gráficos e tabelas de vacinação.
+
 ## 05/07/2021
 - Inclusão de vacinas de dose única em todos os gráficos e tabelas de vacinação.
 
