@@ -411,7 +411,8 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if segunda_dose is None:
             segunda_dose = obtem_dado_anterior(municipio, '2a_dose')
 
-        doses = temp.loc[(temp.dose == '3° DOSE') | (temp.dose == '3º DOSE/ADICIONAL'), 'contagem']
+        doses = temp.loc[(temp.dose == '3° DOSE') | (temp.dose == '3º DOSE/ADICIONAL') |
+                         (temp.dose == '3º DOSE'), 'contagem']
         terceira_dose = int(doses.iat[0]) if not doses.empty else None
 
         if terceira_dose is None:
@@ -3273,7 +3274,7 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
+    data_processamento = datetime.now() - timedelta(days=3)
     processa_doencas = True
 
     main()
