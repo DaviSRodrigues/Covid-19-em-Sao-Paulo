@@ -595,7 +595,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
     hoje = data_processamento
 
-    if dados_vacinacao.data.max().date() <= hoje.date():
+    if dados_vacinacao.data.max().date() <= hoje.date() or True:
         dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
             lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
