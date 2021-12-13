@@ -474,6 +474,12 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if pop_estado is not None:
             dados_vacinacao.loc[dados_vacinacao.municipio == 'ESTADO DE SAO PAULO', 'populacao'] = pop_estado
 
+        pop_cidade = internacoes.loc[(internacoes.drs == 'Município de São Paulo') &
+                                     (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
+
+        if pop_cidade is not None:
+            dados_vacinacao.loc[dados_vacinacao.municipio == 'SAO PAULO', 'populacao'] = pop_cidade
+
     def atualiza_estado():
         if doses_aplicadas is None:
             return
