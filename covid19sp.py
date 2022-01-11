@@ -1356,21 +1356,6 @@ def gera_casos_estado(dados):
                              mode='lines+markers', name='letalidade', hovertemplate='%{y:.2f}%'),
                   secondary_y=True)
 
-    d = dados.dia.size
-
-    frames = [dict(data=[dict(type='scatter', x=dados.dia[:d + 1], y=dados.total_casos[:d + 1]),
-                         dict(type='bar', x=dados.dia[:d + 1], y=dados.casos_dia[:d + 1]),
-                         dict(type='scatter', x=dados.dia[:d + 1], y=dados.total_obitos[:d + 1]),
-                         dict(type='bar', x=dados.dia[:d + 1], y=dados.obitos_dia[:d + 1]),
-                         dict(type='scatter', x=dados.dia[:d + 1], y=dados.letalidade[:d + 1])],
-                   traces=[0, 1, 2, 3, 4],
-                   ) for d in range(0, d)]
-
-    fig.frames = frames
-
-    botoes = [dict(label='Animar', method='animate',
-                   args=[None, dict(frame=dict(duration=200, redraw=True), fromcurrent=True, mode='immediate')])]
-
     fig.update_layout(
         font=dict(family='Roboto'),
         title='Casos confirmados de Covid-19 no Estado de São Paulo' +
@@ -1380,10 +1365,6 @@ def gera_casos_estado(dados):
         hovermode='x unified',
         hoverlabel={'namelength': -1},  # para não truncar o nome de cada trace no hover
         template='plotly',
-        updatemenus=[dict(type='buttons', showactive=False,
-                          x=0.05, y=0.95,
-                          xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)],
         height=600
     )
 
@@ -1432,21 +1413,6 @@ def gera_casos_cidade(dados):
                              mode='lines+markers', name='letalidade', hovertemplate='%{y:.2f}%'),
                   secondary_y=True)
 
-    qtde_dias = dados.dia.size
-
-    frames = [dict(data=[dict(type='scatter', x=dados.dia[:d + 1], y=dados.confirmados[:d + 1]),
-                         dict(type='bar', x=dados.dia[:d + 1], y=dados.casos_dia[:d + 1]),
-                         dict(type='scatter', x=dados.dia[:d + 1], y=dados.óbitos[:d + 1]),
-                         dict(type='bar', x=dados.dia[:d + 1], y=dados.óbitos_dia[:d + 1]),
-                         dict(type='scatter', x=dados.dia[:d + 1], y=dados.letalidade[:d + 1])],
-                   traces=[0, 1, 2, 3, 4],
-                   ) for d in range(0, qtde_dias)]
-
-    fig.frames = frames
-
-    botoes = [dict(label='Animar', method='animate',
-                   args=[None, dict(frame=dict(duration=200, redraw=True), fromcurrent=True, mode='immediate')])]
-
     fig.update_layout(
         font=dict(family='Roboto'),
         title='Casos confirmados de Covid-19 na cidade de São Paulo' +
@@ -1456,10 +1422,6 @@ def gera_casos_cidade(dados):
         hovermode='x unified',
         hoverlabel={'namelength': -1},  # para não truncar o nome de cada trace no hover
         template='plotly',
-        updatemenus=[dict(type='buttons', showactive=False,
-                          x=0.05, y=0.95,
-                          xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)],
         height=600
     )
 
@@ -2095,20 +2057,6 @@ def gera_leitos_estaduais(leitos):
     fig.add_trace(go.Scatter(x=leitos['dia'], y=leitos['sp_enfermaria'],
                              mode='lines+markers', name='enfermaria<br>(estado)', hovertemplate='%{y:.1f}%'))
 
-    d = leitos.dia.size
-
-    frames = [dict(data=[dict(type='scatter', x=leitos.dia[:d + 1], y=leitos.rmsp_uti[:d + 1]),
-                         dict(type='scatter', x=leitos.dia[:d + 1], y=leitos.rmsp_enfermaria[:d + 1]),
-                         dict(type='scatter', x=leitos.dia[:d + 1], y=leitos.sp_uti[:d + 1]),
-                         dict(type='scatter', x=leitos.dia[:d + 1], y=leitos.sp_enfermaria[:d + 1])],
-                   traces=[0, 1, 2, 3],
-                   ) for d in range(0, d)]
-
-    fig.frames = frames
-
-    botoes = [dict(label='Animar', method='animate',
-                   args=[None, dict(frame=dict(duration=200, redraw=True), fromcurrent=True, mode='immediate')])]
-
     fig.update_layout(
         font=dict(family='Roboto'),
         title='Ocupação de leitos Covid-19 no Estado de São Paulo' +
@@ -2119,10 +2067,6 @@ def gera_leitos_estaduais(leitos):
         hovermode='x unified',
         hoverlabel={'namelength': -1},  # para não truncar o nome de cada trace no hover
         template='plotly',
-        updatemenus=[dict(type='buttons', showactive=False,
-                          x=0.05, y=0.95,
-                          xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)],
         height=600
     )
 
@@ -2674,22 +2618,6 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
                              hovertemplate='%{y:.2f}%', visible='legendonly'),
                   secondary_y=True)
 
-    d = dados.data.size
-
-    frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.primeira_dose_dia[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
-                         dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
-                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
-                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
-                   traces=[0, 1, 2, 3, 4, 5],
-                   ) for d in range(0, d)]
-
-    fig.frames = frames
-
-    botoes = [dict(label='Animar', method='animate',
-                   args=[None, dict(frame=dict(duration=200, redraw=True), fromcurrent=True, mode='immediate')])]
-
     fig.update_layout(
         font=dict(family='Roboto'),
         title='Evolução da vacinação no Estado de São Paulo' +
@@ -2699,10 +2627,6 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
         hovermode='x unified',
         hoverlabel={'namelength': -1},  # para não truncar o nome de cada trace no hover
         template='plotly',
-        updatemenus=[dict(type='buttons', showactive=False,
-                          x=0.05, y=0.95,
-                          xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)],
         barmode='stack',
         height=600
     )
@@ -2781,22 +2705,6 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
                              hovertemplate='%{y:.2f}%', visible='legendonly'),
                   secondary_y=True)
 
-    d = dados.data.size
-
-    frames = [dict(data=[dict(type='scatter', x=dados.data[:d + 1], y=dados.total_doses[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.primeira_dose_dia[:d + 1]),
-                         dict(type='bar', x=dados.data[:d + 1], y=dados.segunda_dose_dia[:d + 1]),
-                         dict(type='scatter', x=media_movel.data[:d + 1], y=media_movel.aplicadas_dia[:d + 1]),
-                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_1a_dose[:d + 1]),
-                         dict(type='scatter', x=dados.data[:d + 1], y=dados.perc_vacinadas_2a_dose[:d + 1])],
-                   traces=[0, 1, 2, 3, 4, 5],
-                   ) for d in range(0, d)]
-
-    fig.frames = frames
-
-    botoes = [dict(label='Animar', method='animate',
-                   args=[None, dict(frame=dict(duration=200, redraw=True), fromcurrent=True, mode='immediate')])]
-
     fig.update_layout(
         font=dict(family='Roboto'),
         title='Evolução da vacinação na cidade de São Paulo' +
@@ -2806,10 +2714,6 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
         hovermode='x unified',
         hoverlabel={'namelength': -1},  # para não truncar o nome de cada trace no hover
         template='plotly',
-        updatemenus=[dict(type='buttons', showactive=False,
-                          x=0.05, y=0.95,
-                          xanchor='left', yanchor='top',
-                          pad=dict(t=0, r=10), buttons=botoes)],
         barmode='stack',
         height=600
     )
