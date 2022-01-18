@@ -146,8 +146,15 @@ def carrega_dados_estado():
         req.encoding = req.apparent_encoding
         doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
     except Exception as e:
-        print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
-        doses_aplicadas = None
+        try:
+            print('\t\tDoses aplicadas por município... .csv.csv')
+            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv.csv'
+            req = requests.get(URL, headers=headers, stream=True)
+            req.encoding = req.apparent_encoding
+            doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        except Exception as e:
+            print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
+            doses_aplicadas = None
 
     try:
         print('\t\tDoses recebidas por cada município...')
@@ -156,8 +163,15 @@ def carrega_dados_estado():
         req.encoding = req.apparent_encoding
         doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
     except Exception as e:
-        print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
-        doses_recebidas = None
+        try:
+            print('\t\tDoses recebidas por cada município... .csv.csv')
+            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv.csv'
+            req = requests.get(URL, headers=headers, stream=True)
+            req.encoding = req.apparent_encoding
+            doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        except Exception as e:
+            print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
+            doses_recebidas = None
 
     try:
         print('\t\tAtualizando doses aplicadas por vacina...')
@@ -614,7 +628,10 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             doses_recebidas['municipio'] = doses_recebidas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         if doses_aplicadas is not None:
-            doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
+            try:
+                doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
+            except ValueError as e:
+                doses_aplicadas.columns = ['municipio', 'dose', 'municipio_repetido', 'drs', 'contagem']
 
             doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
             doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
