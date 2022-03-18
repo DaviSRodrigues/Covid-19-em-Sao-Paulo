@@ -426,7 +426,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             segunda_dose = obtem_dado_anterior(municipio, '2a_dose')
 
         doses = temp.loc[(temp.dose == '3° DOSE') | (temp.dose == '3º DOSE/ADICIONAL') |
-                         (temp.dose == '3º DOSE'), 'contagem']
+                         (temp.dose == '3º DOSE') | (temp.dose == 'ADICIONAL'), 'contagem']
         terceira_dose = int(doses.iat[0]) if not doses.empty else None
 
         if terceira_dose is None:
@@ -618,26 +618,25 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
     hoje = data_processamento
 
-    if dados_vacinacao.data.max().date() <= hoje.date():
-        dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+    dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
+        lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        if doses_recebidas is not None:
-            doses_recebidas.columns = ['municipio', 'contagem']
+    if doses_recebidas is not None:
+        doses_recebidas.columns = ['municipio', 'contagem']
 
-            doses_recebidas['municipio'] = doses_recebidas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+        doses_recebidas['municipio'] = doses_recebidas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        if doses_aplicadas is not None:
-            try:
-                doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
-            except ValueError as e:
-                doses_aplicadas.columns = ['municipio', 'dose', 'municipio_repetido', 'drs', 'contagem']
+    if doses_aplicadas is not None:
+        try:
+            doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
+        except ValueError as e:
+            doses_aplicadas.columns = ['municipio', 'dose', 'municipio_repetido', 'drs', 'contagem']
 
-            doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-            doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+        doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
+        doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-            for m in list(doses_aplicadas.municipio.unique()):
-                atualiza_doses(m)
+        for m in list(doses_aplicadas.municipio.unique()):
+            atualiza_doses(m)
 
         atualiza_populacao()
         atualiza_estado()
