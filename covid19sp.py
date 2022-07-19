@@ -3264,11 +3264,10 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    for i in range(4, 0, -1):
-        data_processamento = datetime.now() - timedelta(days=i)
-        processa_doencas = True
+    data_processamento = datetime.now() - timedelta(days=4)
+    processa_doencas = True
 
-        main()
+    main()
 
     # dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
     # dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
