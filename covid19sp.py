@@ -493,30 +493,6 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             dados_vacinacao.loc[filtro, 'dose_unica'] = dose_unica
 
     def atualiza_populacao():
-        hoje_str = hoje.strftime('%Y-%m-%d')
-        dados_pop = dados_munic.loc[dados_munic.datahora == hoje_str, ['nome_munic', 'datahora', 'pop']]
-        dados_pop['nome_munic'] = dados_pop.nome_munic.apply(
-            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
-
-        nonlocal dados_vacinacao
-
-        for m in list(dados_vacinacao['municipio'].unique()):
-            pop = dados_pop.loc[dados_pop.nome_munic == m, 'pop']
-            pop = None if pop.empty or pop.iat[0] == 0 else pop.iat[0]
-
-            if pop is None:
-                pop = dados_vacinacao.loc[dados_vacinacao.municipio == m, 'populacao'].max()
-
-            dados_vacinacao.loc[(dados_vacinacao.municipio == m) &
-                                (dados_vacinacao.data.dt.date == data_processamento.date()), 'populacao'] = pop
-
-        pop_estado = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') &
-                                     (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
-
-        if pop_estado is not None:
-            dados_vacinacao.loc[(dados_vacinacao.municipio == 'ESTADO DE SAO PAULO') &
-                                (dados_vacinacao.data.dt.date == data_processamento.date()), 'populacao'] = pop_estado
-
         pop_cidade = internacoes.loc[(internacoes.drs == 'Município de São Paulo') &
                                      (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
@@ -528,8 +504,15 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if doses_aplicadas is None:
             return
 
+        filtro_dose1 = (doses_aplicadas.dose == '1º DOSE') | (doses_aplicadas.dose == '1° DOSE')
+        filtro_dose2 = (doses_aplicadas.dose == '2º DOSE') | (doses_aplicadas.dose == '2° DOSE')
+        filtro_dose3 = (doses_aplicadas.dose == '3° DOSE') | (doses_aplicadas.dose == '1º DOSE ADICIONAL') | (doses_aplicadas.dose == '1° DOSE ADICIONAL')
+        filtro_dose4 = (doses_aplicadas.dose == '4° DOSE') | (doses_aplicadas.dose == '2º DOSE ADICIONAL') | (doses_aplicadas.dose == '2° DOSE ADICIONAL')
+        filtro_dose5 = (doses_aplicadas.dose == '5° DOSE') | (doses_aplicadas.dose == '3º DOSE ADICIONAL') | (doses_aplicadas.dose == '3° DOSE ADICIONAL')
+        filtro_dose6 = (doses_aplicadas.dose == '6° DOSE') | (doses_aplicadas.dose == '4º DOSE ADICIONAL') | (doses_aplicadas.dose == '4° DOSE ADICIONAL')
+        filtro_doseunica = doses_aplicadas.dose == 'UNICA'
+
         nonlocal dados_vacinacao
-        filtro_m = dados_vacinacao.municipio != 'ESTADO DE SAO PAULO'
         filtro_e = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
         filtro_d = dados_vacinacao.data.dt.date == data_processamento.date()
 
@@ -538,26 +521,27 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if busca.empty:
             novos_dados = {'data': data_processamento,
                            'municipio': 'ESTADO DE SAO PAULO',
-                           'doses_recebidas': dados_vacinacao.loc[filtro_d & filtro_m, 'doses_recebidas'].sum(),
-                           '1a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '1a_dose'].sum(),
-                           '2a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '2a_dose'].sum(),
-                           '3a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '3a_dose'].sum(),
-                           '4a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '4a_dose'].sum(),
-                           '5a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '5a_dose'].sum(),
-                           '6a_dose': dados_vacinacao.loc[filtro_d & filtro_m, '6a_dose'].sum(),
-                           'dose_unica': dados_vacinacao.loc[filtro_d & filtro_m, 'dose_unica'].sum(),
+                           'doses_recebidas': doses_recebidas['contagem'].sum(),
+                           '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum(),
+                           '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum(),
+                           '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum(),
+                           '4a_dose': doses_aplicadas.loc[filtro_dose4, 'contagem'].sum(),
+                           '5a_dose': doses_aplicadas.loc[filtro_dose5, 'contagem'].sum(),
+                           '6a_dose': doses_aplicadas.loc[filtro_dose6, 'contagem'].sum(),
+                           'dose_unica': doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum(),
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
         else:
-            dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = dados_vacinacao.loc[filtro_d & filtro_m, 'doses_recebidas'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '1a_dose'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '2a_dose'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '3a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '3a_dose'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '4a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '4a_dose'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '5a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '5a_dose'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '6a_dose'] = dados_vacinacao.loc[filtro_d & filtro_m, '6a_dose'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = dados_vacinacao.loc[filtro_d & filtro_m, 'dose_unica'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = doses_aplicadas.loc[filtro_dose2, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '3a_dose'] = doses_aplicadas.loc[filtro_dose3, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '4a_dose'] = doses_aplicadas.loc[filtro_dose4, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '5a_dose'] = doses_aplicadas.loc[filtro_dose5, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '6a_dose'] = doses_aplicadas.loc[filtro_dose6, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, 'populacao'] = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
     def calcula_campos_adicionais(linha):
         primeira_dose = 0 if linha['1a_dose'] is None or math.isnan(linha['1a_dose']) else linha['1a_dose']
@@ -705,9 +689,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
-
-        for m in list(doses_aplicadas.municipio.unique()):
-            atualiza_doses(m)
+        atualiza_doses('SAO PAULO')
 
         print(f'\t\t\tAtualizando população... {datetime.now():%H:%M:%S}')
         atualiza_populacao()
@@ -2938,7 +2920,7 @@ def gera_populacao_vacinada(dados):
         annotations=[dict(text='Estado de SP', x=0.17, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False),
                      dict(text='Cidade de SP', x=0.80, y=0.5, font=dict(size=15, family='Roboto'), showarrow=False)],
         height=600,
-        updatemenus=[go.layout.Updatemenu(active=2,
+        updatemenus=[go.layout.Updatemenu(active=0,
                                           buttons=[opcao_dose1, opcao_dose2, opcao_dose3,
                                                    opcao_dose4, opcao_dose5, opcao_dose6],
                                           x=0.001, xanchor='left',
@@ -3238,13 +3220,13 @@ def gera_distribuicao_imunizantes(dados_imunizantes):
 
 
 def atualiza_service_worker(dados_estado):
-    data_anterior = dados_estado.data.iat[-2].strftime('%d/%m/%Y')
     data_atual = dados_estado.data.iat[-1].strftime('%d/%m/%Y')
 
     with open('docs/serviceWorker.js', 'r') as file:
         filedata = file.read()
 
     versao_anterior = int(filedata[16:18])
+    data_anterior = filedata[51:61]
 
     # primeira atualização no dia
     if filedata.count(data_atual) == 0:
@@ -3264,29 +3246,8 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now() - timedelta(days=4)
+    data_processamento = datetime.now()
     processa_doencas = True
 
     main()
 
-    # dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
-    # dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
-    # ordem_original = dados_vacinacao.columns
-    #
-    # dados_vacinacao['4a_dose'] = None
-    # dados_vacinacao['5a_dose'] = None
-    # dados_vacinacao['6a_dose'] = None
-    # dados_vacinacao['quarta_dose_dia'] = None
-    # dados_vacinacao['perc_vacinadas_4a_dose'] = None
-    # dados_vacinacao['quinta_dose_dia'] = None
-    # dados_vacinacao['perc_vacinadas_5a_dose'] = None
-    # dados_vacinacao['sexta_dose_dia'] = None
-    # dados_vacinacao['perc_vacinadas_6a_dose'] = None
-    #
-    # nova_ordem = ['data','municipio','1a_dose','2a_dose','3a_dose','4a_dose','5a_dose','6a_dose','dose_unica','aplicadas_dia','total_doses','doses_recebidas','perc_aplicadas','primeira_dose_dia','perc_vacinadas_1a_dose','segunda_dose_dia','perc_vacinadas_2a_dose','terceira_dose_dia','perc_vacinadas_3a_dose','quarta_dose_dia','perc_vacinadas_4a_dose','quinta_dose_dia','perc_vacinadas_5a_dose','sexta_dose_dia','perc_vacinadas_6a_dose','dose_unica_dia','perc_vacinadas_dose_unica','perc_vacinadas_1a_dose_dose_unica','perc_imunizadas','populacao']
-    # dados_vacinacao = dados_vacinacao[nova_ordem]
-    #
-    # dados_vacinacao.sort_values(by=['data', 'municipio'], ascending=True, inplace=True)
-    # dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
-    # opcoes_zip = dict(method='zip', archive_name='dados_vacinacao.csv')
-    # dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
