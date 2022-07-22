@@ -453,7 +453,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if sexta_dose is None:
             sexta_dose = obtem_dado_anterior(municipio, '6a_dose')
 
-        doses = temp.loc[temp.dose == 'UNICA', 'contagem']
+        doses = temp.loc[(temp.dose == 'ÚNICA') | (temp.dose == 'UNICA'), 'contagem']
         dose_unica = int(doses.iat[0]) if not doses.empty else None
 
         if dose_unica is None:
@@ -510,7 +510,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         filtro_dose4 = (doses_aplicadas.dose == '4° DOSE') | (doses_aplicadas.dose == '2º DOSE ADICIONAL') | (doses_aplicadas.dose == '2° DOSE ADICIONAL')
         filtro_dose5 = (doses_aplicadas.dose == '5° DOSE') | (doses_aplicadas.dose == '3º DOSE ADICIONAL') | (doses_aplicadas.dose == '3° DOSE ADICIONAL')
         filtro_dose6 = (doses_aplicadas.dose == '6° DOSE') | (doses_aplicadas.dose == '4º DOSE ADICIONAL') | (doses_aplicadas.dose == '4° DOSE ADICIONAL')
-        filtro_doseunica = doses_aplicadas.dose == 'UNICA'
+        filtro_doseunica = (doses_aplicadas.dose == 'ÚNICA') | (doses_aplicadas.dose == 'UNICA')
 
         nonlocal dados_vacinacao
         filtro_e = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
@@ -554,7 +554,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         populacao = 0 if linha['populacao'] is None or math.isnan(linha['populacao']) else linha['populacao']
         doses_recebidas = 0 if linha['doses_recebidas'] is None or math.isnan(linha['doses_recebidas']) else linha['doses_recebidas']
 
-        linha['total_doses'] = primeira_dose + segunda_dose + terceira_dose + dose_unica
+        linha['total_doses'] = primeira_dose + segunda_dose + terceira_dose + quarta_dose + quinta_dose + sexta_dose + dose_unica
 
         try:
             linha['perc_vacinadas_1a_dose'] = (primeira_dose / populacao) * 100
@@ -596,10 +596,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         except Exception:
             linha['perc_vacinadas_1a_dose_dose_unica'] = None
 
-        try:
-            linha['perc_imunizadas'] = ((segunda_dose + dose_unica) / populacao) * 100
-        except Exception:
-            linha['perc_imunizadas'] = None
+        linha['perc_imunizadas'] = linha['perc_vacinadas_3a_dose']
 
         try:
             if doses_recebidas == 0:
@@ -1027,7 +1024,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
-    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_imunizadas']
+    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_2a_dose']
     pop_imunizada = 'indisponível' if pop_imunizada.empty else f'{pop_imunizada.item():7.2f}%'.replace('.', ',')
 
     pop_3doses = dados_vacinacao.loc[filtro_data & filtro_estado, 'perc_vacinadas_3a_dose']
@@ -1087,7 +1084,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     pop_vacinada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_1a_dose']
     pop_vacinada = 'indisponível' if pop_vacinada.empty else f'{pop_vacinada.item():7.2f}%'.replace('.', ',')
 
-    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_imunizadas']
+    pop_imunizada = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_2a_dose']
     pop_imunizada = 'indisponível' if pop_imunizada.empty else f'{pop_imunizada.item():7.2f}%'.replace('.', ',')
 
     pop_3doses = dados_vacinacao.loc[filtro_data & filtro_cidade, 'perc_vacinadas_3a_dose']
