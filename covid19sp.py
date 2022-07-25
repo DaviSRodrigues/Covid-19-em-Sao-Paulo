@@ -501,9 +501,6 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                                 (dados_vacinacao.data.dt.date == data_processamento.date()), 'populacao'] = pop_cidade
 
     def atualiza_estado():
-        if doses_aplicadas is None:
-            return
-
         filtro_dose1 = (doses_aplicadas.dose == '1º DOSE') | (doses_aplicadas.dose == '1° DOSE')
         filtro_dose2 = (doses_aplicadas.dose == '2º DOSE') | (doses_aplicadas.dose == '2° DOSE')
         filtro_dose3 = (doses_aplicadas.dose == '1º DOSE ADICIONAL') | (doses_aplicadas.dose == '1° DOSE ADICIONAL') | (doses_aplicadas.dose == '3º DOSE')
@@ -522,38 +519,38 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             novos_dados = {'data': data_processamento,
                            'municipio': 'ESTADO DE SAO PAULO',
                            'doses_recebidas': doses_recebidas['contagem'].sum() if doses_recebidas is not None else None,
-                           '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum().iat[0],
-                           '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum().iat[0],
-                           '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum().iat[0],
-                           '4a_dose': doses_aplicadas.loc[filtro_dose4, 'contagem'].sum().iat[0],
-                           '5a_dose': doses_aplicadas.loc[filtro_dose5, 'contagem'].sum().iat[0],
-                           '6a_dose': doses_aplicadas.loc[filtro_dose6, 'contagem'].sum().iat[0],
-                           'dose_unica': doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum().iat[0],
+                           '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum(),
+                           '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum(),
+                           '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum(),
+                           '4a_dose': doses_aplicadas.loc[filtro_dose4, 'contagem'].sum(),
+                           '5a_dose': doses_aplicadas.loc[filtro_dose5, 'contagem'].sum(),
+                           '6a_dose': doses_aplicadas.loc[filtro_dose6, 'contagem'].sum(),
+                           'dose_unica': doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum(),
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
             print(f'Inserção\n{novos_dados}')
         else:
             dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum() if doses_recebidas is not None else None
-            dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum().iat[0]
-            dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = doses_aplicadas.loc[filtro_dose2, 'contagem'].sum().iat[0]
-            dados_vacinacao.loc[filtro_d & filtro_e, '3a_dose'] = doses_aplicadas.loc[filtro_dose3, 'contagem'].sum().iat[0]
-            dados_vacinacao.loc[filtro_d & filtro_e, '4a_dose'] = doses_aplicadas.loc[filtro_dose4, 'contagem'].sum().iat[0]
-            dados_vacinacao.loc[filtro_d & filtro_e, '5a_dose'] = doses_aplicadas.loc[filtro_dose5, 'contagem'].sum().iat[0]
-            dados_vacinacao.loc[filtro_d & filtro_e, '6a_dose'] = doses_aplicadas.loc[filtro_dose6, 'contagem'].sum().iat[0]
-            dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum().iat[0]
+            dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = doses_aplicadas.loc[filtro_dose2, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '3a_dose'] = doses_aplicadas.loc[filtro_dose3, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '4a_dose'] = doses_aplicadas.loc[filtro_dose4, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '5a_dose'] = doses_aplicadas.loc[filtro_dose5, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, '6a_dose'] = doses_aplicadas.loc[filtro_dose6, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum()
             dados_vacinacao.loc[filtro_d & filtro_e, 'populacao'] = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
             novos_dados = {'data': data_processamento,
                            'municipio': 'ESTADO DE SAO PAULO',
                            'doses_recebidas': doses_recebidas['contagem'].sum() if doses_recebidas is not None else None,
-                           '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum().iat[0],
-                           '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum().iat[0],
-                           '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum().iat[0],
-                           '4a_dose': doses_aplicadas.loc[filtro_dose4, 'contagem'].sum().iat[0],
-                           '5a_dose': doses_aplicadas.loc[filtro_dose5, 'contagem'].sum().iat[0],
-                           '6a_dose': doses_aplicadas.loc[filtro_dose6, 'contagem'].sum().iat[0],
-                           'dose_unica': doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum().iat[0],
+                           '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum(),
+                           '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum(),
+                           '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum(),
+                           '4a_dose': doses_aplicadas.loc[filtro_dose4, 'contagem'].sum(),
+                           '5a_dose': doses_aplicadas.loc[filtro_dose5, 'contagem'].sum(),
+                           '6a_dose': doses_aplicadas.loc[filtro_dose6, 'contagem'].sum(),
+                           'dose_unica': doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum(),
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (
                                        internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
@@ -700,6 +697,9 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
         doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+
+        print(doses_aplicadas)
+        print(doses_aplicadas.info())
 
         print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
         atualiza_doses('SAO PAULO')
