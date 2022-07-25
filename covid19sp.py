@@ -506,10 +506,10 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         filtro_dose1 = (doses_aplicadas.dose == '1º DOSE') | (doses_aplicadas.dose == '1° DOSE')
         filtro_dose2 = (doses_aplicadas.dose == '2º DOSE') | (doses_aplicadas.dose == '2° DOSE')
-        filtro_dose3 = (doses_aplicadas.dose == '3° DOSE') | (doses_aplicadas.dose == '1º DOSE ADICIONAL') | (doses_aplicadas.dose == '1° DOSE ADICIONAL')
-        filtro_dose4 = (doses_aplicadas.dose == '4° DOSE') | (doses_aplicadas.dose == '2º DOSE ADICIONAL') | (doses_aplicadas.dose == '2° DOSE ADICIONAL')
-        filtro_dose5 = (doses_aplicadas.dose == '5° DOSE') | (doses_aplicadas.dose == '3º DOSE ADICIONAL') | (doses_aplicadas.dose == '3° DOSE ADICIONAL')
-        filtro_dose6 = (doses_aplicadas.dose == '6° DOSE') | (doses_aplicadas.dose == '4º DOSE ADICIONAL') | (doses_aplicadas.dose == '4° DOSE ADICIONAL')
+        filtro_dose3 = (doses_aplicadas.dose == '1º DOSE ADICIONAL') | (doses_aplicadas.dose == '1° DOSE ADICIONAL') | (doses_aplicadas.dose == '3º DOSE')
+        filtro_dose4 = (doses_aplicadas.dose == '2º DOSE ADICIONAL') | (doses_aplicadas.dose == '2° DOSE ADICIONAL')
+        filtro_dose5 = (doses_aplicadas.dose == '3º DOSE ADICIONAL') | (doses_aplicadas.dose == '3° DOSE ADICIONAL')
+        filtro_dose6 = (doses_aplicadas.dose == '4º DOSE ADICIONAL') | (doses_aplicadas.dose == '4° DOSE ADICIONAL')
         filtro_doseunica = (doses_aplicadas.dose == 'ÚNICA') | (doses_aplicadas.dose == 'UNICA')
 
         nonlocal dados_vacinacao
@@ -532,7 +532,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
-            print('Atualização\n' + novos_dados)
+            print(f'Inserção\n{novos_dados}')
         else:
             dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum() if doses_recebidas is not None else None
             dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
@@ -546,8 +546,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
             novos_dados = {'data': data_processamento,
                            'municipio': 'ESTADO DE SAO PAULO',
-                           'doses_recebidas': doses_recebidas[
-                               'contagem'].sum() if doses_recebidas is not None else None,
+                           'doses_recebidas': doses_recebidas['contagem'].sum() if doses_recebidas is not None else None,
                            '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum(),
                            '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum(),
                            '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum(),
@@ -558,7 +557,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (
                                        internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
-            print('Inserção\n' + novos_dados)
+            print(f'Atualização\n{novos_dados}')
 
     def calcula_campos_adicionais(linha):
         primeira_dose = 0 if linha['1a_dose'] is None or isnan(linha['1a_dose']) else linha['1a_dose']
