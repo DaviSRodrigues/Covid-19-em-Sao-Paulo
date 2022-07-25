@@ -417,37 +417,37 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     def atualiza_doses(municipio):
         temp = doses_aplicadas.loc[doses_aplicadas['municipio'] == municipio]
 
-        doses = temp.loc[temp.dose == '1º DOSE', 'contagem']
+        doses = temp.loc[temp.dose == '1 DOSE', 'contagem']
         primeira_dose = int(doses.iat[0]) if not doses.empty else None
 
         if primeira_dose is None:
             primeira_dose = obtem_dado_anterior(municipio, '1a_dose')
 
-        doses = temp.loc[temp.dose == '2º DOSE', 'contagem']
+        doses = temp.loc[temp.dose == '2 DOSE', 'contagem']
         segunda_dose = int(doses.iat[0]) if not doses.empty else None
 
         if segunda_dose is None:
             segunda_dose = obtem_dado_anterior(municipio, '2a_dose')
 
-        doses = temp.loc[temp.dose == '1º DOSE ADICIONAL', 'contagem']
+        doses = temp.loc[temp.dose == '1 DOSE ADICIONAL', 'contagem']
         terceira_dose = int(doses.iat[0]) if not doses.empty else None
 
         if terceira_dose is None:
             terceira_dose = obtem_dado_anterior(municipio, '3a_dose')
 
-        doses = temp.loc[temp.dose == '2º DOSE ADICIONAL', 'contagem']
+        doses = temp.loc[temp.dose == '2 DOSE ADICIONAL', 'contagem']
         quarta_dose = int(doses.iat[0]) if not doses.empty else None
 
         if quarta_dose is None:
             quarta_dose = obtem_dado_anterior(municipio, '4a_dose')
 
-        doses = temp.loc[temp.dose == '3º DOSE ADICIONAL', 'contagem']
+        doses = temp.loc[temp.dose == '3 DOSE ADICIONAL', 'contagem']
         quinta_dose = int(doses.iat[0]) if not doses.empty else None
 
         if quinta_dose is None:
             quinta_dose = obtem_dado_anterior(municipio, '5a_dose')
 
-        doses = temp.loc[temp.dose == '4º DOSE ADICIONAL', 'contagem']
+        doses = temp.loc[temp.dose == '4 DOSE ADICIONAL', 'contagem']
         sexta_dose = int(doses.iat[0]) if not doses.empty else None
 
         if sexta_dose is None:
@@ -501,12 +501,12 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                                 (dados_vacinacao.data.dt.date == data_processamento.date()), 'populacao'] = pop_cidade
 
     def atualiza_estado():
-        filtro_dose1 = (doses_aplicadas.dose == '1º DOSE') | (doses_aplicadas.dose == '1° DOSE')
-        filtro_dose2 = (doses_aplicadas.dose == '2º DOSE') | (doses_aplicadas.dose == '2° DOSE')
-        filtro_dose3 = (doses_aplicadas.dose == '1º DOSE ADICIONAL') | (doses_aplicadas.dose == '1° DOSE ADICIONAL') | (doses_aplicadas.dose == '3º DOSE')
-        filtro_dose4 = (doses_aplicadas.dose == '2º DOSE ADICIONAL') | (doses_aplicadas.dose == '2° DOSE ADICIONAL')
-        filtro_dose5 = (doses_aplicadas.dose == '3º DOSE ADICIONAL') | (doses_aplicadas.dose == '3° DOSE ADICIONAL')
-        filtro_dose6 = (doses_aplicadas.dose == '4º DOSE ADICIONAL') | (doses_aplicadas.dose == '4° DOSE ADICIONAL')
+        filtro_dose1 = (doses_aplicadas.dose == '1 DOSE')
+        filtro_dose2 = (doses_aplicadas.dose == '2 DOSE')
+        filtro_dose3 = (doses_aplicadas.dose == '1 DOSE ADICIONAL') | (doses_aplicadas.dose == '3 DOSE')
+        filtro_dose4 = (doses_aplicadas.dose == '2 DOSE ADICIONAL')
+        filtro_dose5 = (doses_aplicadas.dose == '3 DOSE ADICIONAL')
+        filtro_dose6 = (doses_aplicadas.dose == '4 DOSE ADICIONAL')
         filtro_doseunica = (doses_aplicadas.dose == 'ÚNICA') | (doses_aplicadas.dose == 'UNICA')
 
         nonlocal dados_vacinacao
@@ -696,6 +696,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             doses_aplicadas.columns = ['municipio', 'dose', 'municipio_repetido', 'drs', 'contagem']
 
         doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
+        doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('ª', '').replace('º', '').replace('°', '')
         doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         print(doses_aplicadas)
