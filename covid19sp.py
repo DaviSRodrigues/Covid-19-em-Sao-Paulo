@@ -532,7 +532,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
-            print(novos_dados)
+            print('Atualização\n' + novos_dados)
         else:
             dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum() if doses_recebidas is not None else None
             dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
@@ -558,7 +558,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (
                                        internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
-            print(novos_dados)
+            print('Inserção\n' + novos_dados)
 
     def calcula_campos_adicionais(linha):
         primeira_dose = 0 if linha['1a_dose'] is None or isnan(linha['1a_dose']) else linha['1a_dose']
@@ -3261,15 +3261,25 @@ def atualiza_service_worker(dados_estado):
 
 if __name__ == '__main__':
     data_processamento = datetime.now() - timedelta(days=3)
-    print(f'Data processamento -> {data_processamento:%H:%M:%S}')
+    print(f'Data processamento -> {data_processamento:%d/%m/%Y}')
     processa_doencas = True
 
     main()
 
-    print(f'Data processamento -> {data_processamento:%H:%M:%S}')
+    print(f'Data processamento -> {data_processamento:%d/%m/%Y}')
     data_processamento = datetime.now() - timedelta(days=2)
     main()
 
-    print(f'Data processamento -> {data_processamento:%H:%M:%S}')
+    print(f'Data processamento -> {data_processamento:%d/%m/%Y}')
     data_processamento = datetime.now() - timedelta(days=1)
     main()
+
+    # dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
+    # dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
+    #
+    # dados_vacinacao.drop(dados_vacinacao.index[dados_vacinacao.data.dt.date >= pd.to_datetime('2022-07-22')], inplace=True)
+    #
+    # dados_vacinacao.sort_values(by=['data', 'municipio'], ascending=True, inplace=True)
+    # dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
+    # opcoes_zip = dict(method='zip', archive_name='dados_vacinacao.csv')
+    # dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
