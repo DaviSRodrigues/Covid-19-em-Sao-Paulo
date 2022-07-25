@@ -3248,3 +3248,7 @@ if __name__ == '__main__':
 
     main()
 
+    data_processamento = datetime.now() - timedelta(days=2)
+    main()
+    data_processamento = datetime.now() - timedelta(days=1)
+    main()
