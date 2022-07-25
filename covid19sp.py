@@ -11,7 +11,7 @@ na cidade e no estado de São Paulo.
 from datetime import datetime, timedelta
 from io import StringIO
 import locale
-import math
+from math import isnan, nan
 from tableauscraper import TableauScraper
 import traceback
 import unicodedata
@@ -521,7 +521,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if busca.empty:
             novos_dados = {'data': data_processamento,
                            'municipio': 'ESTADO DE SAO PAULO',
-                           'doses_recebidas': doses_recebidas['contagem'].sum(),
+                           'doses_recebidas': doses_recebidas['contagem'].sum() if doses_recebidas is not None else None,
                            '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum(),
                            '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum(),
                            '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum(),
@@ -533,7 +533,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
         else:
-            dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum() if doses_recebidas is not None else None
             dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
             dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = doses_aplicadas.loc[filtro_dose2, 'contagem'].sum()
             dados_vacinacao.loc[filtro_d & filtro_e, '3a_dose'] = doses_aplicadas.loc[filtro_dose3, 'contagem'].sum()
@@ -544,15 +544,15 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             dados_vacinacao.loc[filtro_d & filtro_e, 'populacao'] = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
     def calcula_campos_adicionais(linha):
-        primeira_dose = 0 if linha['1a_dose'] is None or math.isnan(linha['1a_dose']) else linha['1a_dose']
-        segunda_dose = 0 if linha['2a_dose'] is None or math.isnan(linha['2a_dose']) else linha['2a_dose']
-        terceira_dose = 0 if linha['3a_dose'] is None or math.isnan(linha['3a_dose']) else linha['3a_dose']
-        quarta_dose = 0 if linha['4a_dose'] is None or math.isnan(linha['4a_dose']) else linha['4a_dose']
-        quinta_dose = 0 if linha['5a_dose'] is None or math.isnan(linha['5a_dose']) else linha['5a_dose']
-        sexta_dose = 0 if linha['6a_dose'] is None or math.isnan(linha['6a_dose']) else linha['6a_dose']
-        dose_unica = 0 if linha['dose_unica'] is None or math.isnan(linha['dose_unica']) else linha['dose_unica']
-        populacao = 0 if linha['populacao'] is None or math.isnan(linha['populacao']) else linha['populacao']
-        doses_recebidas = 0 if linha['doses_recebidas'] is None or math.isnan(linha['doses_recebidas']) else linha['doses_recebidas']
+        primeira_dose = 0 if linha['1a_dose'] is None or isnan(linha['1a_dose']) else linha['1a_dose']
+        segunda_dose = 0 if linha['2a_dose'] is None or isnan(linha['2a_dose']) else linha['2a_dose']
+        terceira_dose = 0 if linha['3a_dose'] is None or isnan(linha['3a_dose']) else linha['3a_dose']
+        quarta_dose = 0 if linha['4a_dose'] is None or isnan(linha['4a_dose']) else linha['4a_dose']
+        quinta_dose = 0 if linha['5a_dose'] is None or isnan(linha['5a_dose']) else linha['5a_dose']
+        sexta_dose = 0 if linha['6a_dose'] is None or isnan(linha['6a_dose']) else linha['6a_dose']
+        dose_unica = 0 if linha['dose_unica'] is None or isnan(linha['dose_unica']) else linha['dose_unica']
+        populacao = 0 if linha['populacao'] is None or isnan(linha['populacao']) else linha['populacao']
+        doses_recebidas = 0 if linha['doses_recebidas'] is None or isnan(linha['doses_recebidas']) else linha['doses_recebidas']
 
         linha['total_doses'] = primeira_dose + segunda_dose + terceira_dose + quarta_dose + quinta_dose + sexta_dose + dose_unica
 
@@ -785,10 +785,10 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
 
     estado['data'] = estado.data.apply(lambda d: _formata_semana_extenso(d))
 
-    estado['casos_semana'] = estado.casos_semana.apply(lambda c: math.nan if c == 0 else c)
-    estado['obitos_semana'] = estado.obitos_semana.apply(lambda c: math.nan if c == 0 else c)
-    estado['vacinadas_semana'] = estado.vacinadas_semana.apply(lambda c: math.nan if c == 0 else c)
-    estado['internacoes_semana'] = estado.internacoes_semana.apply(lambda c: math.nan if c == 0 else c)
+    estado['casos_semana'] = estado.casos_semana.apply(lambda c: nan if c == 0 else c)
+    estado['obitos_semana'] = estado.obitos_semana.apply(lambda c: nan if c == 0 else c)
+    estado['vacinadas_semana'] = estado.vacinadas_semana.apply(lambda c: nan if c == 0 else c)
+    estado['internacoes_semana'] = estado.internacoes_semana.apply(lambda c: nan if c == 0 else c)
 
     evolucao_estado = estado
 
@@ -827,10 +827,10 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
 
     cidade['data'] = cidade.data.apply(lambda d: _formata_semana_extenso(d))
 
-    cidade['casos_semana'] = cidade.casos_semana.apply(lambda c: math.nan if c == 0 else c)
-    cidade['obitos_semana'] = cidade.obitos_semana.apply(lambda c: math.nan if c == 0 else c)
-    cidade['vacinadas_semana'] = cidade.vacinadas_semana.apply(lambda c: math.nan if c == 0 else c)
-    estado['internacoes_semana'] = estado.internacoes_semana.apply(lambda c: math.nan if c == 0 else c)
+    cidade['casos_semana'] = cidade.casos_semana.apply(lambda c: nan if c == 0 else c)
+    cidade['obitos_semana'] = cidade.obitos_semana.apply(lambda c: nan if c == 0 else c)
+    cidade['vacinadas_semana'] = cidade.vacinadas_semana.apply(lambda c: nan if c == 0 else c)
+    estado['internacoes_semana'] = estado.internacoes_semana.apply(lambda c: nan if c == 0 else c)
 
     evolucao_cidade = cidade
 
@@ -1054,7 +1054,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     dose_1 = 'indisponível' if dose_1.empty else f'{dose_1.item():7,.0f}'.replace(',', '.')
 
     dose_2 = dados_vacinacao.loc[filtro_data & filtro_cidade, '2a_dose']
-    dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.') if not math.isnan(dose_2.item()) else 'indisponível'
+    dose_2 = 'indisponível' if dose_2.empty else f'{dose_2.item():7,.0f}'.replace(',', '.') if not isnan(dose_2.item()) else 'indisponível'
 
     dose_3 = dados_vacinacao.loc[filtro_data & filtro_cidade, '3a_dose']
     dose_3 = 'indisponível' if dose_3.empty else f'{dose_3.item():7,.0f}'.replace(',', '.')
@@ -1280,11 +1280,11 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
 
 
 def _formata_variacao(v, retorna_texto=False):
-    if math.isnan(v) or v is None:
+    if isnan(v) or v is None:
         if retorna_texto:
             return 'indisponível'
         else:
-            return math.nan
+            return nan
 
     return f'+{v:02.1f}%'.replace('.', ',') if v >= 0 else f'{v:02.1f}%'.replace('.', ',')
 
@@ -1325,22 +1325,22 @@ def gera_resumo_semanal(evolucao_cidade, evolucao_estado):
     num_semana = evolucao_estado.index[evolucao_estado.data == semana].item()
 
     vacinadas_semana = evolucao_estado.loc[num_semana, 'vacinadas_semana']
-    vacinadas_semana = 'indisponível' if math.isnan(vacinadas_semana) else f'{vacinadas_semana.item():7,.0f}'.replace(',', '.')
+    vacinadas_semana = 'indisponível' if isnan(vacinadas_semana) else f'{vacinadas_semana.item():7,.0f}'.replace(',', '.')
 
     casos_semana = evolucao_estado.loc[num_semana, 'casos_semana']
-    casos_semana = 'indisponível' if math.isnan(casos_semana) else f'{casos_semana.item():7,.0f}'.replace(',', '.')
+    casos_semana = 'indisponível' if isnan(casos_semana) else f'{casos_semana.item():7,.0f}'.replace(',', '.')
 
     obitos_semana = evolucao_estado.loc[num_semana, 'obitos_semana']
-    obitos_semana = 'indisponível' if math.isnan(obitos_semana) else f'{obitos_semana.item():7,.0f}'.replace(',', '.')
+    obitos_semana = 'indisponível' if isnan(obitos_semana) else f'{obitos_semana.item():7,.0f}'.replace(',', '.')
 
     internacoes = evolucao_estado.loc[num_semana, 'internacoes_semana']
-    internacoes = 'indisponível' if math.isnan(internacoes) else f'{internacoes.item():7,.0f}'.replace(',', '.')
+    internacoes = 'indisponível' if isnan(internacoes) else f'{internacoes.item():7,.0f}'.replace(',', '.')
 
     uti = evolucao_estado.loc[num_semana, 'uti']
-    uti = 'indisponível' if math.isnan(uti) else f'{uti.item():7.1f}%'.replace('.', ',')
+    uti = 'indisponível' if isnan(uti) else f'{uti.item():7.1f}%'.replace('.', ',')
 
     isolamento_atual = evolucao_estado.loc[num_semana, 'isolamento_atual']
-    isolamento_atual = 'indisponível' if math.isnan(isolamento_atual) else f'{isolamento_atual.item():7.1f}%'.replace('.', ',')
+    isolamento_atual = 'indisponível' if isnan(isolamento_atual) else f'{isolamento_atual.item():7.1f}%'.replace('.', ',')
 
     estado = [vacinadas_semana,  # Vacinadas
               '<i>' + _formata_variacao(evolucao_estado.loc[num_semana, 'variacao_vacinadas'], retorna_texto=True) + '</i>',  # Variação vacinadas
@@ -1358,22 +1358,22 @@ def gera_resumo_semanal(evolucao_cidade, evolucao_estado):
     num_semana = evolucao_cidade.index[evolucao_cidade.data == semana].item()
 
     vacinadas_semana = evolucao_cidade.loc[num_semana, 'vacinadas_semana']
-    vacinadas_semana = 'indisponível' if math.isnan(vacinadas_semana) else f'{vacinadas_semana.item():7,.0f}'.replace(',', '.')
+    vacinadas_semana = 'indisponível' if isnan(vacinadas_semana) else f'{vacinadas_semana.item():7,.0f}'.replace(',', '.')
 
     casos_semana = evolucao_cidade.loc[num_semana, 'casos_semana']
-    casos_semana = 'indisponível' if math.isnan(casos_semana) else f'{casos_semana.item():7,.0f}'.replace(',', '.')
+    casos_semana = 'indisponível' if isnan(casos_semana) else f'{casos_semana.item():7,.0f}'.replace(',', '.')
 
     obitos_semana = evolucao_cidade.loc[num_semana, 'obitos_semana']
-    obitos_semana = 'indisponível' if math.isnan(obitos_semana) else f'{obitos_semana.item():7,.0f}'.replace(',', '.')
+    obitos_semana = 'indisponível' if isnan(obitos_semana) else f'{obitos_semana.item():7,.0f}'.replace(',', '.')
 
     internacoes = evolucao_cidade.loc[num_semana, 'internacoes_semana']
-    internacoes = 'indisponível' if math.isnan(internacoes) else f'{internacoes.item():7,.0f}'.replace(',', '.')
+    internacoes = 'indisponível' if isnan(internacoes) else f'{internacoes.item():7,.0f}'.replace(',', '.')
 
     uti = evolucao_cidade.loc[num_semana, 'uti']
-    uti = 'indisponível' if math.isnan(uti) else f'{uti.item():7.1f}%'.replace('.', ',')
+    uti = 'indisponível' if isnan(uti) else f'{uti.item():7.1f}%'.replace('.', ',')
 
     isolamento_atual = evolucao_cidade.loc[num_semana, 'isolamento_atual']
-    isolamento_atual = 'indisponível' if math.isnan(isolamento_atual) else f'{isolamento_atual.item():7.1f}%'.replace('.', ',')
+    isolamento_atual = 'indisponível' if isnan(isolamento_atual) else f'{isolamento_atual.item():7.1f}%'.replace('.', ',')
 
     cidade = [vacinadas_semana,  # Vacinadas
               '<i>' + _formata_variacao(evolucao_cidade.loc[num_semana, 'variacao_vacinadas'], retorna_texto=True) + '</i>',  # Variação vacinadas
@@ -3243,7 +3243,7 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
+    data_processamento = datetime.now() - timedelta(days=3)
     processa_doencas = True
 
     main()

@@ -34,15 +34,15 @@ jobs:
       - name: Configurar Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.7.9
+          python-version: 3.8.12
           
       - name: Testar Python
-        run: python -c "import sys; print(sys.version)"
+        run: python --version
 
       - name: Instalar dependências Python
         run: |
              python -m pip install --upgrade pip
-             pip install pandas>=1.2.1 plotly requests tableauscraper
+             pip install pandas==1.3.5 plotly==5.2.1 requests==2.27.1 tableauscraper==0.1.19
       
       - name: Mudar locale para pt_BR.UTF-8 e horário para BRT
         run: |
