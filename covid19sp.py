@@ -532,6 +532,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
+            print(novos_dados)
         else:
             dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum() if doses_recebidas is not None else None
             dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
@@ -542,6 +543,22 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
             dados_vacinacao.loc[filtro_d & filtro_e, '6a_dose'] = doses_aplicadas.loc[filtro_dose6, 'contagem'].sum()
             dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum()
             dados_vacinacao.loc[filtro_d & filtro_e, 'populacao'] = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
+
+            novos_dados = {'data': data_processamento,
+                           'municipio': 'ESTADO DE SAO PAULO',
+                           'doses_recebidas': doses_recebidas[
+                               'contagem'].sum() if doses_recebidas is not None else None,
+                           '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum(),
+                           '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum(),
+                           '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum(),
+                           '4a_dose': doses_aplicadas.loc[filtro_dose4, 'contagem'].sum(),
+                           '5a_dose': doses_aplicadas.loc[filtro_dose5, 'contagem'].sum(),
+                           '6a_dose': doses_aplicadas.loc[filtro_dose6, 'contagem'].sum(),
+                           'dose_unica': doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum(),
+                           'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (
+                                       internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
+
+            print(novos_dados)
 
     def calcula_campos_adicionais(linha):
         primeira_dose = 0 if linha['1a_dose'] is None or isnan(linha['1a_dose']) else linha['1a_dose']
@@ -3244,11 +3261,15 @@ def atualiza_service_worker(dados_estado):
 
 if __name__ == '__main__':
     data_processamento = datetime.now() - timedelta(days=3)
+    print(f'Data processamento -> {data_processamento:%H:%M:%S}')
     processa_doencas = True
 
     main()
 
+    print(f'Data processamento -> {data_processamento:%H:%M:%S}')
     data_processamento = datetime.now() - timedelta(days=2)
     main()
+
+    print(f'Data processamento -> {data_processamento:%H:%M:%S}')
     data_processamento = datetime.now() - timedelta(days=1)
     main()
