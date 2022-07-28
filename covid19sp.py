@@ -144,14 +144,14 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
     except Exception as e:
         try:
             print('\t\tDoses aplicadas por município... .csv.csv')
             URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv.csv'
             req = requests.get(URL, headers=headers, stream=True)
             req.encoding = req.apparent_encoding
-            doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+            doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
         except Exception as e:
             print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
             doses_aplicadas = None
@@ -161,14 +161,14 @@ def carrega_dados_estado():
         URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
-        doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+        doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
     except Exception as e:
         try:
             print('\t\tDoses recebidas por cada município... .csv.csv')
             URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv.csv'
             req = requests.get(URL, headers=headers, stream=True)
             req.encoding = req.apparent_encoding
-            doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8-sig')
+            doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
         except Exception as e:
             print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
             doses_recebidas = None
@@ -3243,9 +3243,10 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
-    processa_doencas = True
+    for i in range(4, 0, -1):
+        data_processamento = datetime.now() - timedelta(days=i)
+        processa_doencas = True
 
-    main()
+        main()
 
 
