@@ -3243,10 +3243,9 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    for i in range(4, 0, -1):
-        data_processamento = datetime.now() - timedelta(days=i)
-        processa_doencas = True
+    data_processamento = datetime.now()
+    processa_doencas = True
 
-        main()
+    main()
 
 
