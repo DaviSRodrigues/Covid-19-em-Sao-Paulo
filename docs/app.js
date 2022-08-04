@@ -135,21 +135,21 @@ function montaPagina(pagina) {
 	
 	switch(paginaAtual) {
 		case 'resumo':
-			criaTitulo('Resumo diário');
+			criaTitulo('Campanha de vacinação');
 			
-			criaLink('Ampliar resumo diário', 'graficos/resumo.html');
-			criaIFrame('graficos/resumo.html', 'graficos/resumo-mobile.html', versaoMobile);
+			criaLink('Ampliar resumo da campanha de vacinação', 'graficos/resumo-vacinacao.html');
+			criaIFrame('graficos/resumo-vacinacao.html', 'graficos/resumo-vacinacao-mobile.html', versaoMobile);
 			
 			criaTitulo('Semana Epidemiológica');
 			
 			criaLink('Ampliar resumo semanal', 'graficos/resumo-semanal.html');
 			criaIFrame('graficos/resumo-semanal.html', 'graficos/resumo-semanal-mobile.html', versaoMobile);
 			
-			criaTitulo('Campanha de vacinação');
+			criaTitulo('Resumo diário');
 			
-			criaLink('Ampliar resumo da campanha de vacinação', 'graficos/resumo-vacinacao.html');
-			criaIFrame('graficos/resumo-vacinacao.html', 'graficos/resumo-vacinacao-mobile.html', versaoMobile);
-
+			criaLink('Ampliar resumo diário', 'graficos/resumo.html');
+			criaIFrame('graficos/resumo.html', 'graficos/resumo-mobile.html', versaoMobile);
+			
 			break;
 			
 		case 'evolucao':
