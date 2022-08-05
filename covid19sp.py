@@ -547,12 +547,12 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         dose_unica = doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum()
 
         if dose_unica is None or dose_unica == 0:
-            dose_unica = obtem_dado_anterior(municipio, 'dose_unica')
+            dose_unica = obtem_dado_anterior('ESTADO DE SAO PAULO', 'dose_unica')
 
         if doses_recebidas is None:
-            recebidas = obtem_dado_anterior(municipio, 'doses_recebidas')
+            recebidas = obtem_dado_anterior('ESTADO DE SAO PAULO', 'doses_recebidas')
         else:
-            recebidas = doses_recebidas.loc[doses_recebidas.municipio == municipio, 'contagem']
+            recebidas = doses_recebidas.loc[doses_recebidas.municipio == 'ESTADO DE SAO PAULO', 'contagem']
             recebidas = None if recebidas.empty else recebidas.iat[0]
 
         nonlocal dados_vacinacao
