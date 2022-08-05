@@ -3320,6 +3320,6 @@ if __name__ == '__main__':
 
     print(f'Tem ª?\t{any(doses_aplicadas.dose.str.contains("ª"))}\n'
           f'Tem º?\t{any(doses_aplicadas.dose.str.contains("º"))}\n'
-          f'Tem °?\t{any(doses_aplicadas.dose.str.contains("°"))}\n')
-
+          f'Tem °?\t{any(doses_aplicadas.dose.str.contains("°"))}\n'
+          f'Tem 쨘?\t{any(doses_aplicadas.dose.str.contains("쨘"))}\n')
 
