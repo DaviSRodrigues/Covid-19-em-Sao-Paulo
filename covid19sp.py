@@ -571,7 +571,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                            '4a_dose': quarta_dose,
                            '5a_dose': quinta_dose,
                            '6a_dose': sexta_dose,
-                           'dose_unica': dose_unica
+                           'dose_unica': dose_unica,
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
