@@ -727,6 +727,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
         doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+        doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
 
         print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
         atualiza_doses('SAO PAULO')
@@ -3317,6 +3318,14 @@ if __name__ == '__main__':
     dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
 
     print(doses_aplicadas)
+
+    print(f'Tem ª?\t{any(doses_aplicadas.dose.str.contains("ª"))}\n'
+          f'Tem º?\t{any(doses_aplicadas.dose.str.contains("º"))}\n'
+          f'Tem °?\t{any(doses_aplicadas.dose.str.contains("°"))}\n'
+          f'Tem 쨘?\t{any(doses_aplicadas.dose.str.contains("쨘"))}')
+
+    print('\nTrocando o símbolo estranho por º...\n')
+    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
 
     print(f'Tem ª?\t{any(doses_aplicadas.dose.str.contains("ª"))}\n'
           f'Tem º?\t{any(doses_aplicadas.dose.str.contains("º"))}\n'
