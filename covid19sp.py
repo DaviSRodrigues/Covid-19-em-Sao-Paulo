@@ -3299,9 +3299,11 @@ if __name__ == '__main__':
                              'Safari/537.36 '
                              'Edg/88.0.705.74'}
 
+    doses_aplicadas = None
+
     try:
         print('\t\tDoses aplicadas por município...')
-        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
+        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220804_vacinometro.csv'
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
         doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
@@ -3316,8 +3318,8 @@ if __name__ == '__main__':
 
     print(doses_aplicadas)
 
-    print(f'Tem ª?\t{doses_aplicadas.contagem.str.contains("ª")}'
-          f'Tem º?\t{doses_aplicadas.contagem.str.contains("º")}'
-          f'Tem °?\t{doses_aplicadas.contagem.str.contains("°")}')
+    print(f'Tem ª?\t{any(doses_aplicadas.dose.str.contains("ª"))}\n'
+          f'Tem º?\t{any(doses_aplicadas.dose.str.contains("º"))}\n'
+          f'Tem °?\t{any(doses_aplicadas.dose.str.contains("°"))}\n')
 
 
