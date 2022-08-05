@@ -404,7 +404,9 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         indice = pd.Series(dtype='float64')
         dia_anterior = data_processamento - timedelta(days=1)
 
-        while indice.empty and dia_anterior.date() >= dados_vacinacao.data.min().date():
+        data_inicio_vacinacao = dados_vacinacao.data.min().date()
+
+        while indice.empty and dia_anterior.date() >= data_inicio_vacinacao:
             indice = dados_vacinacao.index[(dados_vacinacao.data.dt.date == dia_anterior.date()) &
                                            (dados_vacinacao.municipio == municipio)]
             dia_anterior = dia_anterior - timedelta(days=1)
@@ -512,6 +514,47 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         filtro_dose6 = (doses_aplicadas.dose == '6° DOSE') | (doses_aplicadas.dose == '4º DOSE ADICIONAL') | (doses_aplicadas.dose == '4° DOSE ADICIONAL')
         filtro_doseunica = (doses_aplicadas.dose == 'ÚNICA') | (doses_aplicadas.dose == 'UNICA')
 
+        primeira_dose = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
+
+        if primeira_dose is None or primeira_dose == 0:
+            primeira_dose = obtem_dado_anterior('ESTADO DE SAO PAULO', '1a_dose')
+
+        segunda_dose = doses_aplicadas.loc[filtro_dose2, 'contagem'].sum()
+
+        if segunda_dose is None or segunda_dose == 0:
+            segunda_dose = obtem_dado_anterior('ESTADO DE SAO PAULO', '2a_dose')
+
+        terceira_dose = doses_aplicadas.loc[filtro_dose3, 'contagem'].sum()
+
+        if terceira_dose is None or terceira_dose == 0:
+            terceira_dose = obtem_dado_anterior('ESTADO DE SAO PAULO', '3a_dose')
+
+        quarta_dose = doses_aplicadas.loc[filtro_dose4, 'contagem'].sum()
+
+        if quarta_dose is None or quarta_dose == 0:
+            quarta_dose = obtem_dado_anterior('ESTADO DE SAO PAULO', '4a_dose')
+
+        quinta_dose = doses_aplicadas.loc[filtro_dose5, 'contagem'].sum()
+
+        if quinta_dose is None or quinta_dose == 0:
+            quinta_dose = obtem_dado_anterior('ESTADO DE SAO PAULO', '5a_dose')
+
+        sexta_dose = doses_aplicadas.loc[filtro_dose6, 'contagem'].sum()
+
+        if sexta_dose is None or sexta_dose == 0:
+            sexta_dose = obtem_dado_anterior('ESTADO DE SAO PAULO', '6a_dose')
+
+        dose_unica = doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum()
+
+        if dose_unica is None or dose_unica == 0:
+            dose_unica = obtem_dado_anterior(municipio, 'dose_unica')
+
+        if doses_recebidas is None:
+            recebidas = obtem_dado_anterior(municipio, 'doses_recebidas')
+        else:
+            recebidas = doses_recebidas.loc[doses_recebidas.municipio == municipio, 'contagem']
+            recebidas = None if recebidas.empty else recebidas.iat[0]
+
         nonlocal dados_vacinacao
         filtro_e = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
         filtro_d = dados_vacinacao.data.dt.date == data_processamento.date()
@@ -521,26 +564,26 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if busca.empty:
             novos_dados = {'data': data_processamento,
                            'municipio': 'ESTADO DE SAO PAULO',
-                           'doses_recebidas': doses_recebidas['contagem'].sum() if doses_recebidas is not None else None,
-                           '1a_dose': doses_aplicadas.loc[filtro_dose1, 'contagem'].sum(),
-                           '2a_dose': doses_aplicadas.loc[filtro_dose2, 'contagem'].sum(),
-                           '3a_dose': doses_aplicadas.loc[filtro_dose3, 'contagem'].sum(),
-                           '4a_dose': doses_aplicadas.loc[filtro_dose4, 'contagem'].sum(),
-                           '5a_dose': doses_aplicadas.loc[filtro_dose5, 'contagem'].sum(),
-                           '6a_dose': doses_aplicadas.loc[filtro_dose6, 'contagem'].sum(),
-                           'dose_unica': doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum(),
+                           'doses_recebidas': recebidas,
+                           '1a_dose': primeira_dose,
+                           '2a_dose': segunda_dose,
+                           '3a_dose': terceira_dose,
+                           '4a_dose': quarta_dose,
+                           '5a_dose': quinta_dose,
+                           '6a_dose': sexta_dose,
+                           'dose_unica': dose_unica
                            'populacao': internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]}
 
             dados_vacinacao = dados_vacinacao.append(novos_dados, ignore_index=True)
         else:
-            dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = doses_recebidas['contagem'].sum() if doses_recebidas is not None else None
-            dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = doses_aplicadas.loc[filtro_dose1, 'contagem'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = doses_aplicadas.loc[filtro_dose2, 'contagem'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '3a_dose'] = doses_aplicadas.loc[filtro_dose3, 'contagem'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '4a_dose'] = doses_aplicadas.loc[filtro_dose4, 'contagem'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '5a_dose'] = doses_aplicadas.loc[filtro_dose5, 'contagem'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, '6a_dose'] = doses_aplicadas.loc[filtro_dose6, 'contagem'].sum()
-            dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = doses_aplicadas.loc[filtro_doseunica, 'contagem'].sum()
+            dados_vacinacao.loc[filtro_d & filtro_e, 'doses_recebidas'] = recebidas
+            dados_vacinacao.loc[filtro_d & filtro_e, '1a_dose'] = primeira_dose
+            dados_vacinacao.loc[filtro_d & filtro_e, '2a_dose'] = segunda_dose
+            dados_vacinacao.loc[filtro_d & filtro_e, '3a_dose'] = terceira_dose
+            dados_vacinacao.loc[filtro_d & filtro_e, '4a_dose'] = quarta_dose
+            dados_vacinacao.loc[filtro_d & filtro_e, '5a_dose'] = quinta_dose
+            dados_vacinacao.loc[filtro_d & filtro_e, '6a_dose'] = sexta_dose
+            dados_vacinacao.loc[filtro_d & filtro_e, 'dose_unica'] = dose_unica
             dados_vacinacao.loc[filtro_d & filtro_e, 'populacao'] = internacoes.loc[(internacoes.drs == 'Estado de São Paulo') & (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
     def calcula_campos_adicionais(linha):
@@ -3243,9 +3286,38 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
-    processa_doencas = True
+    # data_processamento = datetime.now()
+    # processa_doencas = True
+    #
+    # main()
 
-    main()
+    print('\tAtualizando dados da campanha de vacinação...')
+
+    headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                             'AppleWebKit/537.36 (KHTML, like Gecko) '
+                             'Chrome/88.0.4324.182 '
+                             'Safari/537.36 '
+                             'Edg/88.0.705.74'}
+
+    try:
+        print('\t\tDoses aplicadas por município...')
+        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
+        req = requests.get(URL, headers=headers, stream=True)
+        req.encoding = req.apparent_encoding
+        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+        doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
+        doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
+        doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+    except Exception as e:
+        print(e)
+
+    dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
+
+    print(doses_aplicadas)
+
+    print(f'Tem ª?\t{doses_aplicadas.contagem.str.contains("ª")}'
+          f'Tem º?\t{doses_aplicadas.contagem.str.contains("º")}'
+          f'Tem °?\t{doses_aplicadas.contagem.str.contains("°")}')
 
 
