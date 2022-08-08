@@ -730,7 +730,8 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
 
         print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
-        atualiza_doses('SAO PAULO')
+        for m in doses_aplicadas.municipio.unique():
+            atualiza_doses(m)
 
         print(f'\t\t\tAtualizando população... {datetime.now():%H:%M:%S}')
         atualiza_populacao()
@@ -3288,7 +3289,7 @@ def atualiza_service_worker(dados_estado):
 
 if __name__ == '__main__':
     for i in range(24, 0, -1):
-        data_processamento = datetime.now()
+        data_processamento = datetime.now() - timedelta(days=i)
         print(f'\nData em processamento -> {data_processamento:%d/%m/%Y}\n')
         processa_doencas = True
 
