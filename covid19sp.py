@@ -3309,5 +3309,6 @@ if __name__ == '__main__':
     doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
         lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
     doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
+    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.replace('횄', 'Ã')
     print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('PAULO')])
 
