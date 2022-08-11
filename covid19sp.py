@@ -3302,14 +3302,13 @@ if __name__ == '__main__':
     URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220810_vacinometro.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
-    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='UTF-8')
+    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='cp1252')
     doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
     doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
     print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('PAULO')])
     doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
         lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('횣', 'U')
+    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º').replace('횣', 'U')
     doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.replace('횄', 'A')
     print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('PAULO')])
 
