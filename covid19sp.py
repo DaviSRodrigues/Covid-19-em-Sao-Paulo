@@ -417,7 +417,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         return None if coluna != 'dose_unica' else 0
 
     def atualiza_doses(municipio):
-        temp = doses_aplicadas.loc[doses_aplicadas['municipio'].contains(municipio)]
+        temp = doses_aplicadas.loc[doses_aplicadas['municipio'].str.contains(municipio)]
 
         doses = temp.loc[temp.dose == '1º DOSE', 'contagem']
         primeira_dose = int(doses.iat[0]) if not doses.empty else None
