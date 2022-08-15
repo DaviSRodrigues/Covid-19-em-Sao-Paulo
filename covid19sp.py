@@ -3289,10 +3289,10 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
-    processa_doencas = True
+    #data_processamento = datetime.now()
+    #processa_doencas = True
 
-    main()
+    #main()
 
     print('\tAtualizando dados da campanha de vacinação...')
 
