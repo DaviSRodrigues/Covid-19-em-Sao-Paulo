@@ -3289,31 +3289,9 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    #data_processamento = datetime.now()
-    #processa_doencas = True
+    for i in range(35, -1, -1):
+        data_processamento = datetime.now() - timedelta(days=i)
+        processa_doencas = True
+        print(f'\n\nData atual -> {data_processamento:%d/%m/%Y}\n\n')
+        main()
 
-    #main()
-
-    print('\tAtualizando dados da campanha de vacinação...')
-
-    headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                             'AppleWebKit/537.36 (KHTML, like Gecko) '
-                             'Chrome/88.0.4324.182 '
-                             'Safari/537.36 '
-                             'Edg/88.0.705.74'}
-
-    print('\t\tDoses aplicadas por município...')
-    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_vacinometro.csv'
-    req = requests.get(URL, headers=headers, stream=True)
-    req.encoding = req.apparent_encoding
-    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
-    doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('횣', 'U')
-    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.replace('횄', 'A')
-    doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
-        lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
-
-    print(doses_aplicadas)
-    print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('O PAULO')])
