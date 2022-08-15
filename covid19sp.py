@@ -3316,4 +3316,4 @@ if __name__ == '__main__':
         lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
     print(doses_aplicadas)
-    print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('SAO PAULO')])
+    print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains(' PAULO')])
