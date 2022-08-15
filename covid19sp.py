@@ -417,7 +417,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         return None if coluna != 'dose_unica' else 0
 
     def atualiza_doses(municipio):
-        temp = doses_aplicadas.loc[doses_aplicadas['municipio'] == municipio]
+        temp = doses_aplicadas.loc[doses_aplicadas['municipio'].contains(municipio)]
 
         doses = temp.loc[temp.dose == '1º DOSE', 'contagem']
         primeira_dose = int(doses.iat[0]) if not doses.empty else None
@@ -732,7 +732,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
-        atualiza_doses('SAO PAULO')
+        atualiza_doses('O PAULO') #SAO PAULO
 
         print(f'\t\t\tAtualizando população... {datetime.now():%H:%M:%S}')
         atualiza_populacao()
@@ -3316,4 +3316,4 @@ if __name__ == '__main__':
         lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
     print(doses_aplicadas)
-    print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains(' PAULO')])
+    print(doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('O PAULO')])
