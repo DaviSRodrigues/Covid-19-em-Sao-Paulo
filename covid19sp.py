@@ -3313,11 +3313,11 @@ if __name__ == '__main__':
 
     doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
     doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.encode('UTF-8-SIG')
+    doses_aplicadas['dose'] = doses_aplicadas.dose.str.decode(req.encoding)
 
     print(doses_aplicadas)
 
-    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.encode('UTF-8-SIG')
+    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.decode(req.encoding)
 
     print(doses_aplicadas)
     
