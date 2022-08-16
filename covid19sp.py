@@ -499,7 +499,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                                      (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
         if pop_cidade is not None:
-            dados_vacinacao.loc[(dados_vacinacao.municipio == 'SAO PAULO') &
+            dados_vacinacao.loc[(dados_vacinacao.municipio.str.contains('O PAULO')) &
                                 (dados_vacinacao.data.dt.date == data_processamento.date()), 'populacao'] = pop_cidade
 
     def atualiza_estado():
@@ -850,7 +850,7 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
 
     cidade = esquerda.merge(cidade, on=['data'], how='outer', suffixes=('_isolamento', '_cidade'))
 
-    filtro = dados_vacinacao.municipio == 'SAO PAULO'
+    filtro = dados_vacinacao.municipio.str.contains('O PAULO')
     colunas = ['data', 'aplicadas_dia', 'perc_imunizadas']
     vacinacao = dados_vacinacao.loc[filtro, colunas].groupby(['data']).sum().reset_index()
     vacinacao.columns = ['data', 'vacinadas_semana', 'perc_imu_semana']
@@ -1021,7 +1021,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     filtro_data = dados_vacinacao.data.dt.date == data_processamento.date()
     filtro_data_max = dados_vacinacao.data == dados_vacinacao.data.max()
     filtro_estado = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados_vacinacao.municipio == 'SAO PAULO'
+    filtro_cidade = dados_vacinacao.municipio.str.contains('O PAULO')
     inicio_vacinacao = pd.to_datetime('2021-01-17')
 
     cabecalho = ['<b>Campanha de<br>vacinação</b>',
@@ -1248,7 +1248,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     isolamento_atual = isolamento.loc[filtro, 'isolamento']
     isolamento_atual = 'indisponível' if isolamento_atual.empty else f'{isolamento_atual.item():7.0f}%'.replace('.', ',')
 
-    filtro = (dados_vacinacao.municipio == 'SAO PAULO') & (dados_vacinacao.data.dt.date == hoje.date())
+    filtro = (dados_vacinacao.municipio.str.contains('O PAULO')) & (dados_vacinacao.data.dt.date == hoje.date())
     vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia']
     vacinadas = 'indisponível' if vacinadas.empty else f'{vacinadas.item():7,.0f}'.replace(',', '.')
 
@@ -2797,7 +2797,7 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
 
 
 def gera_evolucao_vacinacao_cidade(dados_vacinacao):
-    dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'SAO PAULO'].copy()
+    dados = dados_vacinacao.loc[dados_vacinacao.municipio.str.contains('O PAULO')].copy()
     dados = dados[1:]
 
     media_movel = dados.loc[:, ['data', 'aplicadas_dia']].rolling('7D', on='data').mean()
@@ -2892,7 +2892,7 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
 def gera_populacao_vacinada(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio == 'SAO PAULO'
+    filtro_cidade = dados.municipio.str.contains('O PAULO')
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -2999,7 +2999,7 @@ def gera_populacao_vacinada(dados):
 def gera_tipo_doses(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio == 'SAO PAULO'
+    filtro_cidade = dados.municipio.str.contains('O PAULO')
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -3058,7 +3058,7 @@ def gera_tipo_doses(dados):
 def gera_doses_aplicadas(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio == 'SAO PAULO'
+    filtro_cidade = dados.municipio.str.contains('O PAULO')
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
