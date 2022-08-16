@@ -3325,3 +3325,4 @@ if __name__ == '__main__':
 
     # print(doses_aplicadas)
 
+    print(doses_aplicadas.loc[doses_aplicadas.municipio == 'SAO PAULO'])
