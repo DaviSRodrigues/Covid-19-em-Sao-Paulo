@@ -3303,7 +3303,7 @@ if __name__ == '__main__':
                              'Edg/88.0.705.74'}
 
     print('\t\tDoses aplicadas por município...')
-    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
+    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_vacinometro.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
     doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
