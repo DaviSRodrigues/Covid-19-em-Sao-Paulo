@@ -1,4 +1,4 @@
-const VERSAO = '33'
+const VERSAO = '34'
 const CACHE_NAME = 'Covid19-SP-16/08/2022-' + VERSAO;
 
 const CACHE_URLS = [
