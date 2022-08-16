@@ -3306,33 +3306,22 @@ if __name__ == '__main__':
     URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_vacinometro.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
-    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='UTF-8-SIG')
+    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
     print(f'Encoding doses aplicadas -> {req.encoding}')
-
-    print('\t\tDoses recebidas por cada município...')
-    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_painel_distribuicao_doses.csv'
-    req = requests.get(URL, headers=headers, stream=True)
-    req.encoding = req.apparent_encoding
-    doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
-    print(f'Encoding doses recebidas -> {req.encoding}')
-
-    doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('횣', 'U')
-    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.replace('횄', 'A')
-    # doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
-    #     lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
     print(doses_aplicadas)
 
-    doses_recebidas.columns = ['municipio', 'contagem']
+    doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
+    doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
+    doses_aplicadas['dose'] = doses_aplicadas.dose.str.encode('UTF-8-SIG')
 
-    doses_recebidas['municipio'] = doses_recebidas.municipio.apply(
+    print(doses_aplicadas)
+
+    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.encode('UTF-8-SIG')
+
+    print(doses_aplicadas)
+    
+    doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
         lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-    print(doses_recebidas)
-
-    doses_recebidas['municipio'] = doses_recebidas.municipio.str.replace('횄', 'A')
-
-    print(doses_recebidas)
+    print(doses_aplicadas)
