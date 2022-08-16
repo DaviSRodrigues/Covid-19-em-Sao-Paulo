@@ -2983,7 +2983,7 @@ def gera_populacao_vacinada(dados):
         annotations=[dict(text='Estado', x=0.17, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False),
                      dict(text='Cidade', x=0.85, y=0.5, font=dict(size=9, family='Roboto'), showarrow=False)],
         height=400,
-        updatemenus=[go.layout.Updatemenu(active=2,
+        updatemenus=[go.layout.Updatemenu(active=0,
                                           buttons=[opcao_dose1, opcao_dose2, opcao_dose3,
                                                    opcao_dose4, opcao_dose5, opcao_dose6],
                                           x=0.001, xanchor='left',
