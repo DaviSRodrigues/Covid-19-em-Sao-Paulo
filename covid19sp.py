@@ -3306,18 +3306,18 @@ if __name__ == '__main__':
     URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_vacinometro.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
-    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='utf-8', engine='python')
+    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='ISO-8859-1', engine='python')
     print(f'Encoding doses aplicadas -> {req.encoding}')
 
     print(doses_aplicadas)
 
     doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
     doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.encode(req.encoding)
+    # doses_aplicadas['dose'] = doses_aplicadas.dose.str.encode(req.encoding)
 
-    print(doses_aplicadas)
+    # print(doses_aplicadas)
 
-    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.encode(req.encoding)
+    # doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.encode(req.encoding)
 
     print(doses_aplicadas)
     
