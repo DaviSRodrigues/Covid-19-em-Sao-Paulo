@@ -3289,7 +3289,7 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    for i in range(35, -1, -1):
+    for i in range(35, 0, -1):
         data_processamento = datetime.now() - timedelta(days=i)
         processa_doencas = True
         print(f'\n\nData atual -> {data_processamento:%d/%m/%Y}\n\n')
