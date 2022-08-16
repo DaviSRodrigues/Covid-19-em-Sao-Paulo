@@ -3306,20 +3306,20 @@ if __name__ == '__main__':
     URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_vacinometro.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
-    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='latin1')
     print(f'Encoding doses aplicadas -> {req.encoding}')
 
     print(doses_aplicadas)
 
     doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-    doses_aplicadas['dose'] = doses_aplicadas.dose.str.decode(req.encoding)
-
-    print(doses_aplicadas)
-
-    doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.decode(req.encoding)
-
-    print(doses_aplicadas)
+    # doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
+    # doses_aplicadas['dose'] = doses_aplicadas.dose.str.encode(req.encoding)
+    #
+    # print(doses_aplicadas)
+    #
+    # doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.encode(req.encoding)
+    #
+    # print(doses_aplicadas)
     
     doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
         lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
