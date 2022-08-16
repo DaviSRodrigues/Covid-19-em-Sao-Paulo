@@ -3306,7 +3306,7 @@ if __name__ == '__main__':
     URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_vacinometro.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
-    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='ISO-8859-1', engine='python')
+    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding, engine='python')
     print(f'Encoding doses aplicadas -> {req.encoding}')
 
     print(doses_aplicadas)
