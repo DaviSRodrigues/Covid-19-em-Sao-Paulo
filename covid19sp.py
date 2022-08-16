@@ -418,7 +418,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         return None if coluna != 'dose_unica' else 0
 
     def atualiza_doses(municipio):
-        temp = doses_aplicadas.loc[doses_aplicadas['municipio'].str.contains(municipio)]
+        temp = doses_aplicadas.loc[doses_aplicadas['municipio'] == municipio]
 
         doses = temp.loc[temp.dose == '1º DOSE', 'contagem']
         primeira_dose = int(doses.iat[0]) if not doses.empty else None
@@ -500,7 +500,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
                                      (internacoes.data == internacoes.data.max()), 'pop'].iat[0]
 
         if pop_cidade is not None:
-            dados_vacinacao.loc[(dados_vacinacao.municipio.str.startswith('S')) &
+            dados_vacinacao.loc[(dados_vacinacao.municipio == 'SAO PAULO') &
                                 (dados_vacinacao.data.dt.date == data_processamento.date()), 'populacao'] = pop_cidade
 
     def atualiza_estado():
@@ -733,7 +733,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
         print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
-        atualiza_doses('O PAULO') #SAO PAULO
+        atualiza_doses('SAO PAULO')
 
         print(f'\t\t\tAtualizando população... {datetime.now():%H:%M:%S}')
         atualiza_populacao()
@@ -851,7 +851,7 @@ def gera_dados_evolucao_pandemia(dados_munic, dados_estado, isolamento, dados_va
 
     cidade = esquerda.merge(cidade, on=['data'], how='outer', suffixes=('_isolamento', '_cidade'))
 
-    filtro = dados_vacinacao.municipio.str.startswith('S')
+    filtro = dados_vacinacao.municipio == 'SAO PAULO'
     colunas = ['data', 'aplicadas_dia', 'perc_imunizadas']
     vacinacao = dados_vacinacao.loc[filtro, colunas].groupby(['data']).sum().reset_index()
     vacinacao.columns = ['data', 'vacinadas_semana', 'perc_imu_semana']
@@ -1022,7 +1022,7 @@ def gera_resumo_vacinacao(dados_vacinacao):
     filtro_data = dados_vacinacao.data.dt.date == data_processamento.date()
     filtro_data_max = dados_vacinacao.data == dados_vacinacao.data.max()
     filtro_estado = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados_vacinacao.municipio.str.startswith('S')
+    filtro_cidade = dados_vacinacao.municipio == 'SAO PAULO'
     inicio_vacinacao = pd.to_datetime('2021-01-17')
 
     cabecalho = ['<b>Campanha de<br>vacinação</b>',
@@ -1249,7 +1249,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     isolamento_atual = isolamento.loc[filtro, 'isolamento']
     isolamento_atual = 'indisponível' if isolamento_atual.empty else f'{isolamento_atual.item():7.0f}%'.replace('.', ',')
 
-    filtro = (dados_vacinacao.municipio.str.startswith('S')) & (dados_vacinacao.data.dt.date == hoje.date())
+    filtro = (dados_vacinacao.municipio == 'SAO PAULO') & (dados_vacinacao.data.dt.date == hoje.date())
     vacinadas = dados_vacinacao.loc[filtro, 'aplicadas_dia']
     vacinadas = 'indisponível' if vacinadas.empty else f'{vacinadas.item():7,.0f}'.replace(',', '.')
 
@@ -2798,7 +2798,7 @@ def gera_evolucao_vacinacao_estado(dados_vacinacao):
 
 
 def gera_evolucao_vacinacao_cidade(dados_vacinacao):
-    dados = dados_vacinacao.loc[dados_vacinacao.municipio.str.startswith('S')].copy()
+    dados = dados_vacinacao.loc[dados_vacinacao.municipio == 'SAO PAULO'].copy()
     dados = dados[1:]
 
     media_movel = dados.loc[:, ['data', 'aplicadas_dia']].rolling('7D', on='data').mean()
@@ -2893,7 +2893,7 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
 def gera_populacao_vacinada(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio.str.startswith('S')
+    filtro_cidade = dados.municipio == 'SAO PAULO'
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -3000,7 +3000,7 @@ def gera_populacao_vacinada(dados):
 def gera_tipo_doses(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio.str.startswith('S')
+    filtro_cidade = dados.municipio == 'SAO PAULO'
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -3059,7 +3059,7 @@ def gera_tipo_doses(dados):
 def gera_doses_aplicadas(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio.str.startswith('S')
+    filtro_cidade = dados.municipio == 'SAO PAULO'
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -3295,6 +3295,8 @@ if __name__ == '__main__':
     #     processa_doencas = True
     #     print(f'\n\nData atual -> {data_processamento:%d/%m/%Y}\n\n')
     #     main()
+    data_processamento = datetime.now()
+    processa_doencas = True
 
     headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
                              'AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -3306,22 +3308,20 @@ if __name__ == '__main__':
     URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_vacinometro.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
-    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding='unicode_escape')
+    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
     print(f'Encoding doses aplicadas -> {req.encoding}')
 
     print(doses_aplicadas)
 
     doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
     doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-    # doses_aplicadas['dose'] = doses_aplicadas.dose.str.encode('ISO-8859-1')
+    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
+    doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('횣', 'U')
+    doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('O PAULO'), 'municipio'] = 'SAO PAULO'
 
     print(doses_aplicadas)
 
     # doses_aplicadas['municipio'] = doses_aplicadas.municipio.str.encode('ISO-8859-1')
 
     # print(doses_aplicadas)
-    
-    doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(
-        lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-    print(doses_aplicadas)
