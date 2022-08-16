@@ -2892,7 +2892,7 @@ def gera_evolucao_vacinacao_cidade(dados_vacinacao):
 def gera_populacao_vacinada(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio.str.contains('O PAULO')
+    filtro_cidade = dados.municipio.str.startswith('S')
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -2999,7 +2999,7 @@ def gera_populacao_vacinada(dados):
 def gera_tipo_doses(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio.str.contains('O PAULO')
+    filtro_cidade = dados.municipio.str.startswith('S')
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -3058,7 +3058,7 @@ def gera_tipo_doses(dados):
 def gera_doses_aplicadas(dados):
     filtro_data = dados.data == dados.data.max()
     filtro_estado = dados.municipio == 'ESTADO DE SAO PAULO'
-    filtro_cidade = dados.municipio.str.contains('O PAULO')
+    filtro_cidade = dados.municipio.str.startswith('S')
 
     dados_estado = dados.loc[filtro_data & filtro_estado].copy()
     dados_estado.loc[:, 'data'] = dados_estado.data.apply(lambda dt: dt.strftime('%d/%b/%y'))
@@ -3289,9 +3289,13 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    for i in range(30, 0, -1):
+    for i in range(35, 0, -1):
         data_processamento = datetime.now() - timedelta(days=i)
         processa_doencas = True
         print(f'\n\nData atual -> {data_processamento:%d/%m/%Y}\n\n')
         main()
 
+    # dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
+    # dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
+    #
+    # gera_populacao_vacinada(dados_vacinacao)
