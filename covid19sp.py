@@ -36,7 +36,8 @@ def main():
     evolucao_cidade, evolucao_estado = gera_dados_semana(evolucao_cidade, evolucao_estado, leitos_estaduais, isolamento, internacoes)
 
     print(f'\nGerando gráficos e tabelas... {datetime.now():%H:%M:%S}')
-    gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, evolucao_cidade, evolucao_estado, internacoes, doencas, dados_raciais, dados_vacinacao, dados_imunizantes)
+    if data_processamento.date() == pd.to_datetime('2022-08-15').date():
+        gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, evolucao_cidade, evolucao_estado, internacoes, doencas, dados_raciais, dados_vacinacao, dados_imunizantes)
 
     print(f'\nAtualizando serviceWorker.js... {datetime.now():%H:%M:%S}')
     atualiza_service_worker(dados_estado)
@@ -3289,13 +3290,9 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    for i in range(35, 0, -1):
+    for i in range(32, 0, -1):
         data_processamento = datetime.now() - timedelta(days=i)
         processa_doencas = True
         print(f'\n\nData atual -> {data_processamento:%d/%m/%Y}\n\n')
         main()
 
-    # dados_vacinacao = pd.read_csv('dados/dados_vacinacao.zip')
-    # dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
-    #
-    # gera_populacao_vacinada(dados_vacinacao)
