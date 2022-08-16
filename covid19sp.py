@@ -3309,7 +3309,7 @@ if __name__ == '__main__':
     doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
 
     print('\t\tDoses recebidas por cada município...')
-    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv'
+    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/2022/08/20220815_painel_distribuicao_doses.csv'
     req = requests.get(URL, headers=headers, stream=True)
     req.encoding = req.apparent_encoding
     doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
