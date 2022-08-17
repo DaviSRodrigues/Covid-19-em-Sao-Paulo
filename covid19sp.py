@@ -552,8 +552,7 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
         if doses_recebidas is None:
             recebidas = obtem_dado_anterior('ESTADO DE SAO PAULO', 'doses_recebidas')
         else:
-            recebidas = doses_recebidas.loc[doses_recebidas.municipio == 'ESTADO DE SAO PAULO', 'contagem']
-            recebidas = None if recebidas.empty else recebidas.iat[0]
+            recebidas = doses_recebidas['contagem'].sum()
 
         nonlocal dados_vacinacao
         filtro_e = dados_vacinacao.municipio == 'ESTADO DE SAO PAULO'
