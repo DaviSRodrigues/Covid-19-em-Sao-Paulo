@@ -14,6 +14,7 @@ import locale
 from math import isnan, nan
 from tableauscraper import TableauScraper
 import traceback
+import sys
 import unicodedata
 
 import pandas as pd
