@@ -63,7 +63,8 @@ jobs:
         run: git pull
 
       - name: Gerar gráficos e tabelas com os dados municipais e estaduais
-        run: python covid19sp.py ${github.event.inputs.reprocessamento}
+        run: |
+             python covid19sp.py ${github.event.inputs.reprocessamento}
         env: 
              event_name: ${{ github.event.inputs.reprocessamento }}
 
