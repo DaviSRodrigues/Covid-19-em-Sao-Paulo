@@ -162,16 +162,25 @@ def carrega_dados_estado():
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
         doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+        if doses_recebidas.columns.size == 1:
+            raise Exception('Arquivo com problemas. Tentando buscar arquivo com final -1.csv...')
     except Exception as e:
         try:
-            print('\t\tDoses recebidas por cada município... .csv.csv')
-            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv.csv'
+            print('\t\tDoses recebidas por cada município...')
+            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses-1.csv'
             req = requests.get(URL, headers=headers, stream=True)
             req.encoding = req.apparent_encoding
             doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
         except Exception as e:
-            print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
-            doses_recebidas = None
+            try:
+                print('\t\tDoses recebidas por cada município... .csv.csv')
+                URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv.csv'
+                req = requests.get(URL, headers=headers, stream=True)
+                req.encoding = req.apparent_encoding
+                doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+            except Exception as e:
+                print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
+                doses_recebidas = None
 
     try:
         print('\t\tAtualizando doses aplicadas por vacina...')
@@ -3288,8 +3297,14 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    data_processamento = datetime.now()
-    processa_doencas = True
-
-    main()
+    if sys.argv[1] is None:
+        data_processamento = datetime.now()
+        processa_doencas = True
+        main()
+    else:
+        for i in range(sys.argv[1], -1, -1):
+            data_processamento = datetime.now() - timedelta(days=i)
+            processa_doencas = True
+            print(f'\nDia em processamento -> {data_processamento:%d/%m/%Y}\n')
+            main()
 
