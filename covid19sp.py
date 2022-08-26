@@ -146,16 +146,25 @@ def carrega_dados_estado():
         req = requests.get(URL, headers=headers, stream=True)
         req.encoding = req.apparent_encoding
         doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+        if doses_aplicadas.columns.size == 1:
+            raise Exception('Arquivo com problemas. Tentando buscar arquivo com final -1.csv...')
     except Exception as e:
         try:
-            print('\t\tDoses aplicadas por município... .csv.csv')
-            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv.csv'
+            print('\t\tDoses recebidas por cada município...')
+            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro-1.csv'
             req = requests.get(URL, headers=headers, stream=True)
             req.encoding = req.apparent_encoding
             doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
         except Exception as e:
-            print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
-            doses_aplicadas = None
+            try:
+                print('\t\tDoses aplicadas por município... .csv.csv')
+                URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv.csv'
+                req = requests.get(URL, headers=headers, stream=True)
+                req.encoding = req.apparent_encoding
+                doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+            except Exception as e:
+                print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
+                doses_aplicadas = None
 
     try:
         print('\t\tDoses recebidas por cada município...')
