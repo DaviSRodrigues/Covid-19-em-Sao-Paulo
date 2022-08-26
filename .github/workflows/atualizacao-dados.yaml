@@ -64,7 +64,7 @@ jobs:
 
       - name: Gerar gráficos e tabelas com os dados municipais e estaduais
         run: |
-             python covid19sp.py "${reprocessamento || env.padrao}"
+             python covid19sp.py "${{reprocessamento || env.padrao}}"
         env: 
              padrao: 0
              reprocessamento: ${{ github.event.inputs.reprocessamento }}
