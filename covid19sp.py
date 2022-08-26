@@ -3298,12 +3298,12 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    if sys.argv[1] is None:
+    if len(sys.argv) == 1:
         data_processamento = datetime.now()
         processa_doencas = True
         main()
     else:
-        for i in range(sys.argv[1], -1, -1):
+        for i in range(int(sys.argv[1]), -1, -1):
             data_processamento = datetime.now() - timedelta(days=i)
             processa_doencas = True
             print(f'\nDia em processamento -> {data_processamento:%d/%m/%Y}\n')
