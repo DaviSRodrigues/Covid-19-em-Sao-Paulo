@@ -3309,7 +3309,7 @@ def atualiza_service_worker(dados_estado):
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         data_processamento = datetime.now()
-        processa_doencas = True
+        processa_doencas = False
         main()
     else:
         for i in range(int(sys.argv[1]), -1, -1):
