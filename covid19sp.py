@@ -3314,7 +3314,7 @@ if __name__ == '__main__':
     else:
         for i in range(int(sys.argv[1]), -1, -1):
             data_processamento = datetime.now() - timedelta(days=i)
-            processa_doencas = True
+            processa_doencas = False
             print(f'\nDia em processamento -> {data_processamento:%d/%m/%Y}\n')
             main()
 
