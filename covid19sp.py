@@ -379,10 +379,10 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
     print('\t\tAtualizando dados de doenças preexistentes...')
 
-    doencas.columns = ['municipio', 'codigo_ibge', 'idade', 'sexo', 'data_inicio_sintomas', 'obito', 'asma',
+    doencas.columns = ['municipio', 'codigo_ibge', 'idade', 'sexo', 'covid19', 'data_inicio_sintomas', 'obito', 'asma',
                        'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica', 'doenca_neurologica',
                        'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
-                       'sindrome_de_down', 'covid19']
+                       'sindrome_de_down']
 
     if processa_doencas:
         doencas = doencas.groupby(
@@ -3309,12 +3309,12 @@ def atualiza_service_worker(dados_estado):
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         data_processamento = datetime.now()
-        processa_doencas = True
+        processa_doencas = False
         main()
     else:
         for i in range(int(sys.argv[1]), -1, -1):
             data_processamento = datetime.now() - timedelta(days=i)
-            processa_doencas = True
+            processa_doencas = False
             print(f'\nDia em processamento -> {data_processamento:%d/%m/%Y}\n')
             main()
 
