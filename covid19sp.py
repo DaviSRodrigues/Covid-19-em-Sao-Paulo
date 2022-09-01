@@ -1605,22 +1605,22 @@ def gera_casos_cidade(dados):
 def gera_doencas_preexistentes_casos(doencas):
     idades = list(doencas.reset_index('idade').idade.unique())
 
-    casos_ignorados_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
+    casos_ignorados_m = [doencas.xs((1, 'FEMININO', i, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                      'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                      'IGNORADO', 'IGNORADO'), level=('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                      'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                      'sindrome_de_down')).asma.sum() for i in idades]
-    casos_ignorados_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
+    casos_ignorados_h = [doencas.xs((1, 'MASCULINO', i, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                      'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                      'IGNORADO', 'IGNORADO'), level=('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                      'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                      'sindrome_de_down')).asma.sum() for i in idades]
 
-    casos_sem_doencas_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
+    casos_sem_doencas_m = [doencas.xs((1, 'FEMININO', i, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
                                        'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level=('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                        'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                        'sindrome_de_down')).asma.sum() for i in idades]
-    casos_sem_doencas_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
+    casos_sem_doencas_h = [doencas.xs((1, 'MASCULINO', i, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
                                        'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level=('covid19', 'sexo', 'idade', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                        'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                        'sindrome_de_down')).asma.sum() for i in idades]
@@ -1630,10 +1630,10 @@ def gera_doencas_preexistentes_casos(doencas):
 
     for d in doencas.columns:
         casos_com_doencas_m.append(
-            [doencas.xs(('CONFIRMADO', 'FEMININO', i, 'SIM'), level=('covid19', 'sexo', 'idade', d))[d].sum() for i in
+            [doencas.xs((1, 'FEMININO', i, 'SIM'), level=('covid19', 'sexo', 'idade', d))[d].sum() for i in
              idades])
         casos_com_doencas_h.append(
-            [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 'SIM'), level=('covid19', 'sexo', 'idade', d))[d].sum() for i in
+            [doencas.xs((1, 'MASCULINO', i, 'SIM'), level=('covid19', 'sexo', 'idade', d))[d].sum() for i in
              idades])
 
     # para os dados femininos, todos os valores precisam ser negativados
@@ -1711,22 +1711,22 @@ def gera_doencas_preexistentes_casos(doencas):
 def gera_doencas_preexistentes_obitos(doencas):
     idades = list(doencas.reset_index('idade').idade.unique())
 
-    obitos_ignorados_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 1, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
+    obitos_ignorados_m = [doencas.xs((1, 'FEMININO', i, 1, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                       'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                       'IGNORADO', 'IGNORADO', 'IGNORADO'), level=('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                       'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                       'sindrome_de_down')).asma.sum() for i in idades]
-    obitos_ignorados_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 1, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
+    obitos_ignorados_h = [doencas.xs((1, 'MASCULINO', i, 1, 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                       'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO', 'IGNORADO',
                                       'IGNORADO', 'IGNORADO', 'IGNORADO'), level=('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                       'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                       'sindrome_de_down')).asma.sum() for i in idades]
 
-    obitos_sem_doencas_m = [doencas.xs(('CONFIRMADO', 'FEMININO', i, 1, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
+    obitos_sem_doencas_m = [doencas.xs((1, 'FEMININO', i, 1, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
                                         'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level=('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                         'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                         'sindrome_de_down')).asma.sum() for i in idades]
-    obitos_sem_doencas_h = [doencas.xs(('CONFIRMADO', 'MASCULINO', i, 1, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
+    obitos_sem_doencas_h = [doencas.xs((1, 'MASCULINO', i, 1, 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO',
                                        'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO', 'NÃO'), level=('covid19', 'sexo', 'idade', 'obito', 'asma', 'cardiopatia', 'diabetes', 'doenca_hematologica', 'doenca_hepatica',
                                        'doenca_neurologica', 'doenca_renal', 'imunodepressao', 'obesidade', 'outros', 'pneumopatia', 'puerpera',
                                        'sindrome_de_down')).asma.sum() for i in idades]
@@ -1735,10 +1735,10 @@ def gera_doencas_preexistentes_obitos(doencas):
     obitos_com_doencas_h = []
 
     for d in doencas.columns:
-        obitos_com_doencas_m.append([doencas.xs(('CONFIRMADO', 'FEMININO', i, 1, 'SIM'),
+        obitos_com_doencas_m.append([doencas.xs((1, 'FEMININO', i, 1, 'SIM'),
                                                 level=('covid19', 'sexo', 'idade', 'obito', d))[d].sum() for i in
                                      idades])
-        obitos_com_doencas_h.append([doencas.xs(('CONFIRMADO', 'MASCULINO', i, 1, 'SIM'),
+        obitos_com_doencas_h.append([doencas.xs((1, 'MASCULINO', i, 1, 'SIM'),
                                                 level=('covid19', 'sexo', 'idade', 'obito', d))[d].sum() for i in
                                      idades])
 
