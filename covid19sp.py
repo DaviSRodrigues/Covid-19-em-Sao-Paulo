@@ -132,84 +132,92 @@ def carrega_dados_estado():
         print(f'\tErro ao buscar dados_raciais.csv do GitHub: lendo arquivo local.\n\t{e}')
         dados_raciais = pd.read_csv('dados/dados_raciais.zip', sep=';', index_col=0)
 
-    print('\tAtualizando dados da campanha de vacinação...')
+    global vacinacao
 
-    headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                             'AppleWebKit/537.36 (KHTML, like Gecko) '
-                             'Chrome/88.0.4324.182 '
-                             'Safari/537.36 '
-                             'Edg/88.0.705.74'}
+    if vacinacao is True:
+        print('\tAtualizando dados da campanha de vacinação...')
 
-    try:
-        print('\t\tDoses aplicadas por município...')
-        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
-        req = requests.get(URL, headers=headers, stream=True)
-        req.encoding = req.apparent_encoding
-        doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
-        if doses_aplicadas.columns.size == 1:
-            raise Exception('Arquivo com problemas. Tentando buscar arquivo com final -1.csv...')
-    except Exception as e:
+        headers = {'User-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                                 'AppleWebKit/537.36 (KHTML, like Gecko) '
+                                 'Chrome/88.0.4324.182 '
+                                 'Safari/537.36 '
+                                 'Edg/88.0.705.74'}
+
         try:
-            print('\t\tDoses recebidas por cada município...')
-            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro-1.csv'
+            print('\t\tDoses aplicadas por município...')
+            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv'
             req = requests.get(URL, headers=headers, stream=True)
             req.encoding = req.apparent_encoding
             doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+            if doses_aplicadas.columns.size == 1:
+                raise Exception('Arquivo com problemas. Tentando buscar arquivo com final -1.csv...')
         except Exception as e:
             try:
-                print('\t\tDoses aplicadas por município... .csv.csv')
-                URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv.csv'
+                print('\t\tDoses recebidas por cada município...')
+                URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro-1.csv'
                 req = requests.get(URL, headers=headers, stream=True)
                 req.encoding = req.apparent_encoding
                 doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
             except Exception as e:
-                print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
-                doses_aplicadas = None
+                try:
+                    print('\t\tDoses aplicadas por município... .csv.csv')
+                    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_vacinometro.csv.csv'
+                    req = requests.get(URL, headers=headers, stream=True)
+                    req.encoding = req.apparent_encoding
+                    doses_aplicadas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+                except Exception as e:
+                    print(f'\t\tErro ao buscar {data}_vacinometro.csv da Seade: {e}')
+                    doses_aplicadas = None
 
-    try:
-        print('\t\tDoses recebidas por cada município...')
-        URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv'
-        req = requests.get(URL, headers=headers, stream=True)
-        req.encoding = req.apparent_encoding
-        doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
-        if doses_recebidas.columns.size == 1:
-            raise Exception('Arquivo com problemas. Tentando buscar arquivo com final -1.csv...')
-    except Exception as e:
         try:
             print('\t\tDoses recebidas por cada município...')
-            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses-1.csv'
+            URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv'
             req = requests.get(URL, headers=headers, stream=True)
             req.encoding = req.apparent_encoding
             doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+            if doses_recebidas.columns.size == 1:
+                raise Exception('Arquivo com problemas. Tentando buscar arquivo com final -1.csv...')
         except Exception as e:
             try:
-                print('\t\tDoses recebidas por cada município... .csv.csv')
-                URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv.csv'
+                print('\t\tDoses recebidas por cada município...')
+                URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses-1.csv'
                 req = requests.get(URL, headers=headers, stream=True)
                 req.encoding = req.apparent_encoding
                 doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
             except Exception as e:
-                print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
-                doses_recebidas = None
+                try:
+                    print('\t\tDoses recebidas por cada município... .csv.csv')
+                    URL = f'https://www.saopaulo.sp.gov.br/wp-content/uploads/{ano}/{mes}/{data}_painel_distribuicao_doses.csv.csv'
+                    req = requests.get(URL, headers=headers, stream=True)
+                    req.encoding = req.apparent_encoding
+                    doses_recebidas = pd.read_csv(StringIO(req.text), sep=';', encoding=req.encoding)
+                except Exception as e:
+                    print(f'\t\tErro ao buscar {data}_painel_distribuicao_doses.csv da Seade: {e}')
+                    doses_recebidas = None
 
-    try:
-        print('\t\tAtualizando doses aplicadas por vacina...')
-        url = 'https://www2.simi.sp.gov.br/views/PaineldeEstatsticasGerais_14_09_2021_16316423974680/PaineldeEstatsticasGerais'
-        scraper = TableauScraper()
-        scraper.loads(url)
-        sheet = scraper.getWorkbook().getWorksheet('donuts imunibiológico')
-        atualizacao_imunizantes = sheet.data.copy()
-        atualizacao_imunizantes['data'] = data_processamento
-        atualizacao_imunizantes = atualizacao_imunizantes[['data', 'Imunobiologico -alias', 'SUM(Qtde)-alias']]
-        atualizacao_imunizantes.columns = ['data', 'vacina', 'aplicadas']
-        atualizacao_imunizantes = atualizacao_imunizantes.replace('ASTRAZENECA/OXFORD/FIOCRUZ', 'ASTRAZENECA | OXFORD', False)
-        atualizacao_imunizantes = atualizacao_imunizantes.replace('CORONAVAC', 'CORONAVAC | BUTANTAN', False)
-        atualizacao_imunizantes = atualizacao_imunizantes.replace('JANSSEN', 'JANSSEN | JOHNSON & JOHNSON', False)
-        atualizacao_imunizantes = atualizacao_imunizantes.replace('PFIZER', 'PFIZER | BIONTECH', False)
-        atualizacao_imunizantes.sort_values(by='vacina', inplace=True)
-    except Exception as e:
-        print(f'\t\tErro ao buscar dados de vacinas do Tableau: {e}')
-        traceback.print_exception(type(e), e, e.__traceback__)
+        try:
+            raise Exception('O scrapping do Tableau não funciona mais...')
+            print('\t\tAtualizando doses aplicadas por vacina...')
+            url = 'https://www2.simi.sp.gov.br/views/PaineldeEstatsticasGerais_14_09_2021_16316423974680/PaineldeEstatsticasGerais'
+            scraper = TableauScraper()
+            scraper.loads(url)
+            sheet = scraper.getWorkbook().getWorksheet('donuts imunibiológico')
+            atualizacao_imunizantes = sheet.data.copy()
+            atualizacao_imunizantes['data'] = data_processamento
+            atualizacao_imunizantes = atualizacao_imunizantes[['data', 'Imunobiologico -alias', 'SUM(Qtde)-alias']]
+            atualizacao_imunizantes.columns = ['data', 'vacina', 'aplicadas']
+            atualizacao_imunizantes = atualizacao_imunizantes.replace('ASTRAZENECA/OXFORD/FIOCRUZ', 'ASTRAZENECA | OXFORD', False)
+            atualizacao_imunizantes = atualizacao_imunizantes.replace('CORONAVAC', 'CORONAVAC | BUTANTAN', False)
+            atualizacao_imunizantes = atualizacao_imunizantes.replace('JANSSEN', 'JANSSEN | JOHNSON & JOHNSON', False)
+            atualizacao_imunizantes = atualizacao_imunizantes.replace('PFIZER', 'PFIZER | BIONTECH', False)
+            atualizacao_imunizantes.sort_values(by='vacina', inplace=True)
+        except Exception as e:
+            print(f'\t\tErro ao buscar dados de vacinas do Tableau: {e}')
+            traceback.print_exception(type(e), e, e.__traceback__)
+            atualizacao_imunizantes = None
+    else:
+        doses_aplicadas = None
+        doses_recebidas = None
         atualizacao_imunizantes = None
 
     leitos_estaduais = pd.read_csv('dados/leitos_estaduais.csv', index_col=0)
@@ -283,6 +291,8 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
     dados_atualizados = None
 
     def busca_isolamento():
+        return False
+
         try:
             nonlocal dados_atualizados, tentativas, isolamento_atualizado
             tentativas = tentativas + 1
@@ -725,67 +735,71 @@ def pre_processamento_estado(dados_estado, isolamento, leitos_estaduais, interna
 
         return linha
 
-    print('\t\tAtualizando dados da campanha de vacinação...')
+    global vacinacao
+
     dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
-    hoje = data_processamento
 
-    dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
-        lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+    if vacinacao is True:
+        print('\t\tAtualizando dados da campanha de vacinação...')
+        hoje = data_processamento
 
-    if doses_recebidas is not None:
-        doses_recebidas.columns = ['municipio', 'contagem']
+        dados_vacinacao['municipio'] = dados_vacinacao.municipio.apply(
+            lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        doses_recebidas['municipio'] = doses_recebidas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+        if doses_recebidas is not None:
+            doses_recebidas.columns = ['municipio', 'contagem']
 
-    if doses_aplicadas is not None:
-        try:
-            doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
-        except ValueError as e:
-            doses_aplicadas.columns = ['municipio', 'dose', 'municipio_repetido', 'drs', 'contagem']
+            doses_recebidas['municipio'] = doses_recebidas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
-        doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
-        doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('횣', 'U')
-        doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('O PAULO'), 'municipio'] = 'SAO PAULO'
-        doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
+        if doses_aplicadas is not None:
+            try:
+                doses_aplicadas.columns = ['municipio', 'dose', 'contagem']
+            except ValueError as e:
+                doses_aplicadas.columns = ['municipio', 'dose', 'municipio_repetido', 'drs', 'contagem']
 
-        print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
-        atualiza_doses('SAO PAULO')
+            doses_aplicadas['dose'] = doses_aplicadas.dose.str.upper()
+            doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('쨘', 'º')
+            doses_aplicadas['dose'] = doses_aplicadas.dose.str.replace('횣', 'U')
+            doses_aplicadas.loc[doses_aplicadas.municipio.str.contains('O PAULO'), 'municipio'] = 'SAO PAULO'
+            doses_aplicadas['municipio'] = doses_aplicadas.municipio.apply(lambda m: ''.join(c for c in unicodedata.normalize('NFD', m.upper()) if unicodedata.category(c) != 'Mn'))
 
-        print(f'\t\t\tAtualizando população... {datetime.now():%H:%M:%S}')
-        atualiza_populacao()
+            print(f'\t\t\tAtualizando doses... {datetime.now():%H:%M:%S}')
+            atualiza_doses('SAO PAULO')
 
-        print(f'\t\t\tAtualizando estado... {datetime.now():%H:%M:%S}')
-        atualiza_estado()
+            print(f'\t\t\tAtualizando população... {datetime.now():%H:%M:%S}')
+            atualiza_populacao()
 
-        print(f'\t\t\tCalculando campos adicionais... {datetime.now():%H:%M:%S}')
-        dados_vacinacao.loc[dados_vacinacao.data.dt.date == hoje.date()] = \
-            dados_vacinacao.loc[dados_vacinacao.data.dt.date == hoje.date()].apply(lambda linha: calcula_campos_adicionais(linha), axis=1)
+            print(f'\t\t\tAtualizando estado... {datetime.now():%H:%M:%S}')
+            atualiza_estado()
 
-        print(f'\t\t\tOrdenando e salvando dados vacinação... {datetime.now():%H:%M:%S}')
-        dados_vacinacao.sort_values(by=['data', 'municipio'], ascending=True, inplace=True)
-        dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
-        opcoes_zip = dict(method='zip', archive_name='dados_vacinacao.csv')
-        dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
-        dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
+            print(f'\t\t\tCalculando campos adicionais... {datetime.now():%H:%M:%S}')
+            dados_vacinacao.loc[dados_vacinacao.data.dt.date == hoje.date()] = \
+                dados_vacinacao.loc[dados_vacinacao.data.dt.date == hoje.date()].apply(lambda linha: calcula_campos_adicionais(linha), axis=1)
 
-    print(f'\t\t\tAtualizando imunizantes... {datetime.now():%H:%M:%S}')
-    dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
+            print(f'\t\t\tOrdenando e salvando dados vacinação... {datetime.now():%H:%M:%S}')
+            dados_vacinacao.sort_values(by=['data', 'municipio'], ascending=True, inplace=True)
+            dados_vacinacao['data'] = dados_vacinacao.data.apply(lambda d: d.strftime('%d/%m/%Y'))
+            opcoes_zip = dict(method='zip', archive_name='dados_vacinacao.csv')
+            dados_vacinacao.to_csv('dados/dados_vacinacao.zip', index=False, compression=opcoes_zip)
+            dados_vacinacao['data'] = pd.to_datetime(dados_vacinacao.data, format='%d/%m/%Y')
 
-    if atualizacao_imunizantes is not None:
-        if dados_imunizantes.data.max().date() <= data_processamento.date():
-            busca = dados_imunizantes.loc[dados_imunizantes.data.dt.date == data_processamento.date(), 'data']
+        print(f'\t\t\tAtualizando imunizantes... {datetime.now():%H:%M:%S}')
+        dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
 
-            if busca.empty:
-                dados_imunizantes = dados_imunizantes.append(atualizacao_imunizantes)
-            else:
-                for v in dados_imunizantes.vacina.unique():
-                    dados_imunizantes.loc[(dados_imunizantes.data.dt.date == data_processamento.date()) & (dados_imunizantes.vacina == v), 'aplicadas'] = atualizacao_imunizantes.loc[(atualizacao_imunizantes.data.dt.date == data_processamento.date()) & (atualizacao_imunizantes.vacina == v), 'aplicadas'].iat[0]
+        if atualizacao_imunizantes is not None:
+            if dados_imunizantes.data.max().date() <= data_processamento.date():
+                busca = dados_imunizantes.loc[dados_imunizantes.data.dt.date == data_processamento.date(), 'data']
 
-            dados_imunizantes['data'] = dados_imunizantes['data'].apply(lambda d: d.strftime('%d/%m/%Y'))
-            dados_imunizantes = dados_imunizantes.astype({'aplicadas': 'int32'})
-            dados_imunizantes.to_csv('dados/dados_imunizantes.csv', index=False)
-            dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
+                if busca.empty:
+                    dados_imunizantes = dados_imunizantes.append(atualizacao_imunizantes)
+                else:
+                    for v in dados_imunizantes.vacina.unique():
+                        dados_imunizantes.loc[(dados_imunizantes.data.dt.date == data_processamento.date()) & (dados_imunizantes.vacina == v), 'aplicadas'] = atualizacao_imunizantes.loc[(atualizacao_imunizantes.data.dt.date == data_processamento.date()) & (atualizacao_imunizantes.vacina == v), 'aplicadas'].iat[0]
+
+                dados_imunizantes['data'] = dados_imunizantes['data'].apply(lambda d: d.strftime('%d/%m/%Y'))
+                dados_imunizantes = dados_imunizantes.astype({'aplicadas': 'int32'})
+                dados_imunizantes.to_csv('dados/dados_imunizantes.csv', index=False)
+                dados_imunizantes['data'] = pd.to_datetime(dados_imunizantes.data, format='%d/%m/%Y')
 
     return dados_estado, isolamento, leitos_estaduais, internacoes, doencas, dados_raciais, dados_vacinacao, dados_munic, dados_imunizantes
 
@@ -989,8 +1003,8 @@ def gera_dados_semana(evolucao_cidade, evolucao_estado, leitos_estaduais, isolam
 
 
 def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total, dados_estado, isolamento, leitos_estaduais, evolucao_cidade, evolucao_estado, internacoes, doencas, dados_raciais, dados_vacinacao, dados_imunizantes):
-    print('\tResumo da campanha de vacinação...')
-    gera_resumo_vacinacao(dados_vacinacao)
+    # print('\tResumo da campanha de vacinação...')
+    # gera_resumo_vacinacao(dados_vacinacao)
     print('\tResumo diário...')
     gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais_total, dados_estado, leitos_estaduais, isolamento, internacoes, dados_vacinacao)
     print('\tResumo semanal...')
@@ -1013,20 +1027,20 @@ def gera_graficos(dados_munic, dados_cidade, hospitais_campanha, leitos_municipa
     gera_leitos_estaduais(leitos_estaduais)
     print('\tDepartamentos Regionais de Saúde...')
     gera_drs(internacoes)
-    print('\tEvolução da campanha de vacinação no estado...')
-    gera_evolucao_vacinacao_estado(dados_vacinacao)
-    print('\tEvolução da campanha de vacinação na cidade...')
-    gera_evolucao_vacinacao_cidade(dados_vacinacao)
-    print('\tPopulação vacinada...')
-    gera_populacao_vacinada(dados_vacinacao)
-    print('\t1ª dose x 2ª dose...')
-    gera_tipo_doses(dados_vacinacao)
-    print('\tDoses recebidas x aplicadas...')
-    gera_doses_aplicadas(dados_vacinacao)
-    print('\tTabela da campanha de vacinação...')
-    gera_tabela_vacinacao(dados_vacinacao)
-    print('\tDistribuição de imunizantes por fabricante...')
-    gera_distribuicao_imunizantes(dados_imunizantes)
+    # print('\tEvolução da campanha de vacinação no estado...')
+    # gera_evolucao_vacinacao_estado(dados_vacinacao)
+    # print('\tEvolução da campanha de vacinação na cidade...')
+    # gera_evolucao_vacinacao_cidade(dados_vacinacao)
+    # print('\tPopulação vacinada...')
+    # gera_populacao_vacinada(dados_vacinacao)
+    # print('\t1ª dose x 2ª dose...')
+    # gera_tipo_doses(dados_vacinacao)
+    # print('\tDoses recebidas x aplicadas...')
+    # gera_doses_aplicadas(dados_vacinacao)
+    # print('\tTabela da campanha de vacinação...')
+    # gera_tabela_vacinacao(dados_vacinacao)
+    # print('\tDistribuição de imunizantes por fabricante...')
+    # gera_distribuicao_imunizantes(dados_imunizantes)
 
     if processa_doencas:
         print('\tDoenças preexistentes nos casos estaduais...')
@@ -3307,14 +3321,15 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
+    processa_doencas = True
+    vacinacao = False
+
     if len(sys.argv) == 1:
         data_processamento = datetime.now()
-        processa_doencas = True
         main()
     else:
         for i in range(int(sys.argv[1]), -1, -1):
             data_processamento = datetime.now() - timedelta(days=i)
-            processa_doencas = True
             print(f'\nDia em processamento -> {data_processamento:%d/%m/%Y}\n')
             main()
 
