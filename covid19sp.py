@@ -3321,7 +3321,7 @@ def atualiza_service_worker(dados_estado):
 
 
 if __name__ == '__main__':
-    processa_doencas = True
+    processa_doencas = False
     vacinacao = False
 
     if len(sys.argv) == 1:
