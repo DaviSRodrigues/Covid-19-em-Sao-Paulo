@@ -1,5 +1,5 @@
 const VERSAO = '06'
-const CACHE_NAME = 'Covid19-SP-28/10/2022-' + VERSAO;
+const CACHE_NAME = 'Covid19-SP-02/11/2022-' + VERSAO;
 
 const CACHE_URLS = [
 	'index.html',
