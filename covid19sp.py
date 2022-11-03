@@ -237,9 +237,9 @@ def pre_processamento(hospitais_campanha, leitos_municipais, leitos_municipais_p
 
 
 def pre_processamento_cidade(dados_munic, hospitais_campanha, leitos_municipais, leitos_municipais_privados, leitos_municipais_total):
-    dados_cidade = dados_munic.loc[dados_munic.nome_munic == 'São Paulo', ['datahora', 'casos', 'casos_novos', 'obitos', 'obitos_novos', 'letalidade']]
-    dados_cidade.columns = ['data', 'confirmados', 'casos_dia', 'óbitos', 'óbitos_dia', 'letalidade']
-    dados_cidade['letalidade'] = dados_cidade.letalidade * 100
+    dados_cidade = dados_munic.loc[dados_munic.nome_munic == 'São Paulo', ['datahora', 'casos', 'casos_novos', 'obitos', 'obitos_novos']]
+    dados_cidade.columns = ['data', 'confirmados', 'casos_dia', 'óbitos', 'óbitos_dia']
+    dados_cidade['letalidade'] = (dados_cidade.óbitos / dados_cidade.confirmados) * 100
     dados_cidade['data'] = pd.to_datetime(dados_cidade.data)
     dados_cidade['dia'] = dados_cidade.data.apply(lambda d: d.strftime('%d %b %y'))
 
