@@ -64,7 +64,7 @@ def carrega_dados_estado():
         print('\tAtualizando dados dos municípios...')
         URL = 'https://raw.githubusercontent.com/seade-R/dados-covid-sp/master/data/dados_covid_sp.csv'
         dados_munic = pd.read_csv(URL, sep=';', decimal=',')
-        dados_munic['letalidade'] = (dados_cidade.óbitos / dados_cidade.confirmados) * 100
+        dados_munic['letalidade'] = (dados_munic.obitos / dados_munic.casos) * 100
         opcoes_zip = dict(method='zip', archive_name='dados_munic.csv')
         dados_munic.to_csv('dados/dados_munic.zip', sep=';', decimal=',', index=False, compression=opcoes_zip)
     except Exception as e:
