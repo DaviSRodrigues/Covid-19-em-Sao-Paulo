@@ -1299,7 +1299,7 @@ def gera_resumo_diario(dados_munic, dados_cidade, leitos_municipais, dados_estad
     obitos_dia = 'indisponível' if obitos_dia.empty else f'{obitos_dia.item():7,.0f}'.replace(',', '.')
 
     letalidade_atual = dados_munic.loc[filtro, 'letalidade']
-    letalidade_atual = 'indisponível' if letalidade_atual.empty else f'{letalidade_atual.item() * 100:7.2f}%'.replace('.', ',')
+    letalidade_atual = 'indisponível' if letalidade_atual.empty else f'{letalidade_atual.item():7.2f}%'.replace('.', ',')
 
     leitos_covid = internacoes.loc[(internacoes.drs == 'Município de São Paulo') & (internacoes.data.dt.date == hoje.date()), 'total_covid_uti_ultimo_dia']
     leitos_covid = 'indisponível' if leitos_covid.empty else f'{leitos_covid.item():7,.0f}'.replace(',', '.')
